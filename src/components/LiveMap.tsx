@@ -269,7 +269,6 @@ const LiveMap = () => {
                     fontFamily: "'Space Grotesk', sans-serif",
                     whiteSpace: "nowrap",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
-                    transform: "translate(-50%, -100%)",
                   }}
                 >
                   {loc.staff_profiles?.full_name || "Unknown"}
