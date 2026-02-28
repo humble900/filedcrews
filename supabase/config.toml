@@ -1,1 +1,10 @@
 project_id = "iupghjhitebcrgtybcva"
+
+[functions.admin_create_staff]
+verify_jwt = false
+
+[functions.staff_update_location]
+verify_jwt = false
+
+[functions.admin_verify_password]
+verify_jwt = false
