@@ -2,8 +2,75 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Clock, History, X, CircleDot, Loader2 } from "lucide-react";
+import { MapPin, Clock, History, X, CircleDot, Loader2, MapPinHouse } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
+
+/* ── Address lookup via reverse geocoding ── */
+const addressCache: Record<string, string> = {};
+
+function AddressLookup({ lat, lng }: { lat: number; lng: number }) {
+  const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [address, setAddress] = useState("");
+  const [visible, setVisible] = useState(false);
+
+  const lookup = useCallback(() => {
+    if (visible) {
+      setVisible(false);
+      return;
+    }
+
+    const key = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+    const cached = addressCache[key];
+    if (cached) {
+      setAddress(cached);
+      setState("done");
+      setVisible(true);
+      return;
+    }
+
+    setState("loading");
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+      if (status === "OK" && results?.[0]) {
+        const formatted = results[0].formatted_address;
+        addressCache[key] = formatted;
+        setAddress(formatted);
+        setState("done");
+        setVisible(true);
+      } else {
+        setState("error");
+        setAddress("Address not found");
+        setVisible(true);
+      }
+    });
+  }, [lat, lng, visible]);
+
+  return (
+    <div className="inline-flex flex-col">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-5 w-5 ml-1 inline-flex"
+        onClick={(e) => {
+          e.stopPropagation();
+          lookup();
+        }}
+        title="Show address"
+      >
+        {state === "loading" ? (
+          <Loader2 className="h-3 w-3 animate-spin" />
+        ) : (
+          <MapPinHouse className="h-3 w-3" />
+        )}
+      </Button>
+      {visible && address && (
+        <p className={`text-xs mt-0.5 ml-[18px] leading-tight ${state === "error" ? "text-destructive" : "text-foreground"}`}>
+          {address}
+        </p>
+      )}
+    </div>
+  );
+}
 import {
   APIProvider,
   Map,
@@ -330,9 +397,12 @@ const LiveMap = () => {
                         <CircleDot className={`h-3 w-3 ${isSelected ? "text-destructive" : i === 0 ? "text-green-500" : "text-primary"}`} />
                         {format(new Date(pt.created_at), "MMM d, HH:mm:ss")}
                       </p>
-                      <p className="text-xs text-muted-foreground font-mono mt-0.5 ml-[18px]">
-                        {pt.latitude.toFixed(5)}, {pt.longitude.toFixed(5)}
-                      </p>
+                      <div className="flex items-center mt-0.5 ml-[18px]">
+                        <p className="text-xs text-muted-foreground font-mono">
+                          {pt.latitude.toFixed(5)}, {pt.longitude.toFixed(5)}
+                        </p>
+                        <AddressLookup lat={pt.latitude} lng={pt.longitude} />
+                      </div>
                     </div>
                   );
                 })}
@@ -368,9 +438,12 @@ const LiveMap = () => {
                       <Clock className="h-3 w-3" />
                       {formatDistanceToNow(new Date(loc.updated_at), { addSuffix: true })}
                     </p>
-                    <p className="text-xs text-muted-foreground font-mono mt-0.5">
-                      {loc.latitude.toFixed(5)}, {loc.longitude.toFixed(5)}
-                    </p>
+                    <div className="flex items-center mt-0.5">
+                      <p className="text-xs text-muted-foreground font-mono">
+                        {loc.latitude.toFixed(5)}, {loc.longitude.toFixed(5)}
+                      </p>
+                      <AddressLookup lat={loc.latitude} lng={loc.longitude} />
+                    </div>
                   </div>
                 ))}
             </div>
