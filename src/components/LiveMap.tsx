@@ -2,11 +2,15 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Clock, History, X, CircleDot } from "lucide-react";
+import { MapPin, Clock, History, X, CircleDot, Loader2 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
-import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, CircleMarker } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import {
+  APIProvider,
+  Map,
+  AdvancedMarker,
+  useMap,
+  Pin,
+} from "@vis.gl/react-google-maps";
 
 interface StaffLocation {
   staff_id: string;
@@ -28,44 +32,137 @@ interface HistoryPoint {
   created_at: string;
 }
 
-const createStaffIcon = (name: string) => {
-  return L.divIcon({
-    className: "staff-marker",
-    html: `
-      <div style="background: hsl(220 70% 50%); color: white; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; font-family: 'Space Grotesk', sans-serif; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.25); text-align:center; transform: translate(-50%, -100%);">
-        ${name}
-      </div>
-    `,
-    iconSize: [0, 0],
-    iconAnchor: [0, 0],
-  });
-};
-
-function FitBounds({ locations }: { locations: StaffLocation[] }) {
+/* ── History polyline drawn on the map via vanilla Maps API ── */
+function HistoryOverlay({
+  points,
+  selectedPointId,
+}: {
+  points: HistoryPoint[];
+  selectedPointId: string | null;
+}) {
   const map = useMap();
+  const polyRef = useRef<google.maps.Polyline | null>(null);
+  const circlesRef = useRef<google.maps.Circle[]>([]);
+
+  useEffect(() => {
+    if (!map) return;
+
+    // Clean previous
+    polyRef.current?.setMap(null);
+    circlesRef.current.forEach((c) => c.setMap(null));
+    circlesRef.current = [];
+
+    if (points.length < 2) return;
+
+    const path = points.map((p) => ({ lat: p.latitude, lng: p.longitude }));
+    const poly = new google.maps.Polyline({
+      path,
+      strokeColor: "#3b71ca",
+      strokeOpacity: 0.6,
+      strokeWeight: 3,
+      geodesic: true,
+      map,
+    });
+    // dashed line via icons
+    poly.setOptions({
+      strokeOpacity: 0,
+      icons: [
+        {
+          icon: { path: "M 0,-1 0,1", strokeOpacity: 0.6, strokeWeight: 3, scale: 3 },
+          offset: "0",
+          repeat: "16px",
+        },
+      ],
+    });
+    polyRef.current = poly;
+
+    points.forEach((pt, i) => {
+      const isSelected = pt.id === selectedPointId;
+      const isLatest = i === points.length - 1;
+      const circle = new google.maps.Circle({
+        center: { lat: pt.latitude, lng: pt.longitude },
+        radius: isSelected ? 18 : isLatest ? 12 : 7,
+        fillColor: isSelected ? "#e53935" : isLatest ? "#43a047" : "#3b71ca",
+        fillOpacity: isSelected ? 1 : 0.9,
+        strokeColor: isSelected ? "#c62828" : isLatest ? "#2e7d32" : "#1e4b8f",
+        strokeWeight: isSelected ? 3 : 2,
+        map,
+        clickable: false,
+      });
+      circlesRef.current.push(circle);
+    });
+
+    return () => {
+      poly.setMap(null);
+      circlesRef.current.forEach((c) => c.setMap(null));
+    };
+  }, [map, points, selectedPointId]);
+
+  return null;
+}
+
+/* ── Fit bounds helper ── */
+function useFitBounds() {
+  const map = useMap();
+  return useCallback(
+    (coords: { lat: number; lng: number }[]) => {
+      if (!map || coords.length === 0) return;
+      const bounds = new google.maps.LatLngBounds();
+      coords.forEach((c) => bounds.extend(c));
+      map.fitBounds(bounds, 40);
+    },
+    [map]
+  );
+}
+
+function FitOnce({ locations }: { locations: StaffLocation[] }) {
+  const fitBounds = useFitBounds();
   const hasFitted = useRef(false);
   useEffect(() => {
     if (hasFitted.current || locations.length === 0) return;
-    const bounds = L.latLngBounds(locations.map((l) => [l.latitude, l.longitude]));
-    map.fitBounds(bounds, { padding: [40, 40] });
+    fitBounds(locations.map((l) => ({ lat: l.latitude, lng: l.longitude })));
     hasFitted.current = true;
-  }, [locations, map]);
+  }, [locations, fitBounds]);
   return null;
 }
 
-function MapRefSetter({ mapRef }: { mapRef: React.MutableRefObject<L.Map | null> }) {
-  const map = useMap();
-  useEffect(() => { mapRef.current = map; }, [map, mapRef]);
+function FitHistory({ points }: { points: HistoryPoint[] }) {
+  const fitBounds = useFitBounds();
+  const prevLen = useRef(0);
+  useEffect(() => {
+    if (points.length > 1 && points.length !== prevLen.current) {
+      fitBounds(points.map((p) => ({ lat: p.latitude, lng: p.longitude })));
+      prevLen.current = points.length;
+    }
+  }, [points, fitBounds]);
   return null;
 }
 
+/* ── Main component ── */
 const LiveMap = () => {
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [loadingKey, setLoadingKey] = useState(true);
   const [locations, setLocations] = useState<StaffLocation[]>([]);
   const [historyStaff, setHistoryStaff] = useState<{ id: string; name: string } | null>(null);
   const [historyPoints, setHistoryPoints] = useState<HistoryPoint[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
-  const mapRef = useRef<L.Map | null>(null);
+  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+
+  // Fetch Google Maps API key
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("get-maps-key");
+        if (data?.key) setApiKey(data.key);
+        else console.error("Failed to load maps key", error);
+      } catch (e) {
+        console.error("Error fetching maps key", e);
+      } finally {
+        setLoadingKey(false);
+      }
+    })();
+  }, []);
 
   const fetchLocations = useCallback(async () => {
     const { data } = await supabase
@@ -100,100 +197,90 @@ const LiveMap = () => {
   useEffect(() => {
     fetchLocations();
     const interval = setInterval(fetchLocations, 8000);
-
     const channel = supabase
       .channel("staff_locations_changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "staff_locations" }, () => {
         fetchLocations();
       })
       .subscribe();
-
     return () => {
       clearInterval(interval);
       supabase.removeChannel(channel);
     };
   }, [fetchLocations]);
 
-  // Fit history trail on map when loaded
-  useEffect(() => {
-    if (historyPoints.length > 1 && mapRef.current) {
-      const bounds = L.latLngBounds(historyPoints.map((p) => [p.latitude, p.longitude]));
-      mapRef.current.fitBounds(bounds, { padding: [40, 40] });
-    }
-  }, [historyPoints]);
+  const flyTo = (lat: number, lng: number) => {
+    mapInstanceRef.current?.panTo({ lat, lng });
+    mapInstanceRef.current?.setZoom(16);
+  };
 
-  const historyLine: [number, number][] = historyPoints.map((p) => [p.latitude, p.longitude]);
+  if (loadingKey) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-8rem)]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!apiKey) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-8rem)]">
+        <p className="text-muted-foreground">Failed to load Google Maps API key.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex gap-4 h-[calc(100vh-8rem)]">
       <div className="flex-1 rounded-xl overflow-hidden border border-border">
-        <MapContainer
-          center={[24.7136, 46.6753]}
-          zoom={6}
-          style={{ height: "100%", width: "100%" }}
-          zoomControl={true}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          <MapRefSetter mapRef={mapRef} />
-          {locations.map((loc) => (
-            <Marker
-              key={loc.staff_id}
-              position={[loc.latitude, loc.longitude]}
-              icon={createStaffIcon(loc.staff_profiles?.full_name || "Unknown")}
-            >
-              <Popup>
-                <div style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                  <strong>{loc.staff_profiles?.full_name}</strong>
-                  <br />
-                  <small>
-                    {formatDistanceToNow(new Date(loc.updated_at), { addSuffix: true })}
-                  </small>
-                  <br />
-                  <small>
-                    {loc.latitude.toFixed(5)}, {loc.longitude.toFixed(5)}
-                  </small>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
-          {/* History trail */}
-          {historyPoints.length > 1 && (
-            <Polyline
-              positions={historyLine}
-              pathOptions={{ color: "hsl(220, 70%, 50%)", weight: 3, opacity: 0.6, dashArray: "8 4" }}
-            />
-          )}
-          {historyPoints.map((pt, i) => {
-            const isSelected = pt.id === selectedPointId;
-            const isLatest = i === historyPoints.length - 1;
-            return (
-              <CircleMarker
-                key={pt.id}
-                center={[pt.latitude, pt.longitude]}
-                radius={isSelected ? 10 : isLatest ? 7 : 4}
-                pathOptions={{
-                  color: isSelected ? "hsl(0, 80%, 50%)" : isLatest ? "hsl(150, 70%, 40%)" : "hsl(220, 70%, 50%)",
-                  fillColor: isSelected ? "hsl(0, 80%, 60%)" : isLatest ? "hsl(150, 70%, 50%)" : "hsl(220, 70%, 60%)",
-                  fillOpacity: isSelected ? 1 : 0.9,
-                  weight: isSelected ? 3 : 2,
-                }}
+        <APIProvider apiKey={apiKey}>
+          <Map
+            defaultCenter={{ lat: 24.7136, lng: 46.6753 }}
+            defaultZoom={6}
+            mapId="staff-tracker-map"
+            style={{ width: "100%", height: "100%" }}
+            gestureHandling="greedy"
+            disableDefaultUI={false}
+            onIdle={(e) => {
+              // Store map instance reference
+              if (e.map && !mapInstanceRef.current) {
+                mapInstanceRef.current = e.map;
+              }
+            }}
+          >
+            <FitOnce locations={locations} />
+            <FitHistory points={historyPoints} />
+            <HistoryOverlay points={historyPoints} selectedPointId={selectedPointId} />
+
+            {locations.map((loc) => (
+              <AdvancedMarker
+                key={loc.staff_id}
+                position={{ lat: loc.latitude, lng: loc.longitude }}
+                title={loc.staff_profiles?.full_name || "Unknown"}
               >
-                <Popup>
-                  <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 12 }}>
-                    <strong>{format(new Date(pt.created_at), "MMM d, HH:mm:ss")}</strong>
-                    <br />
-                    <span>{pt.latitude.toFixed(5)}, {pt.longitude.toFixed(5)}</span>
-                  </div>
-                </Popup>
-              </CircleMarker>
-            );
-          })}
-          <FitBounds locations={locations} />
-        </MapContainer>
+                <div
+                  style={{
+                    background: "hsl(220, 70%, 50%)",
+                    color: "white",
+                    padding: "4px 10px",
+                    borderRadius: "8px",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    fontFamily: "'Space Grotesk', sans-serif",
+                    whiteSpace: "nowrap",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+                    transform: "translate(-50%, -100%)",
+                  }}
+                >
+                  {loc.staff_profiles?.full_name || "Unknown"}
+                </div>
+              </AdvancedMarker>
+            ))}
+          </Map>
+        </APIProvider>
       </div>
+
+      {/* Sidebar */}
       <Card className="w-72 shrink-0 overflow-auto">
         <CardHeader className="pb-3">
           {historyStaff ? (
@@ -233,7 +320,7 @@ const LiveMap = () => {
                       }`}
                       onClick={() => {
                         setSelectedPointId(pt.id);
-                        mapRef.current?.flyTo([pt.latitude, pt.longitude], 16, { duration: 1.2 });
+                        flyTo(pt.latitude, pt.longitude);
                       }}
                     >
                       <p className={`text-xs font-medium flex items-center gap-1.5 ${isSelected ? "text-primary" : ""}`}>
@@ -258,9 +345,7 @@ const LiveMap = () => {
                   <div
                     key={loc.staff_id}
                     className="px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => {
-                      mapRef.current?.flyTo([loc.latitude, loc.longitude], 16, { duration: 1.2 });
-                    }}
+                    onClick={() => flyTo(loc.latitude, loc.longitude)}
                   >
                     <div className="flex items-center justify-between">
                       <p className="font-medium text-sm">{loc.staff_profiles?.full_name}</p>
