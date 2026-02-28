@@ -260,6 +260,22 @@ function FitHistory({ points }: { points: HistoryPoint[] }) {
   return null;
 }
 
+/* ── Staff color palette ── */
+const STAFF_COLORS = [
+  { bg: "hsl(220, 70%, 50%)", ring: "hsl(220, 70%, 50%)" },   // blue
+  { bg: "hsl(340, 75%, 50%)", ring: "hsl(340, 75%, 50%)" },   // rose
+  { bg: "hsl(160, 65%, 40%)", ring: "hsl(160, 65%, 40%)" },   // teal
+  { bg: "hsl(30, 85%, 50%)",  ring: "hsl(30, 85%, 50%)" },    // orange
+  { bg: "hsl(270, 60%, 55%)", ring: "hsl(270, 60%, 55%)" },   // purple
+  { bg: "hsl(50, 80%, 45%)",  ring: "hsl(50, 80%, 45%)" },    // gold
+  { bg: "hsl(190, 70%, 45%)", ring: "hsl(190, 70%, 45%)" },   // cyan
+  { bg: "hsl(0, 70%, 50%)",   ring: "hsl(0, 70%, 50%)" },     // red
+];
+
+function getStaffColor(index: number) {
+  return STAFF_COLORS[index % STAFF_COLORS.length];
+}
+
 /* ── Main component ── */
 const LiveMap = () => {
   const [apiKey, setApiKey] = useState<string | null>(null);
@@ -379,44 +395,47 @@ const LiveMap = () => {
             <PlaceSearch />
             <HistoryOverlay points={historyPoints} selectedPointId={selectedPointId} />
 
-            {locations.map((loc) => (
-              <AdvancedMarker
-                key={loc.staff_id}
-                position={{ lat: loc.latitude, lng: loc.longitude }}
-                title={loc.staff_profiles?.full_name || "Unknown"}
-              >
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  {/* Name label */}
-                  <div
-                    style={{
-                      background: "hsl(220, 70%, 50%)",
-                      color: "white",
-                      padding: "2px 8px",
-                      borderRadius: "6px",
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      fontFamily: "'Space Grotesk', sans-serif",
-                      whiteSpace: "nowrap",
-                      boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    {loc.staff_profiles?.full_name || "Unknown"}
+            {locations.map((loc, idx) => {
+              const color = getStaffColor(idx);
+              return (
+                <AdvancedMarker
+                  key={loc.staff_id}
+                  position={{ lat: loc.latitude, lng: loc.longitude }}
+                  title={loc.staff_profiles?.full_name || "Unknown"}
+                >
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    {/* Name label */}
+                    <div
+                      style={{
+                        background: color.bg,
+                        color: "white",
+                        padding: "2px 8px",
+                        borderRadius: "6px",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        fontFamily: "'Space Grotesk', sans-serif",
+                        whiteSpace: "nowrap",
+                        boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      {loc.staff_profiles?.full_name || "Unknown"}
+                    </div>
+                    {/* GPS-style person dot */}
+                    <div
+                      style={{
+                        width: "18px",
+                        height: "18px",
+                        borderRadius: "50%",
+                        background: color.bg,
+                        border: "3px solid white",
+                        boxShadow: `0 0 0 2px ${color.ring}, 0 2px 8px rgba(0,0,0,0.3)`,
+                      }}
+                    />
                   </div>
-                  {/* GPS-style person dot */}
-                  <div
-                    style={{
-                      width: "18px",
-                      height: "18px",
-                      borderRadius: "50%",
-                      background: "hsl(220, 70%, 50%)",
-                      border: "3px solid white",
-                      boxShadow: "0 0 0 2px hsl(220, 70%, 50%), 0 2px 8px rgba(0,0,0,0.3)",
-                    }}
-                  />
-                </div>
-              </AdvancedMarker>
-            ))}
+                </AdvancedMarker>
+              );
+            })}
           </Map>
         </APIProvider>
       </div>
