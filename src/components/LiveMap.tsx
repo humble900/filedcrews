@@ -240,7 +240,11 @@ const LiveMap = () => {
             mapId="staff-tracker-map"
             style={{ width: "100%", height: "100%" }}
             gestureHandling="greedy"
-            disableDefaultUI={false}
+            disableDefaultUI={true}
+            zoomControl={true}
+            fullscreenControl={true}
+            mapTypeControl={false}
+            streetViewControl={false}
             onIdle={(e) => {
               // Store map instance reference
               if (e.map && !mapInstanceRef.current) {
