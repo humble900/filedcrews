@@ -64,6 +64,7 @@ const LiveMap = () => {
   const [historyStaff, setHistoryStaff] = useState<{ id: string; name: string } | null>(null);
   const [historyPoints, setHistoryPoints] = useState<HistoryPoint[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
   const mapRef = useRef<L.Map | null>(null);
 
   const fetchLocations = useCallback(async () => {
@@ -93,6 +94,7 @@ const LiveMap = () => {
   const closeHistory = () => {
     setHistoryStaff(null);
     setHistoryPoints([]);
+    setSelectedPointId(null);
   };
 
   useEffect(() => {
@@ -164,27 +166,31 @@ const LiveMap = () => {
               pathOptions={{ color: "hsl(220, 70%, 50%)", weight: 3, opacity: 0.6, dashArray: "8 4" }}
             />
           )}
-          {historyPoints.map((pt, i) => (
-            <CircleMarker
-              key={pt.id}
-              center={[pt.latitude, pt.longitude]}
-              radius={i === historyPoints.length - 1 ? 7 : 4}
-              pathOptions={{
-                color: i === historyPoints.length - 1 ? "hsl(150, 70%, 40%)" : "hsl(220, 70%, 50%)",
-                fillColor: i === historyPoints.length - 1 ? "hsl(150, 70%, 50%)" : "hsl(220, 70%, 60%)",
-                fillOpacity: 0.9,
-                weight: 2,
-              }}
-            >
-              <Popup>
-                <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 12 }}>
-                  <strong>{format(new Date(pt.created_at), "MMM d, HH:mm:ss")}</strong>
-                  <br />
-                  <span>{pt.latitude.toFixed(5)}, {pt.longitude.toFixed(5)}</span>
-                </div>
-              </Popup>
-            </CircleMarker>
-          ))}
+          {historyPoints.map((pt, i) => {
+            const isSelected = pt.id === selectedPointId;
+            const isLatest = i === historyPoints.length - 1;
+            return (
+              <CircleMarker
+                key={pt.id}
+                center={[pt.latitude, pt.longitude]}
+                radius={isSelected ? 10 : isLatest ? 7 : 4}
+                pathOptions={{
+                  color: isSelected ? "hsl(0, 80%, 50%)" : isLatest ? "hsl(150, 70%, 40%)" : "hsl(220, 70%, 50%)",
+                  fillColor: isSelected ? "hsl(0, 80%, 60%)" : isLatest ? "hsl(150, 70%, 50%)" : "hsl(220, 70%, 60%)",
+                  fillOpacity: isSelected ? 1 : 0.9,
+                  weight: isSelected ? 3 : 2,
+                }}
+              >
+                <Popup>
+                  <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 12 }}>
+                    <strong>{format(new Date(pt.created_at), "MMM d, HH:mm:ss")}</strong>
+                    <br />
+                    <span>{pt.latitude.toFixed(5)}, {pt.longitude.toFixed(5)}</span>
+                  </div>
+                </Popup>
+              </CircleMarker>
+            );
+          })}
           <FitBounds locations={locations} />
         </MapContainer>
       </div>
@@ -215,23 +221,31 @@ const LiveMap = () => {
               <p className="px-4 pb-4 text-xs text-muted-foreground">No history recorded.</p>
             ) : (
               <div className="divide-y divide-border">
-                {[...historyPoints].reverse().map((pt, i) => (
-                  <div
-                    key={pt.id}
-                    className="px-4 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => {
-                      mapRef.current?.flyTo([pt.latitude, pt.longitude], 16, { duration: 1.2 });
-                    }}
-                  >
-                    <p className="text-xs font-medium flex items-center gap-1.5">
-                      <CircleDot className={`h-3 w-3 ${i === 0 ? "text-green-500" : "text-primary"}`} />
-                      {format(new Date(pt.created_at), "MMM d, HH:mm:ss")}
-                    </p>
-                    <p className="text-xs text-muted-foreground font-mono mt-0.5 ml-[18px]">
-                      {pt.latitude.toFixed(5)}, {pt.longitude.toFixed(5)}
-                    </p>
-                  </div>
-                ))}
+                {[...historyPoints].reverse().map((pt, i) => {
+                  const isSelected = pt.id === selectedPointId;
+                  return (
+                    <div
+                      key={pt.id}
+                      className={`px-4 py-2.5 cursor-pointer transition-colors border-l-2 ${
+                        isSelected
+                          ? "bg-primary/10 border-l-primary"
+                          : "hover:bg-muted/50 border-l-transparent"
+                      }`}
+                      onClick={() => {
+                        setSelectedPointId(pt.id);
+                        mapRef.current?.flyTo([pt.latitude, pt.longitude], 16, { duration: 1.2 });
+                      }}
+                    >
+                      <p className={`text-xs font-medium flex items-center gap-1.5 ${isSelected ? "text-primary" : ""}`}>
+                        <CircleDot className={`h-3 w-3 ${isSelected ? "text-destructive" : i === 0 ? "text-green-500" : "text-primary"}`} />
+                        {format(new Date(pt.created_at), "MMM d, HH:mm:ss")}
+                      </p>
+                      <p className="text-xs text-muted-foreground font-mono mt-0.5 ml-[18px]">
+                        {pt.latitude.toFixed(5)}, {pt.longitude.toFixed(5)}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             )
           ) : !locations.length ? (
