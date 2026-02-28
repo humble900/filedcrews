@@ -74,10 +74,65 @@ function AddressLookup({ lat, lng }: { lat: number; lng: number }) {
 import {
   APIProvider,
   Map,
+  MapControl,
+  ControlPosition,
   AdvancedMarker,
   useMap,
+  useMapsLibrary,
   Pin,
 } from "@vis.gl/react-google-maps";
+
+/* ── Places search autocomplete ── */
+function PlaceSearch() {
+  const map = useMap();
+  const places = useMapsLibrary("places");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+
+  useEffect(() => {
+    if (!places || !inputRef.current) return;
+
+    const ac = new places.Autocomplete(inputRef.current, {
+      fields: ["geometry", "name", "formatted_address"],
+    });
+
+    ac.addListener("place_changed", () => {
+      const place = ac.getPlace();
+      if (place.geometry?.location && map) {
+        map.panTo(place.geometry.location);
+        map.setZoom(15);
+      }
+    });
+
+    autocompleteRef.current = ac;
+
+    return () => {
+      google.maps.event.clearInstanceListeners(ac);
+    };
+  }, [places, map]);
+
+  return (
+    <MapControl position={ControlPosition.TOP_LEFT}>
+      <div style={{ padding: "10px" }}>
+        <input
+          ref={inputRef}
+          placeholder="Search a place…"
+          style={{
+            width: "260px",
+            padding: "8px 12px",
+            fontSize: "14px",
+            borderRadius: "8px",
+            border: "1px solid hsl(var(--border))",
+            background: "hsl(var(--background))",
+            color: "hsl(var(--foreground))",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+            outline: "none",
+          }}
+        />
+      </div>
+    </MapControl>
+  );
+}
 
 interface StaffLocation {
   staff_id: string;
@@ -321,6 +376,7 @@ const LiveMap = () => {
           >
             <FitOnce locations={locations} />
             <FitHistory points={historyPoints} />
+            <PlaceSearch />
             <HistoryOverlay points={historyPoints} selectedPointId={selectedPointId} />
 
             {locations.map((loc) => (
