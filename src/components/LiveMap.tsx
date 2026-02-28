@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Clock } from "lucide-react";
@@ -34,16 +34,25 @@ const createStaffIcon = (name: string) => {
 
 function FitBounds({ locations }: { locations: StaffLocation[] }) {
   const map = useMap();
+  const hasFitted = useRef(false);
   useEffect(() => {
-    if (locations.length === 0) return;
+    if (hasFitted.current || locations.length === 0) return;
     const bounds = L.latLngBounds(locations.map((l) => [l.latitude, l.longitude]));
     map.fitBounds(bounds, { padding: [40, 40] });
+    hasFitted.current = true;
   }, [locations, map]);
+  return null;
+}
+
+function MapRefSetter({ mapRef }: { mapRef: React.MutableRefObject<L.Map | null> }) {
+  const map = useMap();
+  useEffect(() => { mapRef.current = map; }, [map, mapRef]);
   return null;
 }
 
 const LiveMap = () => {
   const [locations, setLocations] = useState<StaffLocation[]>([]);
+  const mapRef = useRef<L.Map | null>(null);
 
   const fetchLocations = useCallback(async () => {
     const { data } = await supabase
@@ -82,6 +91,7 @@ const LiveMap = () => {
             attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+          <MapRefSetter mapRef={mapRef} />
           {locations.map((loc) => (
             <Marker
               key={loc.staff_id}
@@ -121,7 +131,13 @@ const LiveMap = () => {
               {[...locations]
                 .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
                 .map((loc) => (
-                  <div key={loc.staff_id} className="px-4 py-3">
+                  <div
+                    key={loc.staff_id}
+                    className="px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => {
+                      mapRef.current?.flyTo([loc.latitude, loc.longitude], 16, { duration: 1.2 });
+                    }}
+                  >
                     <p className="font-medium text-sm">{loc.staff_profiles?.full_name}</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                       <Clock className="h-3 w-3" />
