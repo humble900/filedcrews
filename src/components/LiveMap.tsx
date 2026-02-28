@@ -299,9 +299,9 @@ const LiveMap = () => {
       .from("staff_location_history")
       .select("*")
       .eq("staff_id", staffId)
-      .order("created_at", { ascending: true })
+      .order("created_at", { ascending: false })
       .limit(200);
-    if (data) setHistoryPoints(data as HistoryPoint[]);
+    if (data) setHistoryPoints(data.reverse() as HistoryPoint[]);
     setLoadingHistory(false);
   }, []);
 
