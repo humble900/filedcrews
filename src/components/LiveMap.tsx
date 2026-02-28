@@ -23,12 +23,12 @@ const createStaffIcon = (name: string) => {
   return L.divIcon({
     className: "staff-marker",
     html: `
-      <div style="background: hsl(220 70% 50%); color: white; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; font-family: 'Space Grotesk', sans-serif; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.25); text-align:center;">
+      <div style="background: hsl(220 70% 50%); color: white; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; font-family: 'Space Grotesk', sans-serif; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.25); text-align:center; transform: translate(-50%, -100%);">
         ${name}
       </div>
     `,
     iconSize: [0, 0],
-    iconAnchor: [50, 30],
+    iconAnchor: [0, 0],
   });
 };
 
