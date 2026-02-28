@@ -1,34 +1,35 @@
 
-## Fix: Stop map auto-zooming while keeping location updates
+# Add "Show Address" Button for Staff Locations
 
-### Problem
-The `FitBounds` component re-runs `map.fitBounds()` every time the `locations` state changes (every 8s poll + realtime events). This hijacks the user's manual pan/zoom. The data updates are fine and must continue.
+## What This Does
+Adds a small button next to the coordinates in the sidebar that, when clicked, converts the GPS coordinates into a human-readable street address using Google Maps' built-in Reverse Geocoding service. No additional API keys or setup required — the Geocoder is part of the same Google Maps JavaScript API already loaded.
 
-### What stays the same
-- Polling every 8 seconds (line 57) -- keeps running
-- Realtime subscription on `staff_locations` (lines 59-64) -- keeps running  
-- Markers update their positions automatically when `locations` state changes -- keeps working
-- The staff sidebar list updates in real-time -- keeps working
+## How It Works
+- A small map-pin/home icon button appears next to the coordinate text for each staff member (in the live view) and each history entry
+- Clicking it calls `google.maps.Geocoder.geocode()` with the lat/lng
+- The address replaces or appears below the coordinates, with a toggle to switch back
+- A loading spinner shows briefly while the geocoding request is in progress
 
-### Changes to `src/components/LiveMap.tsx`
+## Technical Details
 
-1. **FitBounds: run only once**
-   - Add a `useRef(false)` flag called `hasFitted`
-   - On first render with locations, call `fitBounds` and set flag to `true`
-   - On all subsequent renders, do nothing -- markers still move, but the camera stays where the user left it
+### File: `src/components/LiveMap.tsx`
 
-2. **Add click-to-locate on sidebar staff items**
-   - Create a small `MapController` component that exposes the map instance via a ref
-   - When a user clicks a staff member in the sidebar, call `map.flyTo([lat, lng], 16)` to smoothly navigate to them
-   - Store a ref to the map instance using a callback pattern
+1. **Create a reusable `AddressLookup` component** inside the file:
+   - Takes `lat` and `lng` as props
+   - Uses `google.maps.Geocoder` (available globally since the API is loaded)
+   - Manages its own state: `idle` / `loading` / `address string` / `error`
+   - Renders a small icon button; on click, fetches and displays the formatted address
+   - Clicking again toggles back to coordinates view
+   - Caches results in a `useRef` Map to avoid repeated API calls for the same coordinates
 
-3. **Store map ref for sidebar interaction**
-   - Use a `useRef<L.Map | null>` at the `LiveMap` level
-   - A `MapRefSetter` child component inside `MapContainer` calls `useMap()` and writes it to the parent ref
-   - Sidebar click handler reads from this ref to call `flyTo`
+2. **Add the component in two places:**
+   - **Live staff list** (line ~371): Next to the coordinate `<p>` tag for each staff member
+   - **History entries** (line ~333): Next to the coordinate `<p>` tag for each history point
 
-### Result
-- Markers glide to new positions in real-time as staff move
-- Map camera stays exactly where the admin placed it
-- Clicking a staff name in the sidebar flies the map to that person
-- Initial load still auto-fits to show all staff
+3. **UI behavior:**
+   - Small button with a `MapPinHouse` or `Navigation` icon from lucide-react
+   - On click: shows a brief `Loader2` spinner, then the address text below coordinates
+   - Address text styled in `text-xs text-foreground` to distinguish from the raw coordinates
+   - Click the button again to hide the address
+
+No database changes, no new edge functions, no new dependencies needed.
