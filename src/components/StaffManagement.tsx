@@ -59,29 +59,38 @@ const StaffManagement = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleCreate} className="flex flex-wrap gap-3">
-            <Input
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-48"
-              required
-            />
-            <Input
-              placeholder="Full Name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="w-56"
-              required
-            />
-            <Input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-48"
-              required
-            />
+          <form onSubmit={handleCreate} className="flex flex-wrap items-end gap-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground">Full Name</label>
+              <Input
+                placeholder="e.g. John Doe"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-56"
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground">Username</label>
+              <Input
+                placeholder="e.g. johndoe"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-48"
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground">Password</label>
+              <Input
+                type="password"
+                placeholder="Min 6 characters"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-48"
+                required
+              />
+            </div>
             <Button type="submit" disabled={creating}>
               {creating ? "Creating…" : "Create Staff"}
             </Button>
@@ -105,11 +114,13 @@ const StaffManagement = () => {
                 <div key={s.id} className="flex items-center justify-between py-3">
                   <div>
                     <p className="font-medium">{s.full_name}</p>
-                    <p className="text-sm text-muted-foreground font-mono">@{s.username}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Username: <span className="font-mono">@{s.username}</span>
+                    </p>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-muted-foreground">
-                      {format(new Date(s.created_at), "MMM d, yyyy")}
+                      Joined {format(new Date(s.created_at), "MMM d, yyyy")}
                     </span>
                     <Badge variant={s.is_active ? "default" : "secondary"}>
                       {s.is_active ? "Active" : "Inactive"}
