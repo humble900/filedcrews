@@ -107,26 +107,51 @@ Deno.serve(async (req) => {
     if (geofences && geofences.length > 0) {
       for (const gf of geofences) {
         const dist = haversineMeters(latitude, longitude, gf.latitude, gf.longitude);
-        const currentState = dist <= gf.radius_meters ? "inside" : "outside";
+        const isInside = dist <= gf.radius_meters;
 
         // Get last event for this staff+geofence
         const { data: lastEvent } = await supabaseAdmin
           .from("geofence_events")
-          .select("event_type")
+          .select("event_type, created_at")
           .eq("geofence_id", gf.id)
           .eq("staff_id", staff.id)
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
 
-        // Only log if no previous event or state changed
-        if (!lastEvent || lastEvent.event_type !== currentState) {
+        let eventType: string | null = null;
+
+        if (!lastEvent) {
+          // First ever signal for this staff+geofence
+          if (isInside) eventType = "logged_in";
+          else eventType = "outside";
+        } else {
+          const lastIsInside = lastEvent.event_type === "inside" || lastEvent.event_type === "entered" || lastEvent.event_type === "logged_in";
+          const lastTime = new Date(lastEvent.created_at).getTime();
+          const now = Date.now();
+          const gapMs = now - lastTime;
+          const ONE_HOUR = 60 * 60 * 1000;
+
+          if (isInside && !lastIsInside) {
+            // Was outside, now inside → entered
+            eventType = "entered";
+          } else if (!isInside && lastIsInside) {
+            // Was inside, now outside → exited
+            eventType = "exited";
+          } else if (isInside && lastIsInside && gapMs > ONE_HOUR) {
+            // Was inside, still inside but gap > 1 hour → logged_in
+            eventType = "logged_in";
+          }
+          // Otherwise no change, don't log
+        }
+
+        if (eventType) {
           await supabaseAdmin
             .from("geofence_events")
             .insert({
               geofence_id: gf.id,
               staff_id: staff.id,
-              event_type: currentState,
+              event_type: eventType,
             });
         }
       }

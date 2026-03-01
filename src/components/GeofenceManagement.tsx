@@ -686,23 +686,42 @@ const GeofenceManagement = ({ apiKey, onEditModeChange }: Props) => {
                   <p className="px-4 py-6 text-xs text-muted-foreground text-center">No crossings detected yet.</p>
                 ) : (
                   <div className="divide-y divide-border">
-                    {events.map((ev) => (
-                      <div key={ev.id} className="px-4 py-2.5">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium">{ev.staff_profiles?.full_name || "Unknown"}</p>
-                          <Badge
-                            variant={ev.event_type === "inside" ? "default" : "secondary"}
-                            className={ev.event_type === "inside" ? "bg-green-600 hover:bg-green-700" : ""}
-                          >
-                            <ArrowRightLeft className="h-3 w-3 mr-1" />
-                            {ev.event_type === "inside" ? "Entered" : "Exited"}
-                          </Badge>
+                    {events.map((ev) => {
+                      const isEntered = ev.event_type === "entered" || ev.event_type === "inside";
+                      const isLoggedIn = ev.event_type === "logged_in";
+                      const isExited = ev.event_type === "exited" || ev.event_type === "outside";
+
+                      let badgeClass = "";
+                      let label = ev.event_type;
+                      if (isEntered) {
+                        badgeClass = "bg-green-600 hover:bg-green-700";
+                        label = "Entered";
+                      } else if (isLoggedIn) {
+                        badgeClass = "bg-blue-600 hover:bg-blue-700";
+                        label = "Logged in";
+                      } else if (isExited) {
+                        badgeClass = "";
+                        label = "Exited";
+                      }
+
+                      return (
+                        <div key={ev.id} className="px-4 py-2.5">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium">{ev.staff_profiles?.full_name || "Unknown"}</p>
+                            <Badge
+                              variant={isExited ? "secondary" : "default"}
+                              className={badgeClass}
+                            >
+                              <ArrowRightLeft className="h-3 w-3 mr-1" />
+                              {label}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {format(new Date(ev.created_at), "MMM d, yyyy – HH:mm:ss")}
+                          </p>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {format(new Date(ev.created_at), "MMM d, yyyy – HH:mm:ss")}
-                        </p>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
