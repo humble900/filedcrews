@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { UserPlus, Users, Trash2, Copy, X, CheckCircle } from "lucide-react";
+import { UserPlus, Users, Trash2, Copy, X, CheckCircle, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -34,6 +34,7 @@ const StaffManagement = () => {
   const [creating, setCreating] = useState(false);
   const [lastCreatedStaff, setLastCreatedStaff] = useState<CreatedStaff | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { data: staff, refetch } = useQuery({
     queryKey: ["staff_profiles"],
@@ -125,14 +126,24 @@ const StaffManagement = () => {
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Password</label>
-              <Input
-                type="password"
-                placeholder="Min 6 characters"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full lg:w-48"
-                required
-              />
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Min 6 characters"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full lg:w-48 pr-9"
+                  required
+                />
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowPassword((v) => !v)}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <Button type="submit" disabled={creating} className="w-full sm:w-auto">
               {creating ? "Creating…" : "Create Staff"}
