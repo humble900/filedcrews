@@ -9,14 +9,15 @@ import TrackerDownload from "@/components/TrackerDownload";
 import { LogOut, MapPin, Users, Circle, Smartphone } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Index = () => {
   const { isAuthenticated, logout } = useAdminAuth();
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [geofenceEditing, setGeofenceEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("map");
+  const isMobile = useIsMobile();
 
-  // Fetch API key once at the top level so both LiveMap and Geofences share it
   useEffect(() => {
     (async () => {
       try {
@@ -30,7 +31,7 @@ const Index = () => {
 
   const handleTabChange = useCallback(
     (value: string) => {
-      if (geofenceEditing) return; // block tab switching during edit mode
+      if (geofenceEditing) return;
       setActiveTab(value);
     },
     [geofenceEditing]
@@ -40,7 +41,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border px-6 py-3 flex items-center justify-between">
+      <header className="border-b border-border px-4 md:px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
             <MapPin className="h-4 w-4 text-primary-foreground" />
@@ -49,27 +50,27 @@ const Index = () => {
         </div>
         <Button variant="ghost" size="sm" onClick={logout} disabled={geofenceEditing}>
           <LogOut className="h-4 w-4 mr-1" />
-          Sign Out
+          <span className="hidden sm:inline">Sign Out</span>
         </Button>
       </header>
-      <main className="p-6">
+      <main className="p-3 md:p-6">
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList>
+          <TabsList className="w-full grid grid-cols-4">
             <TabsTrigger value="map" className="gap-1.5" disabled={geofenceEditing}>
               <MapPin className="h-4 w-4" />
-              Live Map
+              {!isMobile && "Live Map"}
             </TabsTrigger>
             <TabsTrigger value="geofences" className="gap-1.5" disabled={geofenceEditing && activeTab !== "geofences"}>
               <Circle className="h-4 w-4" />
-              Geofences
+              {!isMobile && "Geofences"}
             </TabsTrigger>
             <TabsTrigger value="staff" className="gap-1.5" disabled={geofenceEditing}>
               <Users className="h-4 w-4" />
-              Staff
+              {!isMobile && "Staff"}
             </TabsTrigger>
             <TabsTrigger value="tracker" className="gap-1.5" disabled={geofenceEditing}>
               <Smartphone className="h-4 w-4" />
-              Tracker
+              {!isMobile && "Tracker"}
             </TabsTrigger>
           </TabsList>
           <TabsContent value="map" className="mt-4">

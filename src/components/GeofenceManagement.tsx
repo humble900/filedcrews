@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +28,7 @@ import {
   Minus as MinusIcon,
   Plus as PlusIcon,
   Check,
+  List,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -350,6 +353,8 @@ interface Props {
 }
 
 const GeofenceManagement = ({ apiKey, onEditModeChange }: Props) => {
+  const isMobile = useIsMobile();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [geofences, setGeofences] = useState<Geofence[]>([]);
   const [selectedGeofence, setSelectedGeofence] = useState<Geofence | null>(null);
   const [events, setEvents] = useState<GeofenceEvent[]>([]);
@@ -535,8 +540,202 @@ const GeofenceManagement = ({ apiKey, onEditModeChange }: Props) => {
     ? geofences.find((g) => g.id === editingId)?.name ?? "Geofence"
     : "";
 
+  const sidebarContent = (
+    <>
+      {editMode ? (
+        <>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Move className="h-4 w-4" />
+              Editing: {editingGeofenceName}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Radius
+              </label>
+              <div className="flex items-center gap-3 mt-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => adjustRadius(editRadius <= 100 ? -10 : editRadius <= 1000 ? -50 : -100)}
+                >
+                  <MinusIcon className="h-3 w-3" />
+                </Button>
+                <div className="flex-1">
+                  <Slider
+                    value={[editRadius]}
+                    onValueChange={([v]) => setEditRadius(v)}
+                    min={10}
+                    max={5000}
+                    step={10}
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => adjustRadius(editRadius < 100 ? 10 : editRadius < 1000 ? 50 : 100)}
+                >
+                  <PlusIcon className="h-3 w-3" />
+                </Button>
+              </div>
+              <p className="text-center text-sm font-mono mt-2 text-foreground">
+                {editRadius}m
+              </p>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Position
+              </label>
+              {editCenter && (
+                <p className="text-xs font-mono mt-1 text-muted-foreground">
+                  {editCenter.lat.toFixed(6)}, {editCenter.lng.toFixed(6)}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground mt-1 mb-3">
+                Drag the blue dot or use arrows to move
+              </p>
+              <div className="flex flex-col items-center gap-1">
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setEditCenter((prev) => prev ? { ...prev, lat: prev.lat + 0.0005 } : prev)}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+                </Button>
+                <div className="flex items-center gap-1">
+                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setEditCenter((prev) => prev ? { ...prev, lng: prev.lng - 0.0005 } : prev)}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+                  </Button>
+                  <div className="h-8 w-8 rounded-md border border-border flex items-center justify-center">
+                    <Move className="h-3.5 w-3.5 mx-auto text-muted-foreground" />
+                  </div>
+                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setEditCenter((prev) => prev ? { ...prev, lng: prev.lng + 0.0005 } : prev)}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                  </Button>
+                </div>
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setEditCenter((prev) => prev ? { ...prev, lat: prev.lat - 0.0005 } : prev)}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                </Button>
+              </div>
+            </div>
+
+            <Button className="w-full h-12 text-base font-semibold" onClick={handleDone}>
+              <Check className="h-5 w-5 mr-2" />
+              Done
+            </Button>
+          </CardContent>
+        </>
+      ) : (
+        <>
+          <CardHeader className="pb-3">
+            {selectedGeofence ? (
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setSelectedGeofence(null); setEvents([]); }}>
+                    <ArrowLeft className="h-3 w-3" />
+                  </Button>
+                  {selectedGeofence.name}
+                </CardTitle>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Circle className="h-4 w-4" />
+                  Geofences ({geofences.length})
+                </CardTitle>
+                <Button size="sm" variant="outline" onClick={startCreate} disabled={placing}>
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  Add
+                </Button>
+              </div>
+            )}
+          </CardHeader>
+          <CardContent className="p-0">
+            {selectedGeofence ? (
+              <div>
+                <div className="px-4 pb-3 border-b border-border">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant={selectedGeofence.is_active ? "default" : "secondary"}>
+                      {selectedGeofence.is_active ? "Active" : "Disabled"}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">{selectedGeofence.radius_meters}m radius</span>
+                  </div>
+                  <div className="flex gap-1 mt-2 flex-wrap">
+                    <Button size="sm" variant="ghost" onClick={() => { enterEditMode(selectedGeofence); if (isMobile) setSidebarOpen(false); }}>
+                      <Pencil className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => toggleActive(selectedGeofence)}>
+                      {selectedGeofence.is_active ? "Disable" : "Enable"}
+                    </Button>
+                    <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteGeofence(selectedGeofence)}>
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+                <div className="px-4 py-2 border-b border-border">
+                  <p className="text-xs font-medium text-muted-foreground">Crossing Log ({events.length})</p>
+                </div>
+                {loadingEvents ? (
+                  <div className="flex justify-center py-6">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : events.length === 0 ? (
+                  <p className="px-4 py-6 text-xs text-muted-foreground text-center">No crossings detected yet.</p>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {events.map((ev) => (
+                      <div key={ev.id} className="px-4 py-2.5">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium">{ev.staff_profiles?.full_name || "Unknown"}</p>
+                          <Badge
+                            variant={ev.event_type === "inside" ? "default" : "secondary"}
+                            className={ev.event_type === "inside" ? "bg-green-600 hover:bg-green-700" : ""}
+                          >
+                            <ArrowRightLeft className="h-3 w-3 mr-1" />
+                            {ev.event_type === "inside" ? "Entered" : "Exited"}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {format(new Date(ev.created_at), "MMM d, yyyy – HH:mm:ss")}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : geofences.length === 0 ? (
+              <p className="px-4 pb-4 text-xs text-muted-foreground">No geofences yet. Click "Add" to create one.</p>
+            ) : (
+              <div className="divide-y divide-border">
+                {geofences.map((gf) => (
+                  <div key={gf.id} className="px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => selectGeofence(gf)}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                        <p className="font-medium text-sm">{gf.name}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch checked={gf.is_active} onCheckedChange={() => toggleActive(gf)} onClick={(e) => e.stopPropagation()} />
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5 ml-[22px]">
+                      {gf.radius_meters}m radius · Created {format(new Date(gf.created_at), "MMM d, yyyy")}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </>
+      )}
+    </>
+  );
+
   return (
-    <div className="flex gap-4 h-[calc(100vh-8rem)]">
+    <div className="flex gap-4 h-[calc(100vh-8rem)] relative">
       {/* Map */}
       <div className="flex-1 rounded-xl overflow-hidden border border-border relative">
         <APIProvider apiKey={apiKey}>
@@ -562,46 +761,23 @@ const GeofenceManagement = ({ apiKey, onEditModeChange }: Props) => {
               }}
               excludeId={editMode ? editingId : null}
             />
-
-            {/* Edit mode: editable circle + draggable marker */}
             {editMode && editCenter && (
               <>
-                <EditableCircle
-                  center={editCenter}
-                  radius={editRadius}
-                  onCenterChange={(lat, lng) => setEditCenter({ lat, lng })}
-                />
+                <EditableCircle center={editCenter} radius={editRadius} onCenterChange={(lat, lng) => setEditCenter({ lat, lng })} />
                 <PanTo lat={editCenter.lat} lng={editCenter.lng} />
               </>
             )}
-
-            {/* Placement mode */}
             {placing && <PlacementMode onPlace={handlePlace} />}
-
-            {/* Labels for non-editing geofences */}
             {geofences
               .filter((gf) => gf.id !== editingId || !editMode)
               .map((gf) => (
-                <AdvancedMarker
-                  key={gf.id}
-                  position={{ lat: gf.latitude, lng: gf.longitude }}
-                  zIndex={1}
-                >
-                  <div
-                    style={{
-                      background: gf.is_active
-                        ? "hsl(var(--primary))"
-                        : "hsl(var(--muted-foreground))",
-                      color: "white",
-                      padding: "2px 8px",
-                      borderRadius: "6px",
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      whiteSpace: "nowrap",
-                      boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
-                      opacity: gf.is_active ? 1 : 0.7,
-                    }}
-                  >
+                <AdvancedMarker key={gf.id} position={{ lat: gf.latitude, lng: gf.longitude }} zIndex={1}>
+                  <div style={{
+                    background: gf.is_active ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))",
+                    color: "white", padding: "2px 8px", borderRadius: "6px", fontSize: "11px",
+                    fontWeight: 600, whiteSpace: "nowrap", boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
+                    opacity: gf.is_active ? 1 : 0.7,
+                  }}>
                     {gf.name}
                   </div>
                 </AdvancedMarker>
@@ -609,307 +785,51 @@ const GeofenceManagement = ({ apiKey, onEditModeChange }: Props) => {
           </Map>
         </APIProvider>
 
-        {/* Placing overlay banner */}
         {placing && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2 z-10">
             <MapPin className="h-4 w-4" />
-            Click on the map to place "{pendingName}"
-            <Button
-              size="sm"
-              variant="secondary"
-              className="ml-2 h-7"
-              onClick={() => setPlacing(false)}
-            >
+            <span className="hidden sm:inline">Click on the map to place "{pendingName}"</span>
+            <span className="sm:hidden">Tap to place</span>
+            <Button size="sm" variant="secondary" className="ml-2 h-7" onClick={() => setPlacing(false)}>
               Cancel
             </Button>
           </div>
         )}
       </div>
 
-      {/* Sidebar */}
-      <Card className="w-80 shrink-0 overflow-auto">
-        {editMode ? (
-          /* ── Edit mode sidebar ── */
-          <>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Move className="h-4 w-4" />
-                Editing: {editingGeofenceName}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Radius
-                </label>
-                <div className="flex items-center gap-3 mt-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 shrink-0"
-                    onClick={() => adjustRadius(editRadius <= 100 ? -10 : editRadius <= 1000 ? -50 : -100)}
-                  >
-                    <MinusIcon className="h-3 w-3" />
-                  </Button>
-                  <div className="flex-1">
-                    <Slider
-                      value={[editRadius]}
-                      onValueChange={([v]) => setEditRadius(v)}
-                      min={10}
-                      max={5000}
-                      step={10}
-                    />
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 shrink-0"
-                    onClick={() => adjustRadius(editRadius < 100 ? 10 : editRadius < 1000 ? 50 : 100)}
-                  >
-                    <PlusIcon className="h-3 w-3" />
-                  </Button>
-                </div>
-                <p className="text-center text-sm font-mono mt-2 text-foreground">
-                  {editRadius}m
-                </p>
-              </div>
+      {/* Mobile: floating button + Sheet */}
+      {isMobile ? (
+        <>
+          {!editMode && (
+            <Button
+              className="absolute bottom-4 right-4 z-10 h-12 w-12 rounded-full shadow-lg"
+              size="icon"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <List className="h-5 w-5" />
+            </Button>
+          )}
+          {editMode && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-card border border-border rounded-xl shadow-lg p-4 w-[90vw] max-w-sm">
+              {sidebarContent}
+            </div>
+          )}
+          <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+            <SheetContent side="bottom" className="h-[70vh] flex flex-col p-0 overflow-auto">
+              <SheetHeader className="sr-only">
+                <SheetTitle>Geofences</SheetTitle>
+              </SheetHeader>
+              {sidebarContent}
+            </SheetContent>
+          </Sheet>
+        </>
+      ) : (
+        <Card className="w-80 shrink-0 overflow-auto">
+          {sidebarContent}
+        </Card>
+      )}
 
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Position
-                </label>
-                {editCenter && (
-                  <p className="text-xs font-mono mt-1 text-muted-foreground">
-                    {editCenter.lat.toFixed(6)}, {editCenter.lng.toFixed(6)}
-                  </p>
-                )}
-                <p className="text-xs text-muted-foreground mt-1 mb-3">
-                  Drag the blue dot or use arrows to move
-                </p>
-                {/* Arrow controls */}
-                <div className="flex flex-col items-center gap-1">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setEditCenter((prev) => prev ? { ...prev, lat: prev.lat + 0.0005 } : prev)}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
-                  </Button>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => setEditCenter((prev) => prev ? { ...prev, lng: prev.lng - 0.0005 } : prev)}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
-                    </Button>
-                    <div className="h-8 w-8 rounded-md border border-border flex items-center justify-content-center">
-                      <Move className="h-3.5 w-3.5 mx-auto text-muted-foreground" />
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => setEditCenter((prev) => prev ? { ...prev, lng: prev.lng + 0.0005 } : prev)}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                    </Button>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setEditCenter((prev) => prev ? { ...prev, lat: prev.lat - 0.0005 } : prev)}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
-                  </Button>
-                </div>
-              </div>
-
-              <Button
-                className="w-full h-12 text-base font-semibold"
-                onClick={handleDone}
-              >
-                <Check className="h-5 w-5 mr-2" />
-                Done
-              </Button>
-            </CardContent>
-          </>
-        ) : (
-          /* ── Normal sidebar ── */
-          <>
-            <CardHeader className="pb-3">
-              {selectedGeofence ? (
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() => {
-                        setSelectedGeofence(null);
-                        setEvents([]);
-                      }}
-                    >
-                      <ArrowLeft className="h-3 w-3" />
-                    </Button>
-                    {selectedGeofence.name}
-                  </CardTitle>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Circle className="h-4 w-4" />
-                    Geofences ({geofences.length})
-                  </CardTitle>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={startCreate}
-                    disabled={placing}
-                  >
-                    <Plus className="h-3.5 w-3.5 mr-1" />
-                    Add
-                  </Button>
-                </div>
-              )}
-            </CardHeader>
-            <CardContent className="p-0">
-              {selectedGeofence ? (
-                /* Event log view */
-                <div>
-                  <div className="px-4 pb-3 border-b border-border">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge
-                        variant={
-                          selectedGeofence.is_active ? "default" : "secondary"
-                        }
-                      >
-                        {selectedGeofence.is_active ? "Active" : "Disabled"}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {selectedGeofence.radius_meters}m radius
-                      </span>
-                    </div>
-                    <div className="flex gap-1 mt-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => enterEditMode(selectedGeofence)}
-                      >
-                        <Pencil className="h-3 w-3 mr-1" />
-                        Edit
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => toggleActive(selectedGeofence)}
-                      >
-                        {selectedGeofence.is_active ? "Disable" : "Enable"}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-destructive"
-                        onClick={() => deleteGeofence(selectedGeofence)}
-                      >
-                        <Trash2 className="h-3 w-3 mr-1" />
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="px-4 py-2 border-b border-border">
-                    <p className="text-xs font-medium text-muted-foreground">
-                      Crossing Log ({events.length})
-                    </p>
-                  </div>
-
-                  {loadingEvents ? (
-                    <div className="flex justify-center py-6">
-                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : events.length === 0 ? (
-                    <p className="px-4 py-6 text-xs text-muted-foreground text-center">
-                      No crossings detected yet.
-                    </p>
-                  ) : (
-                    <div className="divide-y divide-border">
-                      {events.map((ev) => (
-                        <div key={ev.id} className="px-4 py-2.5">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium">
-                              {ev.staff_profiles?.full_name || "Unknown"}
-                            </p>
-                            <Badge
-                              variant={
-                                ev.event_type === "inside"
-                                  ? "default"
-                                  : "secondary"
-                              }
-                              className={
-                                ev.event_type === "inside"
-                                  ? "bg-green-600 hover:bg-green-700"
-                                  : ""
-                              }
-                            >
-                              <ArrowRightLeft className="h-3 w-3 mr-1" />
-                              {ev.event_type === "inside" ? "Entered" : "Exited"}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {format(
-                              new Date(ev.created_at),
-                              "MMM d, yyyy – HH:mm:ss"
-                            )}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : /* Geofence list */
-              geofences.length === 0 ? (
-                <p className="px-4 pb-4 text-xs text-muted-foreground">
-                  No geofences yet. Click "Add" to create one.
-                </p>
-              ) : (
-                <div className="divide-y divide-border">
-                  {geofences.map((gf) => (
-                    <div
-                      key={gf.id}
-                      className="px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => selectGeofence(gf)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                          <p className="font-medium text-sm">{gf.name}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={gf.is_active}
-                            onCheckedChange={() => toggleActive(gf)}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5 ml-[22px]">
-                        {gf.radius_meters}m radius · Created{" "}
-                        {format(new Date(gf.created_at), "MMM d, yyyy")}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </>
-        )}
-      </Card>
-
-      {/* Name dialog (step 1 of creation) */}
+      {/* Name dialog */}
       <Dialog open={nameDialogOpen} onOpenChange={setNameDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -922,21 +842,12 @@ const GeofenceManagement = ({ apiKey, onEditModeChange }: Props) => {
               onChange={(e) => setPendingName(e.target.value)}
               placeholder="e.g. Office, Warehouse"
               autoFocus
-              onKeyDown={(e) => {
-                if (e.key === "Enter") confirmName();
-              }}
+              onKeyDown={(e) => { if (e.key === "Enter") confirmName(); }}
             />
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setNameDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={confirmName} disabled={!pendingName.trim()}>
-              Next
-            </Button>
+            <Button variant="outline" onClick={() => setNameDialogOpen(false)}>Cancel</Button>
+            <Button onClick={confirmName} disabled={!pendingName.trim()}>Next</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
