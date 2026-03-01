@@ -1,32 +1,73 @@
 
 
-## Add Simple Map Filter Toggle
+# Plan: Show Password on Creation + Delete Staff
 
-A small control on the map to toggle visibility of businesses/POIs and reduce map clutter.
+## Overview
+Two features for the Staff Management page:
+1. **Show password after creating a staff** -- display the password in a success banner so the admin can copy it before it's gone forever
+2. **Delete staff button** -- with a confirmation dialog and full cleanup of related data
 
-### Approach
-Add a toggle button (or small dropdown) on the map that switches between "Default" and "Clean" map styles. The clean style will hide business POIs, reduce label density, and simplify the map appearance.
+## Safety Note
+Deleting a staff member will NOT affect the Android app or other staff. Each staff has an independent login. If a deleted staff tries to use the app, they simply get an "unauthorized" error -- the app won't crash.
 
-### Implementation
+---
 
-**File: `src/components/LiveMap.tsx`**
+## 1. Show Password After Creation
 
-1. Define two style arrays -- a "default" (empty/null) and a "clean" style that hides POIs (businesses, attractions), reduces road label density, and hides transit icons:
+**What changes:**
+- After successfully creating a staff member, instead of just a toast, show a highlighted card/banner with the username and password visible
+- Include a "Copy Password" button
+- The banner stays visible until the admin dismisses it or creates another staff member
 
-```typescript
-const CLEAN_MAP_STYLES: google.maps.MapTypeStyle[] = [
-  { featureType: "poi.business", stylers: [{ visibility: "off" }] },
-  { featureType: "poi.attraction", stylers: [{ visibility: "off" }] },
-  { featureType: "poi.government", stylers: [{ visibility: "off" }] },
-  { featureType: "poi.sports_complex", stylers: [{ visibility: "off" }] },
-  { featureType: "transit", stylers: [{ visibility: "off" }] },
-];
+**File:** `src/components/StaffManagement.tsx`
+- Add state for `lastCreatedStaff` (stores username + password)
+- After successful creation, populate this state
+- Render a visible card with the credentials and copy button
+
+---
+
+## 2. Delete Staff (with full cleanup)
+
+**What changes:**
+
+### Backend function: `supabase/functions/admin_delete_staff/index.ts`
+A new backend function that, given a `staff_id`:
+1. Looks up the staff profile to get `auth_user_id`
+2. Deletes related records from `staff_locations`, `staff_location_history`, and `geofence_events` (all reference `staff_id`)
+3. Deletes the `staff_profiles` row
+4. Deletes the auth user account
+
+This must use the service role key to perform admin operations.
+
+### Frontend: `src/components/StaffManagement.tsx`
+- Add a red "Delete" button (trash icon) next to each staff member
+- Show a confirmation dialog (AlertDialog) warning that this action is permanent
+- On confirm, call the `admin_delete_staff` function and refresh the list
+
+### Config: `supabase/config.toml`
+- Add `[functions.admin_delete_staff]` with `verify_jwt = false` (matches existing pattern)
+
+---
+
+## Technical Details
+
+### New edge function (`admin_delete_staff/index.ts`)
+```
+Input: { staff_id: string }
+Steps:
+  1. Fetch staff_profiles row by id to get auth_user_id
+  2. DELETE FROM staff_locations WHERE staff_id = ?
+  3. DELETE FROM staff_location_history WHERE staff_id = ?
+  4. DELETE FROM geofence_events WHERE staff_id = ?
+  5. DELETE FROM staff_profiles WHERE id = ?
+  6. supabaseAdmin.auth.admin.deleteUser(auth_user_id)
+  7. Return success
 ```
 
-2. Add a state variable `cleanMap` (persisted in `localStorage`) to toggle between the two styles.
+### UI changes in StaffManagement.tsx
+- New state: `lastCreatedStaff` (object with username/password or null)
+- New state: `deletingId` (tracks which staff is being deleted)
+- Success banner component after creation showing credentials
+- AlertDialog for delete confirmation
+- Trash icon button per staff row
 
-3. Since the project uses `mapId` (cloud-based styling), and `styles` prop doesn't work alongside `mapId`, the approach will be to conditionally remove the `mapId` prop when clean mode is active, and pass the `styles` array instead. This way the default mode uses the cloud map style, and clean mode uses the inline style array.
-
-4. Add a small toggle button in a `MapControl` (top-right area) with a layers icon to switch between modes.
-
-**No database changes needed. Single file edit.**
