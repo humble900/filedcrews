@@ -123,26 +123,22 @@ Deno.serve(async (req) => {
 
         if (!lastEvent) {
           // First ever signal for this staff+geofence
-          if (isInside) eventType = "logged_in";
-          else eventType = "outside";
+          eventType = isInside ? "logged_in_inside" : "logged_in_outside";
         } else {
-          const lastIsInside = lastEvent.event_type === "inside" || lastEvent.event_type === "entered" || lastEvent.event_type === "logged_in";
+          const lastIsInside = ["inside", "entered", "logged_in", "logged_in_inside"].includes(lastEvent.event_type);
           const lastTime = new Date(lastEvent.created_at).getTime();
           const now = Date.now();
           const gapMs = now - lastTime;
           const ONE_HOUR = 60 * 60 * 1000;
 
-          if (isInside && !lastIsInside) {
-            // Was outside, now inside → entered
+          if (gapMs > ONE_HOUR) {
+            // Gap > 1 hour → treat as new session
+            eventType = isInside ? "logged_in_inside" : "logged_in_outside";
+          } else if (isInside && !lastIsInside) {
             eventType = "entered";
           } else if (!isInside && lastIsInside) {
-            // Was inside, now outside → exited
             eventType = "exited";
-          } else if (isInside && lastIsInside && gapMs > ONE_HOUR) {
-            // Was inside, still inside but gap > 1 hour → logged_in
-            eventType = "logged_in";
           }
-          // Otherwise no change, don't log
         }
 
         if (eventType) {

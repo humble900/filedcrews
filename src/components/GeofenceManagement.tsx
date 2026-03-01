@@ -688,7 +688,8 @@ const GeofenceManagement = ({ apiKey, onEditModeChange }: Props) => {
                   <div className="divide-y divide-border">
                     {events.map((ev) => {
                       const isEntered = ev.event_type === "entered" || ev.event_type === "inside";
-                      const isLoggedIn = ev.event_type === "logged_in";
+                      const isLoggedInInside = ev.event_type === "logged_in_inside" || ev.event_type === "logged_in";
+                      const isLoggedInOutside = ev.event_type === "logged_in_outside";
                       const isExited = ev.event_type === "exited" || ev.event_type === "outside";
 
                       let badgeClass = "";
@@ -696,9 +697,12 @@ const GeofenceManagement = ({ apiKey, onEditModeChange }: Props) => {
                       if (isEntered) {
                         badgeClass = "bg-green-600 hover:bg-green-700";
                         label = "Entered";
-                      } else if (isLoggedIn) {
+                      } else if (isLoggedInInside) {
                         badgeClass = "bg-blue-600 hover:bg-blue-700";
-                        label = "Logged in";
+                        label = "Logged in (inside)";
+                      } else if (isLoggedInOutside) {
+                        badgeClass = "bg-orange-500 hover:bg-orange-600";
+                        label = "Logged in (outside)";
                       } else if (isExited) {
                         badgeClass = "";
                         label = "Exited";
@@ -709,7 +713,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange }: Props) => {
                           <div className="flex items-center justify-between">
                             <p className="text-sm font-medium">{ev.staff_profiles?.full_name || "Unknown"}</p>
                             <Badge
-                              variant={isExited ? "secondary" : "default"}
+                              variant={isExited || isLoggedInOutside ? "secondary" : "default"}
                               className={badgeClass}
                             >
                               <ArrowRightLeft className="h-3 w-3 mr-1" />
