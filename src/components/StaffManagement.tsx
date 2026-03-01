@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -113,7 +114,7 @@ const StaffManagement = () => {
               {staff.map((s) => (
                 <div key={s.id} className="flex items-center justify-between py-3">
                   <div>
-                    <p className="font-medium">{s.full_name}</p>
+                    <p className={`font-medium ${!s.is_active ? "text-muted-foreground" : ""}`}>{s.full_name}</p>
                     <p className="text-xs text-muted-foreground">
                       Username: <span className="font-mono">@{s.username}</span>
                     </p>
@@ -122,9 +123,26 @@ const StaffManagement = () => {
                     <span className="text-xs text-muted-foreground">
                       Joined {format(new Date(s.created_at), "MMM d, yyyy")}
                     </span>
-                    <Badge variant={s.is_active ? "default" : "secondary"}>
-                      {s.is_active ? "Active" : "Inactive"}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={s.is_active}
+                        onCheckedChange={async (checked) => {
+                          const { error } = await supabase
+                            .from("staff_profiles")
+                            .update({ is_active: checked })
+                            .eq("id", s.id);
+                          if (error) {
+                            toast.error("Failed to update staff status");
+                          } else {
+                            toast.success(`${s.full_name} ${checked ? "activated" : "deactivated"}`);
+                            refetch();
+                          }
+                        }}
+                      />
+                      <Badge variant={s.is_active ? "default" : "secondary"}>
+                        {s.is_active ? "Active" : "Inactive"}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
               ))}
