@@ -586,14 +586,16 @@ const LiveMap = () => {
             <PlaceSearch />
             <HistoryOverlay points={historyPoints} selectedPointId={selectedPointId} />
 
-            <StaffMarkers
-              locations={locations}
-              selectedStaffId={selectedStaffId}
-              onSelect={(staffId, lat, lng) => {
-                setSelectedStaffId(staffId);
-                flyTo(lat, lng);
-              }}
-            />
+            {!historyStaff && (
+              <StaffMarkers
+                locations={locations}
+                selectedStaffId={selectedStaffId}
+                onSelect={(staffId, lat, lng) => {
+                  setSelectedStaffId(staffId);
+                  flyTo(lat, lng);
+                }}
+              />
+            )}
           </Map>
         </APIProvider>
       </div>
