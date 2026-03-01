@@ -1,35 +1,32 @@
 
-# Add "Show Address" Button for Staff Locations
 
-## What This Does
-Adds a small button next to the coordinates in the sidebar that, when clicked, converts the GPS coordinates into a human-readable street address using Google Maps' built-in Reverse Geocoding service. No additional API keys or setup required — the Geocoder is part of the same Google Maps JavaScript API already loaded.
+## Add Simple Map Filter Toggle
 
-## How It Works
-- A small map-pin/home icon button appears next to the coordinate text for each staff member (in the live view) and each history entry
-- Clicking it calls `google.maps.Geocoder.geocode()` with the lat/lng
-- The address replaces or appears below the coordinates, with a toggle to switch back
-- A loading spinner shows briefly while the geocoding request is in progress
+A small control on the map to toggle visibility of businesses/POIs and reduce map clutter.
 
-## Technical Details
+### Approach
+Add a toggle button (or small dropdown) on the map that switches between "Default" and "Clean" map styles. The clean style will hide business POIs, reduce label density, and simplify the map appearance.
 
-### File: `src/components/LiveMap.tsx`
+### Implementation
 
-1. **Create a reusable `AddressLookup` component** inside the file:
-   - Takes `lat` and `lng` as props
-   - Uses `google.maps.Geocoder` (available globally since the API is loaded)
-   - Manages its own state: `idle` / `loading` / `address string` / `error`
-   - Renders a small icon button; on click, fetches and displays the formatted address
-   - Clicking again toggles back to coordinates view
-   - Caches results in a `useRef` Map to avoid repeated API calls for the same coordinates
+**File: `src/components/LiveMap.tsx`**
 
-2. **Add the component in two places:**
-   - **Live staff list** (line ~371): Next to the coordinate `<p>` tag for each staff member
-   - **History entries** (line ~333): Next to the coordinate `<p>` tag for each history point
+1. Define two style arrays -- a "default" (empty/null) and a "clean" style that hides POIs (businesses, attractions), reduces road label density, and hides transit icons:
 
-3. **UI behavior:**
-   - Small button with a `MapPinHouse` or `Navigation` icon from lucide-react
-   - On click: shows a brief `Loader2` spinner, then the address text below coordinates
-   - Address text styled in `text-xs text-foreground` to distinguish from the raw coordinates
-   - Click the button again to hide the address
+```typescript
+const CLEAN_MAP_STYLES: google.maps.MapTypeStyle[] = [
+  { featureType: "poi.business", stylers: [{ visibility: "off" }] },
+  { featureType: "poi.attraction", stylers: [{ visibility: "off" }] },
+  { featureType: "poi.government", stylers: [{ visibility: "off" }] },
+  { featureType: "poi.sports_complex", stylers: [{ visibility: "off" }] },
+  { featureType: "transit", stylers: [{ visibility: "off" }] },
+];
+```
 
-No database changes, no new edge functions, no new dependencies needed.
+2. Add a state variable `cleanMap` (persisted in `localStorage`) to toggle between the two styles.
+
+3. Since the project uses `mapId` (cloud-based styling), and `styles` prop doesn't work alongside `mapId`, the approach will be to conditionally remove the `mapId` prop when clean mode is active, and pass the `styles` array instead. This way the default mode uses the cloud map style, and clean mode uses the inline style array.
+
+4. Add a small toggle button in a `MapControl` (top-right area) with a layers icon to switch between modes.
+
+**No database changes needed. Single file edit.**
