@@ -2,8 +2,10 @@ import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Clock, History, X, CircleDot, Loader2, MapPinHouse, EyeOff, Eye, Layers } from "lucide-react";
+import { MapPin, Clock, History, X, CircleDot, Loader2, MapPinHouse, EyeOff, Eye, Layers, List } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 /* ── Address lookup via reverse geocoding ── */
 const addressCache: Record<string, string> = {};
@@ -528,6 +530,8 @@ const CLEAN_MAP_STYLES: google.maps.MapTypeStyle[] = [
 ];
 
 const LiveMap = () => {
+  const isMobile = useIsMobile();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [loadingKey, setLoadingKey] = useState(true);
   const [locations, setLocations] = useState<StaffLocation[]>([]);
@@ -657,8 +661,160 @@ const LiveMap = () => {
     );
   }
 
+  const sidebarContent = (
+    <>
+      <div className="pb-3 px-4 pt-4">
+        {historyStaff ? (
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <History className="h-4 w-4" />
+              {historyStaff.name}
+            </h3>
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={closeHistory}>
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+        ) : (
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <MapPin className="h-4 w-4" />
+            Staff ({visibleLocations.length}/{locations.length})
+          </h3>
+        )}
+      </div>
+      <div className="overflow-auto flex-1">
+        {historyStaff ? (
+          loadingHistory ? (
+            <p className="px-4 pb-4 text-xs text-muted-foreground">Loading history…</p>
+          ) : !historyPoints.length ? (
+            <p className="px-4 pb-4 text-xs text-muted-foreground">No history recorded.</p>
+          ) : (
+            <div className="divide-y divide-border">
+              {groupHistoryPoints(historyPoints).reverse().map((group, i) => {
+                const isSelected = group.pointIds.includes(selectedPointId ?? "");
+                return (
+                  <div
+                    key={group.id}
+                    className={`px-4 py-2.5 cursor-pointer transition-colors border-l-2 ${
+                      isSelected
+                        ? "bg-primary/10 border-l-primary"
+                        : "hover:bg-muted/50 border-l-transparent"
+                    }`}
+                    onClick={() => {
+                      setSelectedPointId(group.id);
+                      flyTo(group.latitude, group.longitude);
+                      if (isMobile) setSidebarOpen(false);
+                    }}
+                  >
+                    <p className={`text-xs font-medium flex items-center gap-1.5 ${isSelected ? "text-primary" : ""}`}>
+                      <CircleDot className={`h-3 w-3 ${isSelected ? "text-destructive" : i === 0 ? "text-green-500" : "text-primary"}`} />
+                      {formatGroupTime(group)}
+                    </p>
+                    {group.pointCount > 1 && (
+                      <p className="text-[10px] text-muted-foreground ml-[18px]">
+                        {group.pointCount} pings
+                      </p>
+                    )}
+                    <div className="flex items-center mt-0.5 ml-[18px]">
+                      <p className="text-xs text-muted-foreground font-mono">
+                        {group.latitude.toFixed(5)}, {group.longitude.toFixed(5)}
+                      </p>
+                      <AddressLookup lat={group.latitude} lng={group.longitude} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )
+        ) : !locations.length ? (
+          <p className="px-4 pb-4 text-xs text-muted-foreground">No locations yet.</p>
+        ) : (
+          <div className="divide-y divide-border">
+            {[...locations]
+              .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+              .map((loc) => {
+                const isSelected = loc.staff_id === selectedStaffId;
+                const color = getStaffColor(locations.indexOf(loc));
+                const isHidden = hiddenStaffIds.has(loc.staff_id);
+                return (
+                  <div
+                    key={loc.staff_id}
+                    className={`px-4 py-3 cursor-pointer transition-colors border-l-2 ${
+                      isHidden
+                        ? "opacity-50 border-l-transparent"
+                        : isSelected
+                          ? "bg-primary/10 border-l-primary"
+                          : "hover:bg-muted/50 border-l-transparent"
+                    }`}
+                    onClick={() => {
+                      if (isHidden) return;
+                      setSelectedStaffId(loc.staff_id);
+                      flyTo(loc.latitude, loc.longitude);
+                      if (isMobile) setSidebarOpen(false);
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-2.5 h-2.5 rounded-full shrink-0"
+                          style={{ background: color.bg }}
+                        />
+                        <p className={`font-medium text-sm ${isSelected && !isHidden ? "text-primary" : ""}`}>
+                          {loc.staff_profiles?.full_name}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-0.5">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleStaffVisibility(loc.staff_id);
+                          }}
+                          title={isHidden ? "Show on map" : "Hide from map"}
+                        >
+                          {isHidden ? <EyeOff className="h-3.5 w-3.5 text-muted-foreground" /> : <Eye className="h-3.5 w-3.5" />}
+                        </Button>
+                        {!isHidden && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              showHistory(loc.staff_id, loc.staff_profiles?.full_name || "Unknown");
+                            }}
+                          >
+                            <History className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    {!isHidden && (
+                      <>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 ml-[18px]">
+                          <Clock className="h-3 w-3" />
+                          {formatDistanceToNow(new Date(loc.updated_at), { addSuffix: true })}
+                        </p>
+                        <div className="flex items-center mt-0.5 ml-[18px]">
+                          <p className="text-xs text-muted-foreground font-mono">
+                            {loc.latitude.toFixed(5)}, {loc.longitude.toFixed(5)}
+                          </p>
+                          <AddressLookup lat={loc.latitude} lng={loc.longitude} />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+          </div>
+        )}
+      </div>
+    </>
+  );
+
   return (
-    <div className="flex gap-4 h-[calc(100vh-8rem)]">
+    <div className="flex gap-4 h-[calc(100vh-8rem)] relative">
       <div className="flex-1 rounded-xl overflow-hidden border border-border">
         <APIProvider apiKey={apiKey}>
           <Map
@@ -723,154 +879,31 @@ const LiveMap = () => {
         </APIProvider>
       </div>
 
-      {/* Sidebar */}
-      <Card className="w-72 shrink-0 overflow-auto">
-        <CardHeader className="pb-3">
-          {historyStaff ? (
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <History className="h-4 w-4" />
-                {historyStaff.name}
-              </CardTitle>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={closeHistory}>
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-          ) : (
-          <CardTitle className="text-sm flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              Staff ({visibleLocations.length}/{locations.length})
-            </CardTitle>
-          )}
-        </CardHeader>
-        <CardContent className="p-0">
-          {historyStaff ? (
-            loadingHistory ? (
-              <p className="px-4 pb-4 text-xs text-muted-foreground">Loading history…</p>
-            ) : !historyPoints.length ? (
-              <p className="px-4 pb-4 text-xs text-muted-foreground">No history recorded.</p>
-            ) : (
-              <div className="divide-y divide-border">
-                {groupHistoryPoints(historyPoints).reverse().map((group, i) => {
-                  const isSelected = group.pointIds.includes(selectedPointId ?? "");
-                  return (
-                    <div
-                      key={group.id}
-                      className={`px-4 py-2.5 cursor-pointer transition-colors border-l-2 ${
-                        isSelected
-                          ? "bg-primary/10 border-l-primary"
-                          : "hover:bg-muted/50 border-l-transparent"
-                      }`}
-                      onClick={() => {
-                        setSelectedPointId(group.id);
-                        flyTo(group.latitude, group.longitude);
-                      }}
-                    >
-                      <p className={`text-xs font-medium flex items-center gap-1.5 ${isSelected ? "text-primary" : ""}`}>
-                        <CircleDot className={`h-3 w-3 ${isSelected ? "text-destructive" : i === 0 ? "text-green-500" : "text-primary"}`} />
-                        {formatGroupTime(group)}
-                      </p>
-                      {group.pointCount > 1 && (
-                        <p className="text-[10px] text-muted-foreground ml-[18px]">
-                          {group.pointCount} pings
-                        </p>
-                      )}
-                      <div className="flex items-center mt-0.5 ml-[18px]">
-                        <p className="text-xs text-muted-foreground font-mono">
-                          {group.latitude.toFixed(5)}, {group.longitude.toFixed(5)}
-                        </p>
-                        <AddressLookup lat={group.latitude} lng={group.longitude} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )
-          ) : !locations.length ? (
-            <p className="px-4 pb-4 text-xs text-muted-foreground">No locations yet.</p>
-          ) : (
-            <div className="divide-y divide-border">
-              {[...locations]
-                .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-                .map((loc, i) => {
-                  const isSelected = loc.staff_id === selectedStaffId;
-                  const color = getStaffColor(locations.indexOf(loc));
-                  const isHidden = hiddenStaffIds.has(loc.staff_id);
-                  return (
-                    <div
-                      key={loc.staff_id}
-                      className={`px-4 py-3 cursor-pointer transition-colors border-l-2 ${
-                        isHidden
-                          ? "opacity-50 border-l-transparent"
-                          : isSelected
-                            ? "bg-primary/10 border-l-primary"
-                            : "hover:bg-muted/50 border-l-transparent"
-                      }`}
-                      onClick={() => {
-                        if (isHidden) return;
-                        setSelectedStaffId(loc.staff_id);
-                        flyTo(loc.latitude, loc.longitude);
-                      }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-2.5 h-2.5 rounded-full shrink-0"
-                            style={{ background: color.bg }}
-                          />
-                          <p className={`font-medium text-sm ${isSelected && !isHidden ? "text-primary" : ""}`}>
-                            {loc.staff_profiles?.full_name}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-0.5">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleStaffVisibility(loc.staff_id);
-                            }}
-                            title={isHidden ? "Show on map" : "Hide from map"}
-                          >
-                            {isHidden ? <EyeOff className="h-3.5 w-3.5 text-muted-foreground" /> : <Eye className="h-3.5 w-3.5" />}
-                          </Button>
-                          {!isHidden && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                showHistory(loc.staff_id, loc.staff_profiles?.full_name || "Unknown");
-                              }}
-                            >
-                              <History className="h-3.5 w-3.5" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                      {!isHidden && (
-                        <>
-                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 ml-[18px]">
-                            <Clock className="h-3 w-3" />
-                            {formatDistanceToNow(new Date(loc.updated_at), { addSuffix: true })}
-                          </p>
-                          <div className="flex items-center mt-0.5 ml-[18px]">
-                            <p className="text-xs text-muted-foreground font-mono">
-                              {loc.latitude.toFixed(5)}, {loc.longitude.toFixed(5)}
-                            </p>
-                            <AddressLookup lat={loc.latitude} lng={loc.longitude} />
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Mobile: floating button + Sheet */}
+      {isMobile ? (
+        <>
+          <Button
+            className="absolute bottom-4 right-4 z-10 h-12 w-12 rounded-full shadow-lg"
+            size="icon"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <List className="h-5 w-5" />
+          </Button>
+          <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+            <SheetContent side="bottom" className="h-[70vh] flex flex-col p-0">
+              <SheetHeader className="sr-only">
+                <SheetTitle>Staff Panel</SheetTitle>
+              </SheetHeader>
+              {sidebarContent}
+            </SheetContent>
+          </Sheet>
+        </>
+      ) : (
+        /* Desktop: side card */
+        <Card className="w-72 shrink-0 overflow-auto flex flex-col">
+          {sidebarContent}
+        </Card>
+      )}
     </div>
   );
 };

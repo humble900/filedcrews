@@ -60,14 +60,14 @@ const StaffManagement = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleCreate} className="flex flex-wrap items-end gap-4">
+          <form onSubmit={handleCreate} className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-end gap-4">
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Full Name</label>
               <Input
                 placeholder="e.g. John Doe"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-56"
+                className="w-full lg:w-56"
                 required
               />
             </div>
@@ -77,7 +77,7 @@ const StaffManagement = () => {
                 placeholder="e.g. johndoe"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-48"
+                className="w-full lg:w-48"
                 required
               />
             </div>
@@ -88,11 +88,11 @@ const StaffManagement = () => {
                 placeholder="Min 6 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-48"
+                className="w-full lg:w-48"
                 required
               />
             </div>
-            <Button type="submit" disabled={creating}>
+            <Button type="submit" disabled={creating} className="w-full sm:w-auto">
               {creating ? "Creating…" : "Create Staff"}
             </Button>
           </form>
@@ -112,7 +112,7 @@ const StaffManagement = () => {
           ) : (
             <div className="divide-y divide-border">
               {staff.map((s) => (
-                <div key={s.id} className="flex items-center justify-between py-3">
+                <div key={s.id} className="flex flex-col sm:flex-row sm:items-center justify-between py-3 gap-2">
                   <div>
                     <p className={`font-medium ${!s.is_active ? "text-muted-foreground" : ""}`}>{s.full_name}</p>
                     <p className="text-xs text-muted-foreground">
@@ -120,7 +120,7 @@ const StaffManagement = () => {
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground hidden sm:inline">
                       Joined {format(new Date(s.created_at), "MMM d, yyyy")}
                     </span>
                     <div className="flex items-center gap-2">
