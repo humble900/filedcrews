@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Clock, History, X, CircleDot, Loader2, MapPinHouse, EyeOff, Eye, Layers, List } from "lucide-react";
+import { MapPin, Clock, History, X, CircleDot, Loader2, MapPinHouse, EyeOff, Eye, Layers, Users } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -887,7 +887,7 @@ const LiveMap = () => {
             size="icon"
             onClick={() => setSidebarOpen(true)}
           >
-            <List className="h-5 w-5" />
+            <Users className="h-5 w-5" />
           </Button>
           <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
             <SheetContent side="bottom" className="h-[70vh] flex flex-col p-0">
