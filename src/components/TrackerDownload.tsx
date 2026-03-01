@@ -20,36 +20,21 @@ const TrackerDownload = () => {
 
   return (
     <div className="flex flex-col items-center gap-8 py-8 max-w-xl mx-auto">
-      {/* Download Card */}
-      <Card className="w-full text-center">
-        <CardHeader>
-          <CardTitle className="text-xl">Download Tracker App</CardTitle>
-          <CardDescription>
-            Scan the QR code or use the link below to install the GPS tracker on a phone.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center gap-6">
-          <div className="bg-white p-4 rounded-xl inline-block">
-            <QRCodeSVG value={TRACKER_URL} size={200} />
-          </div>
-
-          <div className="w-full flex gap-2">
-            <div className="flex-1 truncate rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground text-left">
-              {TRACKER_URL}
-            </div>
-            <Button variant="outline" size="icon" onClick={handleCopy} className="shrink-0">
-              {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-            </Button>
-          </div>
-
-          <Button asChild variant="secondary" className="w-full">
-            <a href={TRACKER_URL} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Open Link
-            </a>
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Location Permission Banner */}
+      <div className="w-full rounded-xl border-2 border-green-500/50 bg-green-500/10 p-6 text-center space-y-3">
+        <div className="text-4xl font-extrabold tracking-tight text-green-500">
+          ⚠️ IMPORTANT
+        </div>
+        <p className="text-lg font-semibold text-foreground">
+          For the tracker to work, when the app asks for location permission, you <strong>must</strong> select:
+        </p>
+        <div className="inline-block rounded-lg bg-green-500 px-6 py-3 text-2xl font-black text-white shadow-lg">
+          "Always Allow"
+        </div>
+        <p className="text-sm text-muted-foreground">
+          If you choose any other option, the app will not be able to track location in the background.
+        </p>
+      </div>
 
       {/* Installation Notice */}
       <Alert className="border-amber-500/50 bg-amber-500/10">
@@ -65,7 +50,7 @@ const TrackerDownload = () => {
           <div className="space-y-2 text-left">
             <p className="font-medium text-foreground">How to allow it:</p>
             <ol className="list-decimal list-inside space-y-1.5 pl-1">
-              <li>Download the app using the link or QR code above.</li>
+              <li>Download the app using the link or QR code below.</li>
               <li>When prompted, tap <strong className="text-foreground">"Settings"</strong> on the warning popup.</li>
               <li>Toggle on <strong className="text-foreground">"Allow from this source"</strong> (or "Install unknown apps").</li>
               <li>Go back and tap <strong className="text-foreground">"Install"</strong> to complete the installation.</li>
@@ -101,6 +86,38 @@ const TrackerDownload = () => {
           </div>
         </AlertDescription>
       </Alert>
+
+      {/* Download Card */}
+      <Card className="w-full text-center">
+        <CardHeader>
+          <CardTitle className="text-xl">Download Tracker App</CardTitle>
+          <CardDescription>
+            Scan the QR code or use the link below to install the GPS tracker on a phone.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center gap-6">
+          <div className="bg-white p-4 rounded-xl inline-block">
+            <QRCodeSVG value={TRACKER_URL} size={200} />
+          </div>
+
+          <div className="w-full flex gap-2">
+            <div className="flex-1 truncate rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground text-left">
+              {TRACKER_URL}
+            </div>
+            <Button variant="outline" size="icon" onClick={handleCopy} className="shrink-0">
+              {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+            </Button>
+          </div>
+
+          <Button asChild variant="secondary" className="w-full">
+            <a href={TRACKER_URL} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Open Link
+            </a>
+          </Button>
+        </CardContent>
+      </Card>
+
     </div>
   );
 };
