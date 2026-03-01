@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import StaffManagement from "@/components/StaffManagement";
 import LiveMap from "@/components/LiveMap";
 import GeofenceManagement from "@/components/GeofenceManagement";
-import { LogOut, MapPin, Users, Circle } from "lucide-react";
+import TrackerDownload from "@/components/TrackerDownload";
+import { LogOut, MapPin, Users, Circle, Smartphone } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -66,6 +67,10 @@ const Index = () => {
               <Users className="h-4 w-4" />
               Staff
             </TabsTrigger>
+            <TabsTrigger value="tracker" className="gap-1.5" disabled={geofenceEditing}>
+              <Smartphone className="h-4 w-4" />
+              Tracker
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="map" className="mt-4">
             <LiveMap />
@@ -82,6 +87,9 @@ const Index = () => {
           </TabsContent>
           <TabsContent value="staff" className="mt-4">
             <StaffManagement />
+          </TabsContent>
+          <TabsContent value="tracker" className="mt-4">
+            <TrackerDownload />
           </TabsContent>
         </Tabs>
       </main>
