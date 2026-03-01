@@ -824,7 +824,7 @@ const LiveMap = () => {
             style={{ width: "100%", height: "100%" }}
             gestureHandling="greedy"
             disableDefaultUI={true}
-            zoomControl={true}
+            zoomControl={!isMobile}
             fullscreenControl={true}
             mapTypeControl={false}
             streetViewControl={false}
