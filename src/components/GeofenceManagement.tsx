@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -25,6 +26,7 @@ import {
   MapPin,
   ArrowRightLeft,
   Move,
+  Clock,
   Minus as MinusIcon,
   Plus as PlusIcon,
   Check,
@@ -344,6 +346,100 @@ function PanTo({ lat, lng }: { lat: number; lng: number }) {
     done.current = true;
   }, [map, lat, lng]);
   return null;
+}
+
+/* ── Helper: format duration ── */
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+}
+
+/* ── Duration Log component ── */
+function DurationLog({ events }: { events: GeofenceEvent[] }) {
+  const sessions = useMemo(() => {
+    const sorted = [...events].sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+
+    const insideTypes = new Set(["entered", "inside", "logged_in", "logged_in_inside"]);
+    const result: {
+      staffName: string;
+      state: "inside" | "outside";
+      from: Date;
+      to: Date | null;
+      duration: number | null;
+    }[] = [];
+
+    const staffState: globalThis.Map<string, { state: "inside" | "outside"; from: Date; staffName: string }> = new globalThis.Map();
+
+    for (const ev of sorted) {
+      const isInside = insideTypes.has(ev.event_type);
+      const currentState: "inside" | "outside" = isInside ? "inside" : "outside";
+      const staffName = ev.staff_profiles?.full_name || "Unknown";
+      const time = new Date(ev.created_at);
+
+      const prev = staffState.get(ev.staff_id);
+      if (prev && prev.state !== currentState) {
+        result.push({
+          staffName: prev.staffName,
+          state: prev.state,
+          from: prev.from,
+          to: time,
+          duration: time.getTime() - prev.from.getTime(),
+        });
+      }
+      staffState.set(ev.staff_id, { state: currentState, from: time, staffName });
+    }
+
+    const now = new Date();
+    staffState.forEach((val) => {
+      result.push({
+        staffName: val.staffName,
+        state: val.state,
+        from: val.from,
+        to: null,
+        duration: now.getTime() - val.from.getTime(),
+      });
+    });
+
+    return result.sort((a, b) => b.from.getTime() - a.from.getTime());
+  }, [events]);
+
+  if (sessions.length === 0) {
+    return <p className="px-4 py-6 text-xs text-muted-foreground text-center">No duration data available.</p>;
+  }
+
+  return (
+    <div className="divide-y divide-border">
+      {sessions.map((s, i) => (
+        <div key={i} className="px-4 py-2.5">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium">{s.staffName}</p>
+            <Badge
+              variant={s.state === "inside" ? "default" : "secondary"}
+              className={s.state === "inside" ? "bg-green-600 hover:bg-green-700" : ""}
+            >
+              <Clock className="h-3 w-3 mr-1" />
+              {s.state === "inside" ? "Inside" : "Outside"}
+            </Badge>
+          </div>
+          <div className="flex items-center justify-between mt-0.5">
+            <p className="text-xs text-muted-foreground">
+              {format(s.from, "MMM d, HH:mm")} → {s.to ? format(s.to, "MMM d, HH:mm") : "now"}
+            </p>
+            <p className="text-xs font-mono font-medium text-foreground">
+              {s.duration ? formatDuration(s.duration) : "–"}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 /* ── Main component ── */
@@ -675,59 +771,85 @@ const GeofenceManagement = ({ apiKey, onEditModeChange }: Props) => {
                     </Button>
                   </div>
                 </div>
-                <div className="px-4 py-2 border-b border-border">
-                  <p className="text-xs font-medium text-muted-foreground">Crossing Log ({events.length})</p>
-                </div>
-                {loadingEvents ? (
-                  <div className="flex justify-center py-6">
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <Tabs defaultValue="crossings" className="w-full">
+                  <div className="px-4 py-2 border-b border-border">
+                    <TabsList className="w-full h-8">
+                      <TabsTrigger value="crossings" className="text-xs flex-1">
+                        <ArrowRightLeft className="h-3 w-3 mr-1" />
+                        Crossings
+                      </TabsTrigger>
+                      <TabsTrigger value="duration" className="text-xs flex-1">
+                        <Clock className="h-3 w-3 mr-1" />
+                        Duration
+                      </TabsTrigger>
+                    </TabsList>
                   </div>
-                ) : events.length === 0 ? (
-                  <p className="px-4 py-6 text-xs text-muted-foreground text-center">No crossings detected yet.</p>
-                ) : (
-                  <div className="divide-y divide-border">
-                    {events.map((ev) => {
-                      const isEntered = ev.event_type === "entered" || ev.event_type === "inside";
-                      const isLoggedInInside = ev.event_type === "logged_in_inside" || ev.event_type === "logged_in";
-                      const isLoggedInOutside = ev.event_type === "logged_in_outside";
-                      const isExited = ev.event_type === "exited" || ev.event_type === "outside";
 
-                      let badgeClass = "";
-                      let label = ev.event_type;
-                      if (isEntered) {
-                        badgeClass = "bg-green-600 hover:bg-green-700";
-                        label = "Entered";
-                      } else if (isLoggedInInside) {
-                        badgeClass = "bg-blue-600 hover:bg-blue-700";
-                        label = "Logged in (inside)";
-                      } else if (isLoggedInOutside) {
-                        badgeClass = "bg-orange-500 hover:bg-orange-600";
-                        label = "Logged in (outside)";
-                      } else if (isExited) {
-                        badgeClass = "";
-                        label = "Exited";
-                      }
+                  <TabsContent value="crossings" className="mt-0">
+                    {loadingEvents ? (
+                      <div className="flex justify-center py-6">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : events.length === 0 ? (
+                      <p className="px-4 py-6 text-xs text-muted-foreground text-center">No crossings detected yet.</p>
+                    ) : (
+                      <div className="divide-y divide-border">
+                        {events.map((ev) => {
+                          const isEntered = ev.event_type === "entered" || ev.event_type === "inside";
+                          const isLoggedInInside = ev.event_type === "logged_in_inside" || ev.event_type === "logged_in";
+                          const isLoggedInOutside = ev.event_type === "logged_in_outside";
+                          const isExited = ev.event_type === "exited" || ev.event_type === "outside";
 
-                      return (
-                        <div key={ev.id} className="px-4 py-2.5">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium">{ev.staff_profiles?.full_name || "Unknown"}</p>
-                            <Badge
-                              variant={isExited || isLoggedInOutside ? "secondary" : "default"}
-                              className={badgeClass}
-                            >
-                              <ArrowRightLeft className="h-3 w-3 mr-1" />
-                              {label}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {format(new Date(ev.created_at), "MMM d, yyyy – HH:mm:ss")}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                          let badgeClass = "";
+                          let label = ev.event_type;
+                          if (isEntered) {
+                            badgeClass = "bg-green-600 hover:bg-green-700";
+                            label = "Entered";
+                          } else if (isLoggedInInside) {
+                            badgeClass = "bg-blue-600 hover:bg-blue-700";
+                            label = "Logged in (inside)";
+                          } else if (isLoggedInOutside) {
+                            badgeClass = "bg-orange-500 hover:bg-orange-600";
+                            label = "Logged in (outside)";
+                          } else if (isExited) {
+                            badgeClass = "";
+                            label = "Exited";
+                          }
+
+                          return (
+                            <div key={ev.id} className="px-4 py-2.5">
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium">{ev.staff_profiles?.full_name || "Unknown"}</p>
+                                <Badge
+                                  variant={isExited || isLoggedInOutside ? "secondary" : "default"}
+                                  className={badgeClass}
+                                >
+                                  <ArrowRightLeft className="h-3 w-3 mr-1" />
+                                  {label}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {format(new Date(ev.created_at), "MMM d, yyyy – HH:mm:ss")}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="duration" className="mt-0">
+                    {loadingEvents ? (
+                      <div className="flex justify-center py-6">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : events.length === 0 ? (
+                      <p className="px-4 py-6 text-xs text-muted-foreground text-center">No data yet.</p>
+                    ) : (
+                      <DurationLog events={events} />
+                    )}
+                  </TabsContent>
+                </Tabs>
               </div>
             ) : geofences.length === 0 ? (
               <p className="px-4 pb-4 text-xs text-muted-foreground">No geofences yet. Click "Add" to create one.</p>
