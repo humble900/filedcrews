@@ -1,8 +1,8 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Clock, History, X, CircleDot, Loader2, MapPinHouse } from "lucide-react";
+import { MapPin, Clock, History, X, CircleDot, Loader2, MapPinHouse, EyeOff, Eye } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 
 /* ── Address lookup via reverse geocoding ── */
@@ -476,6 +476,29 @@ const LiveMap = () => {
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
 
+  // Hidden staff (persisted in localStorage)
+  const [hiddenStaffIds, setHiddenStaffIds] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem("hiddenStaffIds");
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch { return new Set(); }
+  });
+
+  const toggleStaffVisibility = useCallback((staffId: string) => {
+    setHiddenStaffIds(prev => {
+      const next = new Set(prev);
+      if (next.has(staffId)) next.delete(staffId);
+      else next.add(staffId);
+      localStorage.setItem("hiddenStaffIds", JSON.stringify([...next]));
+      return next;
+    });
+  }, []);
+
+  const visibleLocations = useMemo(
+    () => locations.filter(loc => !hiddenStaffIds.has(loc.staff_id)),
+    [locations, hiddenStaffIds]
+  );
+
   // Fetch Google Maps API key
   useEffect(() => {
     (async () => {
@@ -581,14 +604,14 @@ const LiveMap = () => {
               }
             }}
           >
-            <FitOnce locations={locations} />
+            <FitOnce locations={visibleLocations} />
             <FitHistory points={historyPoints} />
             <PlaceSearch />
             <HistoryOverlay points={historyPoints} selectedPointId={selectedPointId} />
 
             {!historyStaff && (
               <StaffMarkers
-                locations={locations}
+                locations={visibleLocations}
                 selectedStaffId={selectedStaffId}
                 onSelect={(staffId, lat, lng) => {
                   setSelectedStaffId(staffId);
@@ -614,9 +637,9 @@ const LiveMap = () => {
               </Button>
             </div>
           ) : (
-            <CardTitle className="text-sm flex items-center gap-2">
+          <CardTitle className="text-sm flex items-center gap-2">
               <MapPin className="h-4 w-4" />
-              Staff ({locations.length})
+              Staff ({visibleLocations.length}/{locations.length})
             </CardTitle>
           )}
         </CardHeader>
@@ -672,15 +695,19 @@ const LiveMap = () => {
                 .map((loc, i) => {
                   const isSelected = loc.staff_id === selectedStaffId;
                   const color = getStaffColor(locations.indexOf(loc));
+                  const isHidden = hiddenStaffIds.has(loc.staff_id);
                   return (
                     <div
                       key={loc.staff_id}
                       className={`px-4 py-3 cursor-pointer transition-colors border-l-2 ${
-                        isSelected
-                          ? "bg-primary/10 border-l-primary"
-                          : "hover:bg-muted/50 border-l-transparent"
+                        isHidden
+                          ? "opacity-50 border-l-transparent"
+                          : isSelected
+                            ? "bg-primary/10 border-l-primary"
+                            : "hover:bg-muted/50 border-l-transparent"
                       }`}
                       onClick={() => {
+                        if (isHidden) return;
                         setSelectedStaffId(loc.staff_id);
                         flyTo(loc.latitude, loc.longitude);
                       }}
@@ -691,32 +718,52 @@ const LiveMap = () => {
                             className="w-2.5 h-2.5 rounded-full shrink-0"
                             style={{ background: color.bg }}
                           />
-                          <p className={`font-medium text-sm ${isSelected ? "text-primary" : ""}`}>
+                          <p className={`font-medium text-sm ${isSelected && !isHidden ? "text-primary" : ""}`}>
                             {loc.staff_profiles?.full_name}
                           </p>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            showHistory(loc.staff_id, loc.staff_profiles?.full_name || "Unknown");
-                          }}
-                        >
-                          <History className="h-3.5 w-3.5" />
-                        </Button>
+                        <div className="flex items-center gap-0.5">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleStaffVisibility(loc.staff_id);
+                            }}
+                            title={isHidden ? "Show on map" : "Hide from map"}
+                          >
+                            {isHidden ? <EyeOff className="h-3.5 w-3.5 text-muted-foreground" /> : <Eye className="h-3.5 w-3.5" />}
+                          </Button>
+                          {!isHidden && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                showHistory(loc.staff_id, loc.staff_profiles?.full_name || "Unknown");
+                              }}
+                            >
+                              <History className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 ml-[18px]">
-                        <Clock className="h-3 w-3" />
-                        {formatDistanceToNow(new Date(loc.updated_at), { addSuffix: true })}
-                      </p>
-                      <div className="flex items-center mt-0.5 ml-[18px]">
-                        <p className="text-xs text-muted-foreground font-mono">
-                          {loc.latitude.toFixed(5)}, {loc.longitude.toFixed(5)}
-                        </p>
-                        <AddressLookup lat={loc.latitude} lng={loc.longitude} />
-                      </div>
+                      {!isHidden && (
+                        <>
+                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 ml-[18px]">
+                            <Clock className="h-3 w-3" />
+                            {formatDistanceToNow(new Date(loc.updated_at), { addSuffix: true })}
+                          </p>
+                          <div className="flex items-center mt-0.5 ml-[18px]">
+                            <p className="text-xs text-muted-foreground font-mono">
+                              {loc.latitude.toFixed(5)}, {loc.longitude.toFixed(5)}
+                            </p>
+                            <AddressLookup lat={loc.latitude} lng={loc.longitude} />
+                          </div>
+                        </>
+                      )}
                     </div>
                   );
                 })}
