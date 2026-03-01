@@ -6,6 +6,18 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+/** Haversine distance in meters */
+function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -85,6 +97,40 @@ Deno.serve(async (req) => {
         longitude,
         accuracy,
       });
+
+    // ── Geofence detection ──
+    const { data: geofences } = await supabaseAdmin
+      .from("geofences")
+      .select("id, latitude, longitude, radius_meters")
+      .eq("is_active", true);
+
+    if (geofences && geofences.length > 0) {
+      for (const gf of geofences) {
+        const dist = haversineMeters(latitude, longitude, gf.latitude, gf.longitude);
+        const currentState = dist <= gf.radius_meters ? "inside" : "outside";
+
+        // Get last event for this staff+geofence
+        const { data: lastEvent } = await supabaseAdmin
+          .from("geofence_events")
+          .select("event_type")
+          .eq("geofence_id", gf.id)
+          .eq("staff_id", staff.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        // Only log if no previous event or state changed
+        if (!lastEvent || lastEvent.event_type !== currentState) {
+          await supabaseAdmin
+            .from("geofence_events")
+            .insert({
+              geofence_id: gf.id,
+              staff_id: staff.id,
+              event_type: currentState,
+            });
+        }
+      }
+    }
 
     return new Response(
       JSON.stringify({ ok: true }),
