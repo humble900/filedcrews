@@ -6,12 +6,14 @@ import StaffManagement from "@/components/StaffManagement";
 import LiveMap from "@/components/LiveMap";
 import GeofenceManagement from "@/components/GeofenceManagement";
 import { LogOut, MapPin, Users, Circle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const { isAuthenticated, logout } = useAdminAuth();
   const [apiKey, setApiKey] = useState<string | null>(null);
+  const [geofenceEditing, setGeofenceEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState("map");
 
   // Fetch API key once at the top level so both LiveMap and Geofences share it
   useEffect(() => {
@@ -25,6 +27,14 @@ const Index = () => {
     })();
   }, []);
 
+  const handleTabChange = useCallback(
+    (value: string) => {
+      if (geofenceEditing) return; // block tab switching during edit mode
+      setActiveTab(value);
+    },
+    [geofenceEditing]
+  );
+
   if (!isAuthenticated) return <AdminLogin />;
 
   return (
@@ -36,23 +46,23 @@ const Index = () => {
           </div>
           <h1 className="text-lg font-bold tracking-tight">StaffTracker</h1>
         </div>
-        <Button variant="ghost" size="sm" onClick={logout}>
+        <Button variant="ghost" size="sm" onClick={logout} disabled={geofenceEditing}>
           <LogOut className="h-4 w-4 mr-1" />
           Sign Out
         </Button>
       </header>
       <main className="p-6">
-        <Tabs defaultValue="map">
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList>
-            <TabsTrigger value="map" className="gap-1.5">
+            <TabsTrigger value="map" className="gap-1.5" disabled={geofenceEditing}>
               <MapPin className="h-4 w-4" />
               Live Map
             </TabsTrigger>
-            <TabsTrigger value="geofences" className="gap-1.5">
+            <TabsTrigger value="geofences" className="gap-1.5" disabled={geofenceEditing && activeTab !== "geofences"}>
               <Circle className="h-4 w-4" />
               Geofences
             </TabsTrigger>
-            <TabsTrigger value="staff" className="gap-1.5">
+            <TabsTrigger value="staff" className="gap-1.5" disabled={geofenceEditing}>
               <Users className="h-4 w-4" />
               Staff
             </TabsTrigger>
@@ -62,7 +72,10 @@ const Index = () => {
           </TabsContent>
           <TabsContent value="geofences" className="mt-4">
             {apiKey ? (
-              <GeofenceManagement apiKey={apiKey} />
+              <GeofenceManagement
+                apiKey={apiKey}
+                onEditModeChange={setGeofenceEditing}
+              />
             ) : (
               <p className="text-muted-foreground">Loading map…</p>
             )}

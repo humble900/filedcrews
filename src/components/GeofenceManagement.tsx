@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,10 @@ import {
   Loader2,
   MapPin,
   ArrowRightLeft,
+  Move,
+  Minus as MinusIcon,
+  Plus as PlusIcon,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -160,10 +165,12 @@ function GeofenceCircles({
   geofences,
   selectedId,
   onSelect,
+  excludeId,
 }: {
   geofences: Geofence[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  excludeId?: string | null;
 }) {
   const map = useMap();
   const circlesRef = useRef<google.maps.Circle[]>([]);
@@ -173,39 +180,116 @@ function GeofenceCircles({
     circlesRef.current.forEach((c) => c.setMap(null));
     circlesRef.current = [];
 
-    geofences.forEach((gf) => {
-      const isSelected = gf.id === selectedId;
-      const circle = new google.maps.Circle({
-        center: { lat: gf.latitude, lng: gf.longitude },
-        radius: gf.radius_meters,
-        fillColor: gf.is_active
-          ? isSelected
-            ? "#3b71ca"
-            : "#43a047"
-          : "#9e9e9e",
-        fillOpacity: isSelected ? 0.3 : 0.15,
-        strokeColor: gf.is_active
-          ? isSelected
-            ? "#1e4b8f"
-            : "#2e7d32"
-          : "#757575",
-        strokeWeight: isSelected ? 3 : 2,
-        map,
-        clickable: true,
+    geofences
+      .filter((gf) => gf.id !== excludeId)
+      .forEach((gf) => {
+        const isSelected = gf.id === selectedId;
+        const circle = new google.maps.Circle({
+          center: { lat: gf.latitude, lng: gf.longitude },
+          radius: gf.radius_meters,
+          fillColor: gf.is_active
+            ? isSelected
+              ? "#3b71ca"
+              : "#43a047"
+            : "#9e9e9e",
+          fillOpacity: isSelected ? 0.3 : 0.15,
+          strokeColor: gf.is_active
+            ? isSelected
+              ? "#1e4b8f"
+              : "#2e7d32"
+            : "#757575",
+          strokeWeight: isSelected ? 3 : 2,
+          map,
+          clickable: true,
+        });
+        circle.addListener("click", () => onSelect(gf.id));
+        circlesRef.current.push(circle);
       });
-      circle.addListener("click", () => onSelect(gf.id));
-      circlesRef.current.push(circle);
-    });
 
     return () => {
       circlesRef.current.forEach((c) => c.setMap(null));
     };
-  }, [map, geofences, selectedId, onSelect]);
+  }, [map, geofences, selectedId, onSelect, excludeId]);
 
   return null;
 }
 
-/* ── Click-to-place marker ── */
+/* ── Editable circle (shown during edit mode) ── */
+function EditableCircle({
+  center,
+  radius,
+  onCenterChange,
+}: {
+  center: { lat: number; lng: number };
+  radius: number;
+  onCenterChange: (lat: number, lng: number) => void;
+}) {
+  const map = useMap();
+  const circleRef = useRef<google.maps.Circle | null>(null);
+  const markerRef = useRef<google.maps.Marker | null>(null);
+
+  useEffect(() => {
+    if (!map) return;
+
+    // Create draggable marker
+    const marker = new google.maps.Marker({
+      map,
+      position: center,
+      draggable: true,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 10,
+        fillColor: "#3b71ca",
+        fillOpacity: 1,
+        strokeColor: "#ffffff",
+        strokeWeight: 3,
+      },
+      zIndex: 9999,
+      title: "Drag to move geofence",
+    });
+
+    marker.addListener("dragend", () => {
+      const pos = marker.getPosition();
+      if (pos) onCenterChange(pos.lat(), pos.lng());
+    });
+
+    // Create circle
+    const circle = new google.maps.Circle({
+      center,
+      radius,
+      fillColor: "#3b71ca",
+      fillOpacity: 0.2,
+      strokeColor: "#1e4b8f",
+      strokeWeight: 2,
+      strokeOpacity: 0.8,
+      map,
+      clickable: false,
+    });
+
+    markerRef.current = marker;
+    circleRef.current = circle;
+
+    return () => {
+      marker.setMap(null);
+      circle.setMap(null);
+    };
+  }, [map]); // Only create once
+
+  // Update position
+  useEffect(() => {
+    if (markerRef.current) markerRef.current.setPosition(center);
+    if (circleRef.current) circleRef.current.setCenter(center);
+  }, [center]);
+
+  // Update radius
+  useEffect(() => {
+    if (circleRef.current) circleRef.current.setRadius(radius);
+  }, [radius]);
+
+  return null;
+}
+
+/* ── Click-to-place ── */
 function PlacementMode({
   onPlace,
 }: {
@@ -215,12 +299,16 @@ function PlacementMode({
 
   useEffect(() => {
     if (!map) return;
+    map.setOptions({ draggableCursor: "crosshair" });
     const listener = map.addListener("click", (e: google.maps.MapMouseEvent) => {
       if (e.latLng) {
         onPlace(e.latLng.lat(), e.latLng.lng());
       }
     });
-    return () => google.maps.event.removeListener(listener);
+    return () => {
+      google.maps.event.removeListener(listener);
+      map.setOptions({ draggableCursor: undefined });
+    };
   }, [map, onPlace]);
 
   return null;
@@ -242,24 +330,46 @@ function FitGeofences({ geofences }: { geofences: Geofence[] }) {
   return null;
 }
 
+/* ── Pan to point ── */
+function PanTo({ lat, lng }: { lat: number; lng: number }) {
+  const map = useMap();
+  const done = useRef(false);
+  useEffect(() => {
+    if (!map || done.current) return;
+    map.panTo({ lat, lng });
+    map.setZoom(14);
+    done.current = true;
+  }, [map, lat, lng]);
+  return null;
+}
+
 /* ── Main component ── */
 interface Props {
   apiKey: string;
+  onEditModeChange?: (editing: boolean) => void;
 }
 
-const GeofenceManagement = ({ apiKey }: Props) => {
+const GeofenceManagement = ({ apiKey, onEditModeChange }: Props) => {
   const [geofences, setGeofences] = useState<Geofence[]>([]);
   const [selectedGeofence, setSelectedGeofence] = useState<Geofence | null>(null);
   const [events, setEvents] = useState<GeofenceEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
-  const [placing, setPlacing] = useState(false);
-  const [placedPoint, setPlacedPoint] = useState<{ lat: number; lng: number } | null>(null);
 
-  // Dialog state
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingGeofence, setEditingGeofence] = useState<Geofence | null>(null);
-  const [formName, setFormName] = useState("");
-  const [formRadius, setFormRadius] = useState("100");
+  // Creation flow: step 1 = name dialog, step 2 = placing on map
+  const [nameDialogOpen, setNameDialogOpen] = useState(false);
+  const [pendingName, setPendingName] = useState("");
+  const [placing, setPlacing] = useState(false);
+
+  // Edit mode state
+  const [editMode, setEditMode] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editCenter, setEditCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const [editRadius, setEditRadius] = useState(500);
+
+  // Notify parent about edit mode changes
+  useEffect(() => {
+    onEditModeChange?.(editMode || placing || nameDialogOpen);
+  }, [editMode, placing, nameDialogOpen, onEditModeChange]);
 
   const fetchGeofences = useCallback(async () => {
     const { data } = await supabase
@@ -306,61 +416,91 @@ const GeofenceManagement = ({ apiKey }: Props) => {
     };
   }, [selectedGeofence, fetchEvents]);
 
-  const openCreate = () => {
+  /* ── Creation flow ── */
+  const startCreate = () => {
+    setPendingName("");
+    setNameDialogOpen(true);
+  };
+
+  const confirmName = () => {
+    if (!pendingName.trim()) return;
+    setNameDialogOpen(false);
     setPlacing(true);
-    setPlacedPoint(null);
-    toast.info("Click on the map to place the geofence center");
+    toast.info("Click on the map to place the geofence");
   };
 
-  const handlePlace = useCallback((lat: number, lng: number) => {
-    setPlacedPoint({ lat, lng });
-    setPlacing(false);
-    setEditingGeofence(null);
-    setFormName("");
-    setFormRadius("100");
-    setDialogOpen(true);
-  }, []);
+  const handlePlace = useCallback(
+    async (lat: number, lng: number) => {
+      setPlacing(false);
 
-  const openEdit = (gf: Geofence) => {
-    setEditingGeofence(gf);
-    setPlacedPoint({ lat: gf.latitude, lng: gf.longitude });
-    setFormName(gf.name);
-    setFormRadius(String(gf.radius_meters));
-    setDialogOpen(true);
-  };
-
-  const handleSave = async () => {
-    if (!formName.trim() || !placedPoint) return;
-    const radius = parseFloat(formRadius) || 100;
-
-    if (editingGeofence) {
-      const { error } = await supabase
+      // Insert into DB immediately with 500m default
+      const { data, error } = await supabase
         .from("geofences")
-        .update({
-          name: formName.trim(),
-          latitude: placedPoint.lat,
-          longitude: placedPoint.lng,
-          radius_meters: radius,
+        .insert({
+          name: pendingName.trim(),
+          latitude: lat,
+          longitude: lng,
+          radius_meters: 500,
         })
-        .eq("id", editingGeofence.id);
-      if (error) toast.error("Failed to update geofence");
-      else toast.success("Geofence updated");
-    } else {
-      const { error } = await supabase.from("geofences").insert({
-        name: formName.trim(),
-        latitude: placedPoint.lat,
-        longitude: placedPoint.lng,
-        radius_meters: radius,
-      });
-      if (error) toast.error("Failed to create geofence");
-      else toast.success("Geofence created");
+        .select()
+        .single();
+
+      if (error || !data) {
+        toast.error("Failed to create geofence");
+        return;
+      }
+
+      toast.success("Geofence created — adjust size and position");
+      await fetchGeofences();
+
+      // Enter edit mode
+      setEditingId(data.id);
+      setEditCenter({ lat, lng });
+      setEditRadius(500);
+      setEditMode(true);
+    },
+    [pendingName, fetchGeofences]
+  );
+
+  /* ── Edit mode ── */
+  const enterEditMode = (gf: Geofence) => {
+    setEditingId(gf.id);
+    setEditCenter({ lat: gf.latitude, lng: gf.longitude });
+    setEditRadius(gf.radius_meters);
+    setEditMode(true);
+    setSelectedGeofence(null);
+    setEvents([]);
+  };
+
+  const handleDone = async () => {
+    if (!editingId || !editCenter) return;
+
+    const { error } = await supabase
+      .from("geofences")
+      .update({
+        latitude: editCenter.lat,
+        longitude: editCenter.lng,
+        radius_meters: editRadius,
+      })
+      .eq("id", editingId);
+
+    if (error) {
+      toast.error("Failed to save geofence");
+      return;
     }
 
-    setDialogOpen(false);
-    setPlacedPoint(null);
+    toast.success("Geofence saved");
+    setEditMode(false);
+    setEditingId(null);
+    setEditCenter(null);
     fetchGeofences();
   };
 
+  const adjustRadius = (delta: number) => {
+    setEditRadius((prev) => Math.max(10, Math.min(50000, prev + delta)));
+  };
+
+  /* ── Other actions ── */
   const toggleActive = async (gf: Geofence) => {
     const { error } = await supabase
       .from("geofences")
@@ -391,10 +531,14 @@ const GeofenceManagement = ({ apiKey }: Props) => {
     fetchEvents(gf.id);
   };
 
+  const editingGeofenceName = editingId
+    ? geofences.find((g) => g.id === editingId)?.name ?? "Geofence"
+    : "";
+
   return (
     <div className="flex gap-4 h-[calc(100vh-8rem)]">
       {/* Map */}
-      <div className="flex-1 rounded-xl overflow-hidden border border-border">
+      <div className="flex-1 rounded-xl overflow-hidden border border-border relative">
         <APIProvider apiKey={apiKey}>
           <Map
             defaultCenter={{ lat: 24.7136, lng: 46.6753 }}
@@ -412,243 +556,346 @@ const GeofenceManagement = ({ apiKey }: Props) => {
               geofences={geofences}
               selectedId={selectedGeofence?.id ?? null}
               onSelect={(id) => {
+                if (editMode) return;
                 const gf = geofences.find((g) => g.id === id);
                 if (gf) selectGeofence(gf);
               }}
+              excludeId={editMode ? editingId : null}
             />
 
-            {/* Placement marker */}
-            {placedPoint && (
-              <AdvancedMarker position={placedPoint}>
-                <div className="w-4 h-4 rounded-full bg-primary border-2 border-primary-foreground shadow-lg" />
-              </AdvancedMarker>
+            {/* Edit mode: editable circle + draggable marker */}
+            {editMode && editCenter && (
+              <>
+                <EditableCircle
+                  center={editCenter}
+                  radius={editRadius}
+                  onCenterChange={(lat, lng) => setEditCenter({ lat, lng })}
+                />
+                <PanTo lat={editCenter.lat} lng={editCenter.lng} />
+              </>
             )}
 
+            {/* Placement mode */}
             {placing && <PlacementMode onPlace={handlePlace} />}
 
-            {/* Labels */}
-            {geofences.map((gf) => (
-              <AdvancedMarker
-                key={gf.id}
-                position={{ lat: gf.latitude, lng: gf.longitude }}
-                zIndex={1}
-              >
-                <div
-                  style={{
-                    background: gf.is_active ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))",
-                    color: "white",
-                    padding: "2px 8px",
-                    borderRadius: "6px",
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    whiteSpace: "nowrap",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
-                    opacity: gf.is_active ? 1 : 0.7,
-                  }}
+            {/* Labels for non-editing geofences */}
+            {geofences
+              .filter((gf) => gf.id !== editingId || !editMode)
+              .map((gf) => (
+                <AdvancedMarker
+                  key={gf.id}
+                  position={{ lat: gf.latitude, lng: gf.longitude }}
+                  zIndex={1}
                 >
-                  {gf.name}
-                </div>
-              </AdvancedMarker>
-            ))}
+                  <div
+                    style={{
+                      background: gf.is_active
+                        ? "hsl(var(--primary))"
+                        : "hsl(var(--muted-foreground))",
+                      color: "white",
+                      padding: "2px 8px",
+                      borderRadius: "6px",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      whiteSpace: "nowrap",
+                      boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
+                      opacity: gf.is_active ? 1 : 0.7,
+                    }}
+                  >
+                    {gf.name}
+                  </div>
+                </AdvancedMarker>
+              ))}
           </Map>
         </APIProvider>
+
+        {/* Placing overlay banner */}
+        {placing && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2 z-10">
+            <MapPin className="h-4 w-4" />
+            Click on the map to place "{pendingName}"
+            <Button
+              size="sm"
+              variant="secondary"
+              className="ml-2 h-7"
+              onClick={() => setPlacing(false)}
+            >
+              Cancel
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Sidebar */}
       <Card className="w-80 shrink-0 overflow-auto">
-        <CardHeader className="pb-3">
-          {selectedGeofence ? (
-            <div className="flex items-center justify-between">
+        {editMode ? (
+          /* ── Edit mode sidebar ── */
+          <>
+            <CardHeader className="pb-3">
               <CardTitle className="text-sm flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={() => {
-                    setSelectedGeofence(null);
-                    setEvents([]);
-                  }}
-                >
-                  <ArrowLeft className="h-3 w-3" />
-                </Button>
-                {selectedGeofence.name}
+                <Move className="h-4 w-4" />
+                Editing: {editingGeofenceName}
               </CardTitle>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Circle className="h-4 w-4" />
-                Geofences ({geofences.length})
-              </CardTitle>
-              <Button size="sm" variant="outline" onClick={openCreate} disabled={placing}>
-                <Plus className="h-3.5 w-3.5 mr-1" />
-                Add
-              </Button>
-            </div>
-          )}
-        </CardHeader>
-        <CardContent className="p-0">
-          {selectedGeofence ? (
-            /* Event log view */
-            <div>
-              <div className="px-4 pb-3 border-b border-border">
-                <div className="flex items-center gap-2 mb-1">
-                  <Badge variant={selectedGeofence.is_active ? "default" : "secondary"}>
-                    {selectedGeofence.is_active ? "Active" : "Disabled"}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {selectedGeofence.radius_meters}m radius
-                  </span>
-                </div>
-                <div className="flex gap-1 mt-2">
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Radius
+                </label>
+                <div className="flex items-center gap-3 mt-2">
                   <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => openEdit(selectedGeofence)}
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    onClick={() => adjustRadius(editRadius <= 100 ? -10 : editRadius <= 1000 ? -50 : -100)}
                   >
-                    <Pencil className="h-3 w-3 mr-1" />
-                    Edit
+                    <MinusIcon className="h-3 w-3" />
                   </Button>
+                  <div className="flex-1">
+                    <Slider
+                      value={[editRadius]}
+                      onValueChange={([v]) => setEditRadius(v)}
+                      min={10}
+                      max={5000}
+                      step={10}
+                    />
+                  </div>
                   <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => toggleActive(selectedGeofence)}
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    onClick={() => adjustRadius(editRadius < 100 ? 10 : editRadius < 1000 ? 50 : 100)}
                   >
-                    {selectedGeofence.is_active ? "Disable" : "Enable"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-destructive"
-                    onClick={() => deleteGeofence(selectedGeofence)}
-                  >
-                    <Trash2 className="h-3 w-3 mr-1" />
-                    Delete
+                    <PlusIcon className="h-3 w-3" />
                   </Button>
                 </div>
-              </div>
-
-              <div className="px-4 py-2 border-b border-border">
-                <p className="text-xs font-medium text-muted-foreground">
-                  Crossing Log ({events.length})
+                <p className="text-center text-sm font-mono mt-2 text-foreground">
+                  {editRadius}m
                 </p>
               </div>
 
-              {loadingEvents ? (
-                <div className="flex justify-center py-6">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <div>
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Position
+                </label>
+                {editCenter && (
+                  <p className="text-xs font-mono mt-1 text-muted-foreground">
+                    {editCenter.lat.toFixed(6)}, {editCenter.lng.toFixed(6)}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  Drag the blue dot on the map to move
+                </p>
+              </div>
+
+              <Button
+                className="w-full h-12 text-base font-semibold"
+                onClick={handleDone}
+              >
+                <Check className="h-5 w-5 mr-2" />
+                Done
+              </Button>
+            </CardContent>
+          </>
+        ) : (
+          /* ── Normal sidebar ── */
+          <>
+            <CardHeader className="pb-3">
+              {selectedGeofence ? (
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => {
+                        setSelectedGeofence(null);
+                        setEvents([]);
+                      }}
+                    >
+                      <ArrowLeft className="h-3 w-3" />
+                    </Button>
+                    {selectedGeofence.name}
+                  </CardTitle>
                 </div>
-              ) : events.length === 0 ? (
-                <p className="px-4 py-6 text-xs text-muted-foreground text-center">
-                  No crossings detected yet.
+              ) : (
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Circle className="h-4 w-4" />
+                    Geofences ({geofences.length})
+                  </CardTitle>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={startCreate}
+                    disabled={placing}
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1" />
+                    Add
+                  </Button>
+                </div>
+              )}
+            </CardHeader>
+            <CardContent className="p-0">
+              {selectedGeofence ? (
+                /* Event log view */
+                <div>
+                  <div className="px-4 pb-3 border-b border-border">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge
+                        variant={
+                          selectedGeofence.is_active ? "default" : "secondary"
+                        }
+                      >
+                        {selectedGeofence.is_active ? "Active" : "Disabled"}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {selectedGeofence.radius_meters}m radius
+                      </span>
+                    </div>
+                    <div className="flex gap-1 mt-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => enterEditMode(selectedGeofence)}
+                      >
+                        <Pencil className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => toggleActive(selectedGeofence)}
+                      >
+                        {selectedGeofence.is_active ? "Disable" : "Enable"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive"
+                        onClick={() => deleteGeofence(selectedGeofence)}
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="px-4 py-2 border-b border-border">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Crossing Log ({events.length})
+                    </p>
+                  </div>
+
+                  {loadingEvents ? (
+                    <div className="flex justify-center py-6">
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : events.length === 0 ? (
+                    <p className="px-4 py-6 text-xs text-muted-foreground text-center">
+                      No crossings detected yet.
+                    </p>
+                  ) : (
+                    <div className="divide-y divide-border">
+                      {events.map((ev) => (
+                        <div key={ev.id} className="px-4 py-2.5">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium">
+                              {ev.staff_profiles?.full_name || "Unknown"}
+                            </p>
+                            <Badge
+                              variant={
+                                ev.event_type === "inside"
+                                  ? "default"
+                                  : "secondary"
+                              }
+                              className={
+                                ev.event_type === "inside"
+                                  ? "bg-green-600 hover:bg-green-700"
+                                  : ""
+                              }
+                            >
+                              <ArrowRightLeft className="h-3 w-3 mr-1" />
+                              {ev.event_type === "inside" ? "Entered" : "Exited"}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {format(
+                              new Date(ev.created_at),
+                              "MMM d, yyyy – HH:mm:ss"
+                            )}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : /* Geofence list */
+              geofences.length === 0 ? (
+                <p className="px-4 pb-4 text-xs text-muted-foreground">
+                  No geofences yet. Click "Add" to create one.
                 </p>
               ) : (
                 <div className="divide-y divide-border">
-                  {events.map((ev) => (
-                    <div key={ev.id} className="px-4 py-2.5">
+                  {geofences.map((gf) => (
+                    <div
+                      key={gf.id}
+                      className="px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => selectGeofence(gf)}
+                    >
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium">
-                          {ev.staff_profiles?.full_name || "Unknown"}
-                        </p>
-                        <Badge
-                          variant={ev.event_type === "inside" ? "default" : "secondary"}
-                          className={
-                            ev.event_type === "inside"
-                              ? "bg-green-600 hover:bg-green-700"
-                              : ""
-                          }
-                        >
-                          <ArrowRightLeft className="h-3 w-3 mr-1" />
-                          {ev.event_type === "inside" ? "Entered" : "Exited"}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                          <p className="font-medium text-sm">{gf.name}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={gf.is_active}
+                            onCheckedChange={() => toggleActive(gf)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {format(new Date(ev.created_at), "MMM d, yyyy – HH:mm:ss")}
+                      <p className="text-xs text-muted-foreground mt-0.5 ml-[22px]">
+                        {gf.radius_meters}m radius · Created{" "}
+                        {format(new Date(gf.created_at), "MMM d, yyyy")}
                       </p>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
-          ) : /* Geofence list */
-          geofences.length === 0 ? (
-            <p className="px-4 pb-4 text-xs text-muted-foreground">
-              No geofences yet. Click "Add" to create one.
-            </p>
-          ) : (
-            <div className="divide-y divide-border">
-              {geofences.map((gf) => (
-                <div
-                  key={gf.id}
-                  className="px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => selectGeofence(gf)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                      <p className="font-medium text-sm">{gf.name}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={gf.is_active}
-                        onCheckedChange={(e) => {
-                          e; // prevent bubbling handled by click
-                          toggleActive(gf);
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5 ml-[22px]">
-                    {gf.radius_meters}m radius · Created{" "}
-                    {format(new Date(gf.created_at), "MMM d, yyyy")}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
+            </CardContent>
+          </>
+        )}
       </Card>
 
-      {/* Create/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {/* Name dialog (step 1 of creation) */}
+      <Dialog open={nameDialogOpen} onOpenChange={setNameDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              {editingGeofence ? "Edit Geofence" : "New Geofence"}
-            </DialogTitle>
+            <DialogTitle>New Geofence</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div>
-              <label className="text-sm font-medium">Name</label>
-              <Input
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-                placeholder="e.g. Office, Warehouse"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Radius (meters)</label>
-              <Input
-                type="number"
-                value={formRadius}
-                onChange={(e) => setFormRadius(e.target.value)}
-                min="10"
-                max="50000"
-              />
-            </div>
-            {placedPoint && (
-              <p className="text-xs text-muted-foreground font-mono">
-                Center: {placedPoint.lat.toFixed(6)}, {placedPoint.lng.toFixed(6)}
-              </p>
-            )}
+          <div className="py-2">
+            <label className="text-sm font-medium">Name</label>
+            <Input
+              value={pendingName}
+              onChange={(e) => setPendingName(e.target.value)}
+              placeholder="e.g. Office, Warehouse"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") confirmName();
+              }}
+            />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setNameDialogOpen(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={!formName.trim()}>
-              {editingGeofence ? "Update" : "Create"}
+            <Button onClick={confirmName} disabled={!pendingName.trim()}>
+              Next
             </Button>
           </DialogFooter>
         </DialogContent>
