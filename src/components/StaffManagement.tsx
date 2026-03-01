@@ -6,15 +6,34 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { UserPlus, Users } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { UserPlus, Users, Trash2, Copy, X, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+
+interface CreatedStaff {
+  fullName: string;
+  username: string;
+  password: string;
+}
 
 const StaffManagement = () => {
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
   const [creating, setCreating] = useState(false);
+  const [lastCreatedStaff, setLastCreatedStaff] = useState<CreatedStaff | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const { data: staff, refetch } = useQuery({
     queryKey: ["staff_profiles"],
@@ -32,13 +51,14 @@ const StaffManagement = () => {
     e.preventDefault();
     if (!username || !fullName || !password) return;
     setCreating(true);
+    setLastCreatedStaff(null);
     try {
       const { data, error } = await supabase.functions.invoke("admin_create_staff", {
         body: { username, password, full_name: fullName },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      toast.success(`Staff "${fullName}" created`);
+      setLastCreatedStaff({ fullName, username, password });
       setUsername("");
       setFullName("");
       setPassword("");
@@ -48,6 +68,28 @@ const StaffManagement = () => {
     } finally {
       setCreating(false);
     }
+  };
+
+  const handleDelete = async (staffId: string) => {
+    setDeletingId(staffId);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin_delete_staff", {
+        body: { staff_id: staffId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success("Staff member deleted");
+      refetch();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete staff");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Copied to clipboard");
   };
 
   return (
@@ -99,6 +141,50 @@ const StaffManagement = () => {
         </CardContent>
       </Card>
 
+      {lastCreatedStaff && (
+        <Card className="border-green-500/50 bg-green-500/5">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
+                <div className="space-y-1">
+                  <p className="font-medium text-sm">
+                    Staff "{lastCreatedStaff.fullName}" created successfully
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Username: <span className="font-mono font-medium text-foreground">@{lastCreatedStaff.username}</span>
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-muted-foreground">
+                      Password: <span className="font-mono font-medium text-foreground">{lastCreatedStaff.password}</span>
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2"
+                      onClick={() => copyToClipboard(lastCreatedStaff.password)}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Save this password now — it cannot be retrieved later.
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 shrink-0"
+                onClick={() => setLastCreatedStaff(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -142,6 +228,36 @@ const StaffManagement = () => {
                       <Badge variant={s.is_active ? "default" : "secondary"}>
                         {s.is_active ? "Active" : "Inactive"}
                       </Badge>
+
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete {s.full_name}?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently delete this staff member, their location history, and all related data. This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              disabled={deletingId === s.id}
+                              onClick={() => handleDelete(s.id)}
+                            >
+                              {deletingId === s.id ? "Deleting…" : "Delete"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 </div>
