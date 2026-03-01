@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Copy, Check, ExternalLink, ShieldAlert, Play, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
+import locationPermissionGuide from "@/assets/location-permission-guide.jpeg";
 
 const TRACKER_URL =
   "https://expo.dev/accounts/eusoulegal6/projects/gps-prototype/builds/8d115476-024c-4f49-a7e6-263bc9e8168a";
@@ -34,6 +35,11 @@ const TrackerDownload = () => {
         <p className="text-sm text-muted-foreground">
           If you choose any other option, the app will not be able to track location in the background.
         </p>
+        <img
+          src={locationPermissionGuide}
+          alt="Android location permission screen showing 'Allow all the time' option selected"
+          className="mx-auto rounded-lg border border-border max-w-[280px] w-full"
+        />
       </div>
 
       {/* Installation Notice */}
