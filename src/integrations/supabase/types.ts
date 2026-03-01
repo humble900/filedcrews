@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      geofence_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          geofence_id: string
+          id: string
+          staff_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          geofence_id: string
+          id?: string
+          staff_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          geofence_id?: string
+          id?: string
+          staff_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "geofence_events_geofence_id_fkey"
+            columns: ["geofence_id"]
+            isOneToOne: false
+            referencedRelation: "geofences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "geofence_events_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      geofences: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          latitude: number
+          longitude: number
+          name: string
+          radius_meters: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          latitude: number
+          longitude: number
+          name: string
+          radius_meters?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          latitude?: number
+          longitude?: number
+          name?: string
+          radius_meters?: number
+        }
+        Relationships: []
+      }
       staff_location_history: {
         Row: {
           accuracy: number | null
