@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Clock, History, X, CircleDot, Loader2, MapPinHouse, EyeOff, Eye } from "lucide-react";
+import { MapPin, Clock, History, X, CircleDot, Loader2, MapPinHouse, EyeOff, Eye, Layers } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 
 /* ── Address lookup via reverse geocoding ── */
@@ -465,6 +465,14 @@ function getStaffColor(index: number) {
 }
 
 /* ── Main component ── */
+const CLEAN_MAP_STYLES: google.maps.MapTypeStyle[] = [
+  { featureType: "poi.business", stylers: [{ visibility: "off" }] },
+  { featureType: "poi.attraction", stylers: [{ visibility: "off" }] },
+  { featureType: "poi.government", stylers: [{ visibility: "off" }] },
+  { featureType: "poi.sports_complex", stylers: [{ visibility: "off" }] },
+  { featureType: "transit", stylers: [{ visibility: "off" }] },
+];
+
 const LiveMap = () => {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [loadingKey, setLoadingKey] = useState(true);
@@ -475,6 +483,18 @@ const LiveMap = () => {
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
+
+  // Clean map toggle (persisted)
+  const [cleanMap, setCleanMap] = useState<boolean>(() => {
+    try { return localStorage.getItem("cleanMap") === "true"; } catch { return false; }
+  });
+  const toggleCleanMap = useCallback(() => {
+    setCleanMap(prev => {
+      const next = !prev;
+      localStorage.setItem("cleanMap", String(next));
+      return next;
+    });
+  }, []);
 
   // Hidden staff (persisted in localStorage)
   const [hiddenStaffIds, setHiddenStaffIds] = useState<Set<string>>(() => {
@@ -590,7 +610,7 @@ const LiveMap = () => {
           <Map
             defaultCenter={{ lat: 24.7136, lng: 46.6753 }}
             defaultZoom={6}
-            mapId="staff-tracker-map"
+            {...(cleanMap ? { styles: CLEAN_MAP_STYLES } : { mapId: "staff-tracker-map" })}
             style={{ width: "100%", height: "100%" }}
             gestureHandling="greedy"
             disableDefaultUI={true}
@@ -599,7 +619,6 @@ const LiveMap = () => {
             mapTypeControl={false}
             streetViewControl={false}
             onIdle={(e) => {
-              // Store map instance reference
               if (e.map && !mapInstanceRef.current) {
                 mapInstanceRef.current = e.map;
               }
@@ -609,6 +628,32 @@ const LiveMap = () => {
             <FitHistory points={historyPoints} />
             <PlaceSearch />
             <HistoryOverlay points={historyPoints} selectedPointId={selectedPointId} />
+
+            <MapControl position={ControlPosition.TOP_RIGHT}>
+              <div style={{ padding: "10px" }}>
+                <button
+                  onClick={toggleCleanMap}
+                  title={cleanMap ? "Show all details" : "Simplify map"}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "6px 10px",
+                    borderRadius: "8px",
+                    border: "1px solid hsl(var(--border))",
+                    background: cleanMap ? "hsl(var(--primary))" : "hsl(var(--background))",
+                    color: cleanMap ? "hsl(var(--primary-foreground))" : "hsl(var(--foreground))",
+                    fontSize: "12px",
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                  }}
+                >
+                  <Layers style={{ width: 14, height: 14 }} />
+                  {cleanMap ? "Clean" : "Default"}
+                </button>
+              </div>
+            </MapControl>
 
             {!historyStaff && (
               <StaffMarkers
