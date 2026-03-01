@@ -88,7 +88,7 @@ function PlaceSearch() {
   const places = useMapsLibrary("places");
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-  const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
+  const markerRef = useRef<google.maps.Marker | null>(null);
 
   useEffect(() => {
     if (!places || !inputRef.current) return;
@@ -105,13 +105,14 @@ function PlaceSearch() {
         map.setZoom(15);
 
         // Remove previous marker
-        if (markerRef.current) markerRef.current.map = null;
+        if (markerRef.current) markerRef.current.setMap(null);
 
         // Drop a pin at the searched location
-        const marker = new google.maps.marker.AdvancedMarkerElement({
+        const marker = new google.maps.Marker({
           map,
           position: pos,
           title: place.name || place.formatted_address || "Search result",
+          animation: google.maps.Animation.DROP,
         });
         markerRef.current = marker;
       }
@@ -121,7 +122,7 @@ function PlaceSearch() {
 
     return () => {
       google.maps.event.clearInstanceListeners(ac);
-      if (markerRef.current) markerRef.current.map = null;
+      if (markerRef.current) markerRef.current.setMap(null);
     };
   }, [places, map]);
 
