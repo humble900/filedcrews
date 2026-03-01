@@ -27,9 +27,113 @@ import { format } from "date-fns";
 import {
   APIProvider,
   Map,
+  MapControl,
+  ControlPosition,
   AdvancedMarker,
   useMap,
+  useMapsLibrary,
 } from "@vis.gl/react-google-maps";
+
+/* ── Places search (with pin + close button) ── */
+function GeoPlaceSearch() {
+  const map = useMap();
+  const places = useMapsLibrary("places");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const markerRef = useRef<google.maps.Marker | null>(null);
+  const closeRef = useRef<google.maps.OverlayView | null>(null);
+
+  const clearPin = useCallback(() => {
+    if (markerRef.current) markerRef.current.setMap(null);
+    markerRef.current = null;
+    if (closeRef.current) closeRef.current.setMap(null);
+    closeRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    if (!places || !inputRef.current) return;
+
+    const ac = new places.Autocomplete(inputRef.current, {
+      fields: ["geometry", "name", "formatted_address"],
+    });
+
+    ac.addListener("place_changed", () => {
+      const place = ac.getPlace();
+      if (place.geometry?.location && map) {
+        const pos = place.geometry.location;
+        map.panTo(pos);
+        map.setZoom(15);
+
+        clearPin();
+
+        const marker = new google.maps.Marker({
+          map,
+          position: pos,
+          title: place.name || place.formatted_address || "Search result",
+          animation: google.maps.Animation.DROP,
+        });
+        markerRef.current = marker;
+
+        class CloseOverlay extends google.maps.OverlayView {
+          private div: HTMLDivElement | null = null;
+          private position: google.maps.LatLng;
+          private onClose: () => void;
+          constructor(position: google.maps.LatLng, m: google.maps.Map, onClose: () => void) {
+            super();
+            this.position = position;
+            this.onClose = onClose;
+            this.setMap(m);
+          }
+          onAdd() {
+            this.div = document.createElement("div");
+            this.div.style.cssText = "position:absolute;cursor:pointer;width:18px;height:18px;border-radius:50%;background:hsl(0,0%,15%);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.3);";
+            this.div.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+            this.div.addEventListener("click", (e) => { e.stopPropagation(); this.onClose(); });
+            this.getPanes()?.overlayMouseTarget.appendChild(this.div);
+          }
+          draw() {
+            if (!this.div) return;
+            const proj = this.getProjection();
+            const point = proj.fromLatLngToDivPixel(this.position);
+            if (point) {
+              this.div.style.left = (point.x + 6) + "px";
+              this.div.style.top = (point.y - 42) + "px";
+            }
+          }
+          onRemove() { this.div?.remove(); this.div = null; }
+        }
+
+        closeRef.current = new CloseOverlay(pos, map, clearPin);
+      }
+    });
+
+    return () => {
+      google.maps.event.clearInstanceListeners(ac);
+      clearPin();
+    };
+  }, [places, map, clearPin]);
+
+  return (
+    <MapControl position={ControlPosition.TOP_LEFT}>
+      <div style={{ padding: "10px" }}>
+        <input
+          ref={inputRef}
+          placeholder="Search a place…"
+          style={{
+            width: "260px",
+            padding: "8px 12px",
+            fontSize: "14px",
+            borderRadius: "8px",
+            border: "1px solid hsl(var(--border))",
+            background: "hsl(var(--background))",
+            color: "hsl(var(--foreground))",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+            outline: "none",
+          }}
+        />
+      </div>
+    </MapControl>
+  );
+}
 
 /* ── Types ── */
 interface Geofence {
@@ -302,6 +406,7 @@ const GeofenceManagement = ({ apiKey }: Props) => {
             zoomControl
             fullscreenControl
           >
+            <GeoPlaceSearch />
             <FitGeofences geofences={geofences} />
             <GeofenceCircles
               geofences={geofences}
