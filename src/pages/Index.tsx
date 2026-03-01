@@ -46,7 +46,7 @@ const Index = () => {
           <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
             <MapPin className="h-4 w-4 text-primary-foreground" />
           </div>
-          <h1 className="text-lg font-bold tracking-tight">StaffTracker</h1>
+          <h1 className="text-lg font-bold tracking-tight">Staff Tracker</h1>
         </div>
         <Button variant="ghost" size="sm" onClick={logout} disabled={geofenceEditing}>
           <LogOut className="h-4 w-4 mr-1" />
