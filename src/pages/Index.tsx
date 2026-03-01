@@ -4,10 +4,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import StaffManagement from "@/components/StaffManagement";
 import LiveMap from "@/components/LiveMap";
-import { LogOut, MapPin, Users } from "lucide-react";
+import GeofenceManagement from "@/components/GeofenceManagement";
+import { LogOut, MapPin, Users, Circle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const { isAuthenticated, logout } = useAdminAuth();
+  const [apiKey, setApiKey] = useState<string | null>(null);
+
+  // Fetch API key once at the top level so both LiveMap and Geofences share it
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await supabase.functions.invoke("get-maps-key");
+        if (data?.key) setApiKey(data.key);
+      } catch (e) {
+        console.error("Error fetching maps key", e);
+      }
+    })();
+  }, []);
 
   if (!isAuthenticated) return <AdminLogin />;
 
@@ -32,6 +48,10 @@ const Index = () => {
               <MapPin className="h-4 w-4" />
               Live Map
             </TabsTrigger>
+            <TabsTrigger value="geofences" className="gap-1.5">
+              <Circle className="h-4 w-4" />
+              Geofences
+            </TabsTrigger>
             <TabsTrigger value="staff" className="gap-1.5">
               <Users className="h-4 w-4" />
               Staff
@@ -39,6 +59,13 @@ const Index = () => {
           </TabsList>
           <TabsContent value="map" className="mt-4">
             <LiveMap />
+          </TabsContent>
+          <TabsContent value="geofences" className="mt-4">
+            {apiKey ? (
+              <GeofenceManagement apiKey={apiKey} />
+            ) : (
+              <p className="text-muted-foreground">Loading map…</p>
+            )}
           </TabsContent>
           <TabsContent value="staff" className="mt-4">
             <StaffManagement />
