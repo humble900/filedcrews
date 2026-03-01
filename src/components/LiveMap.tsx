@@ -414,7 +414,7 @@ function StaffMarkers({
             key={loc.staff_id}
             position={{ lat: loc.latitude, lng: loc.longitude }}
             title={loc.staff_profiles?.full_name || "Unknown"}
-            zIndex={isSelected ? 1000 : 1}
+            zIndex={isSelected ? 9999 : 1}
             onClick={() => onSelect(loc.staff_id, loc.latitude, loc.longitude)}
           >
             <div style={{
