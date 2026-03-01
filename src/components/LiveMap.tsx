@@ -220,7 +220,38 @@ function HistoryOverlay({
     };
   }, [map, points, selectedPointId]);
 
-  return null;
+  // Show a floating date/time label on the selected history point
+  const selectedPoint = points.find((p) => p.id === selectedPointId);
+  if (!selectedPoint) return null;
+
+  return (
+    <AdvancedMarker
+      position={{ lat: selectedPoint.latitude, lng: selectedPoint.longitude }}
+      zIndex={2000}
+    >
+      <div style={{
+        display: "flex", flexDirection: "column", alignItems: "center",
+        pointerEvents: "none",
+      }}>
+        <div
+          style={{
+            background: "hsl(0, 70%, 45%)",
+            color: "white",
+            padding: "2px 6px",
+            borderRadius: "4px",
+            fontSize: "9px",
+            fontWeight: 600,
+            fontFamily: "'Space Grotesk', sans-serif",
+            whiteSpace: "nowrap",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+            marginBottom: "6px",
+          }}
+        >
+          {format(new Date(selectedPoint.created_at), "MMM d, HH:mm:ss")}
+        </div>
+      </div>
+    </AdvancedMarker>
+  );
 }
 
 /* ── Fit bounds helper ── */
