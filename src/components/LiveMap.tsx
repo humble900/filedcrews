@@ -343,15 +343,16 @@ function StaffMarkers({
               >
                 {loc.staff_profiles?.full_name || "Unknown"}
               </div>
-              {/* GPS dot – fixed small size always */}
+              {/* GPS dot – shrinks when zooming out to stay geographically accurate */}
               <div
                 style={{
-                  width: "12px",
-                  height: "12px",
+                  width: `${Math.max(4, Math.round(12 * Math.min(1, zoom / 14)))}px`,
+                  height: `${Math.max(4, Math.round(12 * Math.min(1, zoom / 14)))}px`,
                   borderRadius: "50%",
                   background: color.bg,
-                  border: "2px solid white",
-                  boxShadow: `0 0 0 1.5px ${color.ring}, 0 2px 6px rgba(0,0,0,0.3)`,
+                  border: `${Math.max(1, Math.round(2 * Math.min(1, zoom / 14)))}px solid white`,
+                  boxShadow: `0 0 0 1px ${color.ring}, 0 1px 4px rgba(0,0,0,0.3)`,
+                  transition: "width 0.15s, height 0.15s",
                 }}
               />
             </div>
