@@ -6,7 +6,7 @@ import { Copy, Check, ExternalLink, ShieldAlert, Play, ChevronDown, ChevronUp } 
 import { useState } from "react";
 
 const TRACKER_URL =
-  "https://expo.dev/accounts/eusoulegal6/projects/gps-prototype/builds/5b2eb78d-df55-4269-933f-fc5ace9e3fef";
+  "https://expo.dev/accounts/eusoulegal6/projects/gps-prototype/builds/8d115476-024c-4f49-a7e6-263bc9e8168a";
 
 const TrackerDownload = () => {
   const [copied, setCopied] = useState(false);
