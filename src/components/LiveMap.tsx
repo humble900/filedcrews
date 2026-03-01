@@ -312,6 +312,73 @@ function getLabelSize(zoom: number): number {
   return Math.round(base * scale * 10) / 10;
 }
 
+/* ── Group nearby consecutive history points ── */
+interface HistoryGroup {
+  id: string; // first point id (used for selection)
+  latitude: number;
+  longitude: number;
+  accuracy: number | null;
+  startTime: string;
+  endTime: string;
+  pointCount: number;
+  pointIds: string[];
+}
+
+const PROXIMITY_THRESHOLD = 0.0003; // ~30 meters
+
+function groupHistoryPoints(points: HistoryPoint[]): HistoryGroup[] {
+  if (!points.length) return [];
+  const groups: HistoryGroup[] = [];
+  let current: HistoryGroup = {
+    id: points[0].id,
+    latitude: points[0].latitude,
+    longitude: points[0].longitude,
+    accuracy: points[0].accuracy,
+    startTime: points[0].created_at,
+    endTime: points[0].created_at,
+    pointCount: 1,
+    pointIds: [points[0].id],
+  };
+
+  for (let i = 1; i < points.length; i++) {
+    const pt = points[i];
+    const dLat = Math.abs(pt.latitude - current.latitude);
+    const dLng = Math.abs(pt.longitude - current.longitude);
+    if (dLat < PROXIMITY_THRESHOLD && dLng < PROXIMITY_THRESHOLD) {
+      current.endTime = pt.created_at;
+      current.pointCount++;
+      current.pointIds.push(pt.id);
+    } else {
+      groups.push(current);
+      current = {
+        id: pt.id,
+        latitude: pt.latitude,
+        longitude: pt.longitude,
+        accuracy: pt.accuracy,
+        startTime: pt.created_at,
+        endTime: pt.created_at,
+        pointCount: 1,
+        pointIds: [pt.id],
+      };
+    }
+  }
+  groups.push(current);
+  return groups;
+}
+
+function formatGroupTime(group: HistoryGroup): string {
+  const start = new Date(group.startTime);
+  const end = new Date(group.endTime);
+  const sameDay = format(start, "MMM d") === format(end, "MMM d");
+  if (group.startTime === group.endTime) {
+    return format(start, "MMM d, HH:mm:ss");
+  }
+  if (sameDay) {
+    return `${format(start, "MMM d, HH:mm")} – ${format(end, "HH:mm")}`;
+  }
+  return `${format(start, "MMM d, HH:mm")} – ${format(end, "MMM d, HH:mm")}`;
+}
+
 /* ── Staff color palette ── */
 const STAFF_COLORS = [
   { bg: "hsl(220, 70%, 50%)", ring: "hsl(220, 70%, 50%)" },   // blue
@@ -559,30 +626,35 @@ const LiveMap = () => {
               <p className="px-4 pb-4 text-xs text-muted-foreground">No history recorded.</p>
             ) : (
               <div className="divide-y divide-border">
-                {[...historyPoints].reverse().map((pt, i) => {
-                  const isSelected = pt.id === selectedPointId;
+                {groupHistoryPoints(historyPoints).reverse().map((group, i) => {
+                  const isSelected = group.pointIds.includes(selectedPointId ?? "");
                   return (
                     <div
-                      key={pt.id}
+                      key={group.id}
                       className={`px-4 py-2.5 cursor-pointer transition-colors border-l-2 ${
                         isSelected
                           ? "bg-primary/10 border-l-primary"
                           : "hover:bg-muted/50 border-l-transparent"
                       }`}
                       onClick={() => {
-                        setSelectedPointId(pt.id);
-                        flyTo(pt.latitude, pt.longitude);
+                        setSelectedPointId(group.id);
+                        flyTo(group.latitude, group.longitude);
                       }}
                     >
                       <p className={`text-xs font-medium flex items-center gap-1.5 ${isSelected ? "text-primary" : ""}`}>
                         <CircleDot className={`h-3 w-3 ${isSelected ? "text-destructive" : i === 0 ? "text-green-500" : "text-primary"}`} />
-                        {format(new Date(pt.created_at), "MMM d, HH:mm:ss")}
+                        {formatGroupTime(group)}
                       </p>
+                      {group.pointCount > 1 && (
+                        <p className="text-[10px] text-muted-foreground ml-[18px]">
+                          {group.pointCount} pings
+                        </p>
+                      )}
                       <div className="flex items-center mt-0.5 ml-[18px]">
                         <p className="text-xs text-muted-foreground font-mono">
-                          {pt.latitude.toFixed(5)}, {pt.longitude.toFixed(5)}
+                          {group.latitude.toFixed(5)}, {group.longitude.toFixed(5)}
                         </p>
-                        <AddressLookup lat={pt.latitude} lng={pt.longitude} />
+                        <AddressLookup lat={group.latitude} lng={group.longitude} />
                       </div>
                     </div>
                   );
