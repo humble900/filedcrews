@@ -473,7 +473,7 @@ const LiveMap = () => {
 
   const flyTo = (lat: number, lng: number) => {
     mapInstanceRef.current?.panTo({ lat, lng });
-    mapInstanceRef.current?.setZoom(16);
+    mapInstanceRef.current?.setZoom(13);
   };
 
   if (loadingKey) {
