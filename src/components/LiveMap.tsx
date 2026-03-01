@@ -260,6 +260,28 @@ function FitHistory({ points }: { points: HistoryPoint[] }) {
   return null;
 }
 
+/* ── Zoom-aware label scaling ── */
+function useZoomLevel() {
+  const map = useMap();
+  const [zoom, setZoom] = useState(6);
+  useEffect(() => {
+    if (!map) return;
+    const listener = map.addListener("zoom_changed", () => {
+      setZoom(map.getZoom() ?? 6);
+    });
+    return () => google.maps.event.removeListener(listener);
+  }, [map]);
+  return zoom;
+}
+
+/** Returns a font-size (px) for the name label that grows as zoom decreases */
+function getLabelSize(zoom: number): number {
+  // At zoom 18+ → 11px (normal), at zoom 4 → ~24px
+  const base = 11;
+  const scale = Math.max(1, 1 + (14 - zoom) * 0.12);
+  return Math.round(base * scale * 10) / 10;
+}
+
 /* ── Staff color palette ── */
 const STAFF_COLORS = [
   { bg: "hsl(220, 70%, 50%)", ring: "hsl(220, 70%, 50%)" },   // blue
@@ -272,6 +294,74 @@ const STAFF_COLORS = [
   { bg: "hsl(0, 70%, 50%)",   ring: "hsl(0, 70%, 50%)" },     // red
 ];
 
+/* ── Staff markers (zoom-aware) ── */
+function StaffMarkers({
+  locations,
+  selectedStaffId,
+  onSelect,
+}: {
+  locations: StaffLocation[];
+  selectedStaffId: string | null;
+  onSelect: (staffId: string, lat: number, lng: number) => void;
+}) {
+  const zoom = useZoomLevel();
+
+  return (
+    <>
+      {locations.map((loc, idx) => {
+        const color = getStaffColor(idx);
+        const isSelected = loc.staff_id === selectedStaffId;
+        const labelSize = getLabelSize(zoom);
+        return (
+          <AdvancedMarker
+            key={loc.staff_id}
+            position={{ lat: loc.latitude, lng: loc.longitude }}
+            title={loc.staff_profiles?.full_name || "Unknown"}
+            zIndex={isSelected ? 1000 : 1}
+            onClick={() => onSelect(loc.staff_id, loc.latitude, loc.longitude)}
+          >
+            <div style={{
+              display: "flex", flexDirection: "column", alignItems: "center",
+              filter: isSelected ? "drop-shadow(0 0 8px rgba(255,255,255,0.6))" : "none",
+            }}>
+              {/* Name label – grows as zoom decreases */}
+              <div
+                style={{
+                  background: color.bg,
+                  color: "white",
+                  padding: `${Math.max(2, labelSize * 0.2)}px ${Math.max(6, labelSize * 0.7)}px`,
+                  borderRadius: "6px",
+                  fontSize: `${labelSize}px`,
+                  fontWeight: 600,
+                  fontFamily: "'Space Grotesk', sans-serif",
+                  whiteSpace: "nowrap",
+                  boxShadow: isSelected
+                    ? `0 0 12px ${color.bg}, 0 2px 6px rgba(0,0,0,0.25)`
+                    : "0 2px 6px rgba(0,0,0,0.25)",
+                  marginBottom: "4px",
+                  transition: "font-size 0.15s ease",
+                }}
+              >
+                {loc.staff_profiles?.full_name || "Unknown"}
+              </div>
+              {/* GPS dot – fixed small size always */}
+              <div
+                style={{
+                  width: "12px",
+                  height: "12px",
+                  borderRadius: "50%",
+                  background: color.bg,
+                  border: "2px solid white",
+                  boxShadow: `0 0 0 1.5px ${color.ring}, 0 2px 6px rgba(0,0,0,0.3)`,
+                }}
+              />
+            </div>
+          </AdvancedMarker>
+        );
+      })}
+    </>
+  );
+}
 function getStaffColor(index: number) {
   return STAFF_COLORS[index % STAFF_COLORS.length];
 }
@@ -398,61 +488,14 @@ const LiveMap = () => {
             <PlaceSearch />
             <HistoryOverlay points={historyPoints} selectedPointId={selectedPointId} />
 
-            {locations.map((loc, idx) => {
-              const color = getStaffColor(idx);
-              const isSelected = loc.staff_id === selectedStaffId;
-              return (
-                <AdvancedMarker
-                  key={loc.staff_id}
-                  position={{ lat: loc.latitude, lng: loc.longitude }}
-                  title={loc.staff_profiles?.full_name || "Unknown"}
-                  zIndex={isSelected ? 1000 : 1}
-                  onClick={() => {
-                    setSelectedStaffId(loc.staff_id);
-                    flyTo(loc.latitude, loc.longitude);
-                  }}
-                >
-                  <div style={{
-                    display: "flex", flexDirection: "column", alignItems: "center",
-                    transform: isSelected ? "scale(1.2)" : "scale(1)",
-                    transition: "transform 0.2s ease",
-                    filter: isSelected ? "drop-shadow(0 0 8px rgba(255,255,255,0.6))" : "none",
-                  }}>
-                    {/* Name label */}
-                    <div
-                      style={{
-                        background: color.bg,
-                        color: "white",
-                        padding: "2px 8px",
-                        borderRadius: "6px",
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        fontFamily: "'Space Grotesk', sans-serif",
-                        whiteSpace: "nowrap",
-                        boxShadow: isSelected
-                          ? `0 0 12px ${color.bg}, 0 2px 6px rgba(0,0,0,0.25)`
-                          : "0 2px 6px rgba(0,0,0,0.25)",
-                        marginBottom: "4px",
-                      }}
-                    >
-                      {loc.staff_profiles?.full_name || "Unknown"}
-                    </div>
-                    {/* GPS-style person dot */}
-                    <div
-                      style={{
-                        width: isSelected ? "22px" : "18px",
-                        height: isSelected ? "22px" : "18px",
-                        borderRadius: "50%",
-                        background: color.bg,
-                        border: "3px solid white",
-                        boxShadow: `0 0 0 2px ${color.ring}, 0 2px 8px rgba(0,0,0,0.3)`,
-                        transition: "width 0.2s, height 0.2s",
-                      }}
-                    />
-                  </div>
-                </AdvancedMarker>
-              );
-            })}
+            <StaffMarkers
+              locations={locations}
+              selectedStaffId={selectedStaffId}
+              onSelect={(staffId, lat, lng) => {
+                setSelectedStaffId(staffId);
+                flyTo(lat, lng);
+              }}
+            />
           </Map>
         </APIProvider>
       </div>
