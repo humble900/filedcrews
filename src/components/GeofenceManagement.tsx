@@ -683,9 +683,49 @@ const GeofenceManagement = ({ apiKey, onEditModeChange }: Props) => {
                     {editCenter.lat.toFixed(6)}, {editCenter.lng.toFixed(6)}
                   </p>
                 )}
-                <p className="text-xs text-muted-foreground mt-1">
-                  Drag the blue dot on the map to move
+                <p className="text-xs text-muted-foreground mt-1 mb-3">
+                  Drag the blue dot or use arrows to move
                 </p>
+                {/* Arrow controls */}
+                <div className="flex flex-col items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setEditCenter((prev) => prev ? { ...prev, lat: prev.lat + 0.0005 } : prev)}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setEditCenter((prev) => prev ? { ...prev, lng: prev.lng - 0.0005 } : prev)}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+                    </Button>
+                    <div className="h-8 w-8 rounded-md border border-border flex items-center justify-content-center">
+                      <Move className="h-3.5 w-3.5 mx-auto text-muted-foreground" />
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setEditCenter((prev) => prev ? { ...prev, lng: prev.lng + 0.0005 } : prev)}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    </Button>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setEditCenter((prev) => prev ? { ...prev, lat: prev.lat - 0.0005 } : prev)}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                  </Button>
+                </div>
               </div>
 
               <Button
