@@ -276,9 +276,8 @@ function useZoomLevel() {
 
 /** Returns a font-size (px) for the name label that grows as zoom decreases */
 function getLabelSize(zoom: number): number {
-  // At zoom 18+ → 11px (normal), at zoom 4 → ~24px
-  const base = 11;
-  const scale = Math.max(1, 1 + (14 - zoom) * 0.12);
+  const base = 10;
+  const scale = Math.max(1, 1 + (14 - zoom) * 0.06);
   return Math.round(base * scale * 10) / 10;
 }
 
