@@ -285,6 +285,7 @@ const LiveMap = () => {
   const [historyPoints, setHistoryPoints] = useState<HistoryPoint[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
+  const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
 
   // Fetch Google Maps API key
@@ -323,6 +324,7 @@ const LiveMap = () => {
 
   const showHistory = (staffId: string, name: string) => {
     setHistoryStaff({ id: staffId, name });
+    setSelectedStaffId(staffId);
     fetchHistory(staffId);
   };
 
@@ -330,6 +332,7 @@ const LiveMap = () => {
     setHistoryStaff(null);
     setHistoryPoints([]);
     setSelectedPointId(null);
+    setSelectedStaffId(null);
   };
 
   useEffect(() => {
@@ -397,13 +400,24 @@ const LiveMap = () => {
 
             {locations.map((loc, idx) => {
               const color = getStaffColor(idx);
+              const isSelected = loc.staff_id === selectedStaffId;
               return (
                 <AdvancedMarker
                   key={loc.staff_id}
                   position={{ lat: loc.latitude, lng: loc.longitude }}
                   title={loc.staff_profiles?.full_name || "Unknown"}
+                  zIndex={isSelected ? 1000 : 1}
+                  onClick={() => {
+                    setSelectedStaffId(loc.staff_id);
+                    flyTo(loc.latitude, loc.longitude);
+                  }}
                 >
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <div style={{
+                    display: "flex", flexDirection: "column", alignItems: "center",
+                    transform: isSelected ? "scale(1.2)" : "scale(1)",
+                    transition: "transform 0.2s ease",
+                    filter: isSelected ? "drop-shadow(0 0 8px rgba(255,255,255,0.6))" : "none",
+                  }}>
                     {/* Name label */}
                     <div
                       style={{
@@ -415,7 +429,9 @@ const LiveMap = () => {
                         fontWeight: 600,
                         fontFamily: "'Space Grotesk', sans-serif",
                         whiteSpace: "nowrap",
-                        boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
+                        boxShadow: isSelected
+                          ? `0 0 12px ${color.bg}, 0 2px 6px rgba(0,0,0,0.25)`
+                          : "0 2px 6px rgba(0,0,0,0.25)",
                         marginBottom: "4px",
                       }}
                     >
@@ -424,12 +440,13 @@ const LiveMap = () => {
                     {/* GPS-style person dot */}
                     <div
                       style={{
-                        width: "18px",
-                        height: "18px",
+                        width: isSelected ? "22px" : "18px",
+                        height: isSelected ? "22px" : "18px",
                         borderRadius: "50%",
                         background: color.bg,
                         border: "3px solid white",
                         boxShadow: `0 0 0 2px ${color.ring}, 0 2px 8px rgba(0,0,0,0.3)`,
+                        transition: "width 0.2s, height 0.2s",
                       }}
                     />
                   </div>
@@ -504,38 +521,57 @@ const LiveMap = () => {
             <div className="divide-y divide-border">
               {[...locations]
                 .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-                .map((loc) => (
-                  <div
-                    key={loc.staff_id}
-                    className="px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => flyTo(loc.latitude, loc.longitude)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium text-sm">{loc.staff_profiles?.full_name}</p>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          showHistory(loc.staff_id, loc.staff_profiles?.full_name || "Unknown");
-                        }}
-                      >
-                        <History className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <Clock className="h-3 w-3" />
-                      {formatDistanceToNow(new Date(loc.updated_at), { addSuffix: true })}
-                    </p>
-                    <div className="flex items-center mt-0.5">
-                      <p className="text-xs text-muted-foreground font-mono">
-                        {loc.latitude.toFixed(5)}, {loc.longitude.toFixed(5)}
+                .map((loc, i) => {
+                  const isSelected = loc.staff_id === selectedStaffId;
+                  const color = getStaffColor(locations.indexOf(loc));
+                  return (
+                    <div
+                      key={loc.staff_id}
+                      className={`px-4 py-3 cursor-pointer transition-colors border-l-2 ${
+                        isSelected
+                          ? "bg-primary/10 border-l-primary"
+                          : "hover:bg-muted/50 border-l-transparent"
+                      }`}
+                      onClick={() => {
+                        setSelectedStaffId(loc.staff_id);
+                        flyTo(loc.latitude, loc.longitude);
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-2.5 h-2.5 rounded-full shrink-0"
+                            style={{ background: color.bg }}
+                          />
+                          <p className={`font-medium text-sm ${isSelected ? "text-primary" : ""}`}>
+                            {loc.staff_profiles?.full_name}
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            showHistory(loc.staff_id, loc.staff_profiles?.full_name || "Unknown");
+                          }}
+                        >
+                          <History className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 ml-[18px]">
+                        <Clock className="h-3 w-3" />
+                        {formatDistanceToNow(new Date(loc.updated_at), { addSuffix: true })}
                       </p>
-                      <AddressLookup lat={loc.latitude} lng={loc.longitude} />
+                      <div className="flex items-center mt-0.5 ml-[18px]">
+                        <p className="text-xs text-muted-foreground font-mono">
+                          {loc.latitude.toFixed(5)}, {loc.longitude.toFixed(5)}
+                        </p>
+                        <AddressLookup lat={loc.latitude} lng={loc.longitude} />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
             </div>
           )}
         </CardContent>
