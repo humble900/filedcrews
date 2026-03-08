@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      companies: {
+        Row: {
+          auth_user_id: string
+          created_at: string
+          id: string
+          name: string
+          prefix: string
+        }
+        Insert: {
+          auth_user_id: string
+          created_at?: string
+          id?: string
+          name: string
+          prefix: string
+        }
+        Update: {
+          auth_user_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          prefix?: string
+        }
+        Relationships: []
+      }
       geofence_events: {
         Row: {
           created_at: string
@@ -55,6 +79,7 @@ export type Database = {
       }
       geofences: {
         Row: {
+          company_id: string | null
           created_at: string
           id: string
           is_active: boolean
@@ -64,6 +89,7 @@ export type Database = {
           radius_meters: number
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -73,6 +99,7 @@ export type Database = {
           radius_meters?: number
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -81,7 +108,15 @@ export type Database = {
           name?: string
           radius_meters?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "geofences_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       staff_location_history: {
         Row: {
@@ -153,6 +188,7 @@ export type Database = {
       staff_profiles: {
         Row: {
           auth_user_id: string | null
+          company_id: string | null
           created_at: string
           full_name: string
           id: string
@@ -161,6 +197,7 @@ export type Database = {
         }
         Insert: {
           auth_user_id?: string | null
+          company_id?: string | null
           created_at?: string
           full_name: string
           id?: string
@@ -169,13 +206,22 @@ export type Database = {
         }
         Update: {
           auth_user_id?: string | null
+          company_id?: string | null
           created_at?: string
           full_name?: string
           id?: string
           is_active?: boolean
           username?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "staff_profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
