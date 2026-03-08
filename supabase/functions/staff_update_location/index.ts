@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
     // Find staff profile
     const { data: staff, error: staffError } = await supabaseAdmin
       .from("staff_profiles")
-      .select("id")
+      .select("id, company_id")
       .eq("auth_user_id", userId)
       .single();
 
