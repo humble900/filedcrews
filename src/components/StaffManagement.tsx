@@ -51,7 +51,7 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username || !fullName || !password) return;
-    const fullUsername = `${prefix}${username}`;
+    const fullUsername = `${prefix}${username}`.toUpperCase();
     setCreating(true);
     setLastCreatedStaff(null);
     try {
