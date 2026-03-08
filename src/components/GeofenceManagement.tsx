@@ -446,9 +446,10 @@ function DurationLog({ events }: { events: GeofenceEvent[] }) {
 interface Props {
   apiKey: string;
   onEditModeChange?: (editing: boolean) => void;
+  companyId: string;
 }
 
-const GeofenceManagement = ({ apiKey, onEditModeChange }: Props) => {
+const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [geofences, setGeofences] = useState<Geofence[]>([]);
@@ -542,6 +543,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange }: Props) => {
           latitude: lat,
           longitude: lng,
           radius_meters: 500,
+          company_id: companyId,
         })
         .select()
         .single();
@@ -560,7 +562,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange }: Props) => {
       setEditRadius(500);
       setEditMode(true);
     },
-    [pendingName, fetchGeofences]
+    [pendingName, fetchGeofences, companyId]
   );
 
   /* ── Edit mode ── */

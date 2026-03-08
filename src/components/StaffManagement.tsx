@@ -27,7 +27,7 @@ interface CreatedStaff {
   password: string;
 }
 
-const StaffManagement = () => {
+const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: string }) => {
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
@@ -51,15 +51,16 @@ const StaffManagement = () => {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username || !fullName || !password) return;
+    const fullUsername = `${prefix}${username}`;
     setCreating(true);
     setLastCreatedStaff(null);
     try {
       const { data, error } = await supabase.functions.invoke("admin_create_staff", {
-        body: { username, password, full_name: fullName },
+        body: { username: fullUsername, password, full_name: fullName, company_id: companyId },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      setLastCreatedStaff({ fullName, username, password });
+      setLastCreatedStaff({ fullName, username: fullUsername, password });
       setUsername("");
       setFullName("");
       setPassword("");
@@ -116,13 +117,18 @@ const StaffManagement = () => {
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Username</label>
-              <Input
-                placeholder="e.g. johndoe"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full lg:w-48"
-                required
-              />
+              <div className="flex items-center gap-0">
+                <span className="inline-flex h-10 items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm font-mono font-medium text-muted-foreground">
+                  {prefix}
+                </span>
+                <Input
+                  placeholder="e.g. johndoe"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+                  className="w-full lg:w-48 rounded-l-none"
+                  required
+                />
+              </div>
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Password</label>

@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
     // Find staff profile
     const { data: staff, error: staffError } = await supabaseAdmin
       .from("staff_profiles")
-      .select("id")
+      .select("id, company_id")
       .eq("auth_user_id", userId)
       .single();
 
@@ -99,10 +99,16 @@ Deno.serve(async (req) => {
       });
 
     // ── Geofence detection ──
-    const { data: geofences } = await supabaseAdmin
+    const geofenceQuery = supabaseAdmin
       .from("geofences")
       .select("id, latitude, longitude, radius_meters")
       .eq("is_active", true);
+    
+    if (staff.company_id) {
+      geofenceQuery.eq("company_id", staff.company_id);
+    }
+    
+    const { data: geofences } = await geofenceQuery;
 
     if (geofences && geofences.length > 0) {
       for (const gf of geofences) {

@@ -12,11 +12,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { username, password, full_name } = await req.json();
+    const { username, password, full_name, company_id } = await req.json();
 
-    if (!username || !password || !full_name) {
+    if (!username || !password || !full_name || !company_id) {
       return new Response(
-        JSON.stringify({ error: "username, password, and full_name are required" }),
+        JSON.stringify({ error: "username, password, full_name, and company_id are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -43,13 +43,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Insert staff profile
+    // Insert staff profile with company_id
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("staff_profiles")
       .insert({
         username,
         full_name,
         auth_user_id: authData.user.id,
+        company_id,
       })
       .select("id, username, full_name")
       .single();
