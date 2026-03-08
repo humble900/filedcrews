@@ -51,15 +51,16 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username || !fullName || !password) return;
+    const fullUsername = `${prefix}${username}`;
     setCreating(true);
     setLastCreatedStaff(null);
     try {
       const { data, error } = await supabase.functions.invoke("admin_create_staff", {
-        body: { username, password, full_name: fullName },
+        body: { username: fullUsername, password, full_name: fullName, company_id: companyId },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      setLastCreatedStaff({ fullName, username, password });
+      setLastCreatedStaff({ fullName, username: fullUsername, password });
       setUsername("");
       setFullName("");
       setPassword("");
