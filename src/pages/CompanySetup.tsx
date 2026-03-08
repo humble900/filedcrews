@@ -18,12 +18,12 @@ const CompanySetup = ({ onCreate, onSignOut }: CompanySetupProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (prefix.length !== 3) {
-      toast.error("Prefix must be exactly 3 letters");
+    if (prefix.length !== 5) {
+      toast.error("Prefix must be exactly 5 letters");
       return;
     }
-    if (!/^[A-Za-z]{3}$/.test(prefix)) {
-      toast.error("Prefix must be 3 letters only (A-Z)");
+    if (!/^[A-Za-z]{5}$/.test(prefix)) {
+      toast.error("Prefix must be 5 letters only (A-Z)");
       return;
     }
     setLoading(true);
