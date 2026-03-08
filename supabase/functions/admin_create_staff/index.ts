@@ -12,7 +12,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { username, password, full_name, company_id } = await req.json();
+    const { username: rawUsername, password, full_name, company_id } = await req.json();
+    const username = rawUsername?.toUpperCase();
 
     if (!username || !password || !full_name || !company_id) {
       return new Response(
