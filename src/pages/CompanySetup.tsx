@@ -88,7 +88,7 @@ const CompanySetup = ({ onCreate, onSignOut }: CompanySetupProps) => {
                   </p>
                 )}
               </div>
-              <Button type="submit" className="w-full" disabled={loading || prefix.length !== 3}>
+              <Button type="submit" className="w-full" disabled={loading || prefix.length !== 5}>
                 {loading ? "Creating…" : "Create Company"}
               </Button>
             </form>
