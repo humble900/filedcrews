@@ -647,7 +647,7 @@ const LiveMap = () => {
 
   if (loadingKey) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-8rem)]">
+      <div className="flex items-center justify-center h-[calc(100vh-10rem)]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
@@ -655,7 +655,7 @@ const LiveMap = () => {
 
   if (!apiKey) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-8rem)]">
+      <div className="flex items-center justify-center h-[calc(100vh-10rem)]">
         <p className="text-muted-foreground">Failed to load Google Maps API key.</p>
       </div>
     );
@@ -814,7 +814,7 @@ const LiveMap = () => {
   );
 
   return (
-    <div className="flex gap-4 h-[calc(100vh-8rem)] relative">
+    <div className="flex gap-4 h-[calc(100vh-10rem)] relative">
       <div className="flex-1 rounded-xl overflow-hidden border border-border">
         <APIProvider apiKey={apiKey}>
           <Map
