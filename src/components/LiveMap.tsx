@@ -814,7 +814,7 @@ const LiveMap = () => {
   );
 
   return (
-    <div className="flex gap-4 h-[calc(100vh-8rem)] relative">
+    <div className="flex gap-4 h-[calc(100vh-10rem)] relative">
       <div className="flex-1 rounded-xl overflow-hidden border border-border">
         <APIProvider apiKey={apiKey}>
           <Map
