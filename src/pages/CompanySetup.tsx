@@ -56,7 +56,7 @@ const CompanySetup = ({ onCreate, onSignOut }: CompanySetupProps) => {
               <CardTitle className="text-2xl font-bold">Setup Your Company</CardTitle>
             </div>
             <CardDescription>
-              Choose a 3-letter prefix. All staff usernames will start with this prefix.
+              Choose a 5-letter prefix. All staff usernames will start with this prefix.
             </CardDescription>
           </CardHeader>
           <CardContent>
