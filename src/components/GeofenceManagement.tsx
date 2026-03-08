@@ -446,9 +446,10 @@ function DurationLog({ events }: { events: GeofenceEvent[] }) {
 interface Props {
   apiKey: string;
   onEditModeChange?: (editing: boolean) => void;
+  companyId: string;
 }
 
-const GeofenceManagement = ({ apiKey, onEditModeChange }: Props) => {
+const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [geofences, setGeofences] = useState<Geofence[]>([]);
