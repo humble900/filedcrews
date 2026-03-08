@@ -655,7 +655,7 @@ const LiveMap = () => {
 
   if (!apiKey) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-8rem)]">
+      <div className="flex items-center justify-center h-[calc(100vh-10rem)]">
         <p className="text-muted-foreground">Failed to load Google Maps API key.</p>
       </div>
     );
