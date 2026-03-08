@@ -543,6 +543,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
           latitude: lat,
           longitude: lng,
           radius_meters: 500,
+          company_id: companyId,
         })
         .select()
         .single();

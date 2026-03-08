@@ -27,7 +27,7 @@ interface CreatedStaff {
   password: string;
 }
 
-const StaffManagement = () => {
+const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: string }) => {
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
