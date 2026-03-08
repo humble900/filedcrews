@@ -117,13 +117,18 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Username</label>
-              <Input
-                placeholder="e.g. johndoe"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full lg:w-48"
-                required
-              />
+              <div className="flex items-center gap-0">
+                <span className="inline-flex h-10 items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm font-mono font-medium text-muted-foreground">
+                  {prefix}
+                </span>
+                <Input
+                  placeholder="e.g. johndoe"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+                  className="w-full lg:w-48 rounded-l-none"
+                  required
+                />
+              </div>
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Password</label>
