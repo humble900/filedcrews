@@ -72,19 +72,19 @@ const CompanySetup = ({ onCreate, onSignOut }: CompanySetupProps) => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="prefix">Staff Username Prefix (3 letters)</Label>
+                <Label htmlFor="prefix">Staff Username Prefix (5 letters)</Label>
                 <Input
                   id="prefix"
-                  placeholder="e.g. ACM"
+                  placeholder="e.g. ACMCO"
                   value={prefix}
-                  onChange={(e) => setPrefix(e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3))}
+                  onChange={(e) => setPrefix(e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 5))}
                   className="font-mono text-lg tracking-widest uppercase"
                   required
-                  maxLength={3}
+                  maxLength={5}
                 />
                 {prefix.length > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    Staff usernames will look like: <span className="font-mono font-medium text-foreground">{prefix}{prefix.length === 3 ? "johndoe" : "..."}</span>
+                    Staff usernames will look like: <span className="font-mono font-medium text-foreground">{prefix}{prefix.length === 5 ? "johndoe" : "..."}</span>
                   </p>
                 )}
               </div>
