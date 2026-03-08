@@ -562,7 +562,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
       setEditRadius(500);
       setEditMode(true);
     },
-    [pendingName, fetchGeofences]
+    [pendingName, fetchGeofences, companyId]
   );
 
   /* ── Edit mode ── */
