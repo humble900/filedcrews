@@ -18,12 +18,12 @@ const CompanySetup = ({ onCreate, onSignOut }: CompanySetupProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (prefix.length !== 3) {
-      toast.error("Prefix must be exactly 3 letters");
+    if (prefix.length !== 5) {
+      toast.error("Prefix must be exactly 5 letters");
       return;
     }
-    if (!/^[A-Za-z]{3}$/.test(prefix)) {
-      toast.error("Prefix must be 3 letters only (A-Z)");
+    if (!/^[A-Za-z]{5}$/.test(prefix)) {
+      toast.error("Prefix must be 5 letters only (A-Z)");
       return;
     }
     setLoading(true);
@@ -56,7 +56,7 @@ const CompanySetup = ({ onCreate, onSignOut }: CompanySetupProps) => {
               <CardTitle className="text-2xl font-bold">Setup Your Company</CardTitle>
             </div>
             <CardDescription>
-              Choose a 3-letter prefix. All staff usernames will start with this prefix.
+              Choose a 5-letter prefix. All staff usernames will start with this prefix.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -72,23 +72,23 @@ const CompanySetup = ({ onCreate, onSignOut }: CompanySetupProps) => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="prefix">Staff Username Prefix (3 letters)</Label>
+                <Label htmlFor="prefix">Staff Username Prefix (5 letters)</Label>
                 <Input
                   id="prefix"
-                  placeholder="e.g. ACM"
+                  placeholder="e.g. ACMCO"
                   value={prefix}
-                  onChange={(e) => setPrefix(e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3))}
+                  onChange={(e) => setPrefix(e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 5))}
                   className="font-mono text-lg tracking-widest uppercase"
                   required
-                  maxLength={3}
+                  maxLength={5}
                 />
                 {prefix.length > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    Staff usernames will look like: <span className="font-mono font-medium text-foreground">{prefix}{prefix.length === 3 ? "johndoe" : "..."}</span>
+                    Staff usernames will look like: <span className="font-mono font-medium text-foreground">{prefix}{prefix.length === 5 ? "johndoe" : "..."}</span>
                   </p>
                 )}
               </div>
-              <Button type="submit" className="w-full" disabled={loading || prefix.length !== 3}>
+              <Button type="submit" className="w-full" disabled={loading || prefix.length !== 5}>
                 {loading ? "Creating…" : "Create Company"}
               </Button>
             </form>
