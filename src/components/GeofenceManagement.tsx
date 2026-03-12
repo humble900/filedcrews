@@ -541,7 +541,14 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [selectedGeofence, fetchEvents]);
+  }, [selectedGeofence, selectedDate, fetchEvents]);
+
+  // Re-fetch events when date changes
+  useEffect(() => {
+    if (selectedGeofence) {
+      fetchEvents(selectedGeofence.id, selectedDate);
+    }
+  }, [selectedDate, selectedGeofence, fetchEvents]);
 
   /* ── Creation flow ── */
   const startCreate = () => {
