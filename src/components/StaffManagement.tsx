@@ -20,6 +20,8 @@ import {
 import { UserPlus, Users, Trash2, Copy, X, CheckCircle, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import StaffAvatar from "./StaffAvatar";
+import StaffPhotoUpload from "./StaffPhotoUpload";
 
 interface CreatedStaff {
   fullName: string;
