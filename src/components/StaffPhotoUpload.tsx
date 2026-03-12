@@ -34,18 +34,18 @@ async function getCroppedBlob(
   crop: Crop
 ): Promise<Blob> {
   const canvas = document.createElement("canvas");
-  const scaleX = image.naturalWidth / image.width;
-  const scaleY = image.naturalHeight / image.height;
   const outputSize = 256;
   canvas.width = outputSize;
   canvas.height = outputSize;
   const ctx = canvas.getContext("2d")!;
   ctx.imageSmoothingQuality = "high";
 
-  const cropX = (crop.x ?? 0) * scaleX;
-  const cropY = (crop.y ?? 0) * scaleY;
-  const cropW = (crop.width ?? 0) * scaleX;
-  const cropH = (crop.height ?? 0) * scaleY;
+  // Convert % crop to pixel values on the natural image
+  const isPct = crop.unit === "%";
+  const cropX = isPct ? (crop.x / 100) * image.naturalWidth : crop.x * (image.naturalWidth / image.width);
+  const cropY = isPct ? (crop.y / 100) * image.naturalHeight : crop.y * (image.naturalHeight / image.height);
+  const cropW = isPct ? (crop.width / 100) * image.naturalWidth : crop.width * (image.naturalWidth / image.width);
+  const cropH = isPct ? (crop.height / 100) * image.naturalHeight : crop.height * (image.naturalHeight / image.height);
 
   ctx.drawImage(image, cropX, cropY, cropW, cropH, 0, 0, outputSize, outputSize);
 
