@@ -404,6 +404,7 @@ function DurationLog({ events }: { events: GeofenceEvent[] }) {
     staffState.forEach((val) => {
       result.push({
         staffName: val.staffName,
+        staffPhotoUrl: val.staffPhotoUrl,
         state: val.state,
         from: val.from,
         to: null,
