@@ -38,6 +38,7 @@ import {
   Plus as PlusIcon,
   Check,
   List,
+  Calendar as CalendarIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
