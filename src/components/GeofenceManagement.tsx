@@ -370,31 +370,34 @@ function DurationLog({ events }: { events: GeofenceEvent[] }) {
     const insideTypes = new Set(["entered", "inside", "logged_in", "logged_in_inside"]);
     const result: {
       staffName: string;
+      staffPhotoUrl: string | null;
       state: "inside" | "outside";
       from: Date;
       to: Date | null;
       duration: number | null;
     }[] = [];
 
-    const staffState: globalThis.Map<string, { state: "inside" | "outside"; from: Date; staffName: string }> = new globalThis.Map();
+    const staffState: globalThis.Map<string, { state: "inside" | "outside"; from: Date; staffName: string; staffPhotoUrl: string | null }> = new globalThis.Map();
 
     for (const ev of sorted) {
       const isInside = insideTypes.has(ev.event_type);
       const currentState: "inside" | "outside" = isInside ? "inside" : "outside";
       const staffName = ev.staff_profiles?.full_name || "Unknown";
+      const staffPhotoUrl = ev.staff_profiles?.photo_url || null;
       const time = new Date(ev.created_at);
 
       const prev = staffState.get(ev.staff_id);
       if (prev && prev.state !== currentState) {
         result.push({
           staffName: prev.staffName,
+          staffPhotoUrl: prev.staffPhotoUrl,
           state: prev.state,
           from: prev.from,
           to: time,
           duration: time.getTime() - prev.from.getTime(),
         });
       }
-      staffState.set(ev.staff_id, { state: currentState, from: time, staffName });
+      staffState.set(ev.staff_id, { state: currentState, from: time, staffName, staffPhotoUrl });
     }
 
     const now = new Date();
