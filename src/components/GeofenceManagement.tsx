@@ -535,7 +535,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
           table: "geofence_events",
           filter: `geofence_id=eq.${selectedGeofence.id}`,
         },
-        () => fetchEvents(selectedGeofence.id)
+        () => fetchEvents(selectedGeofence.id, selectedDate)
       )
       .subscribe();
     return () => {
