@@ -467,6 +467,8 @@ function StaffMarkers({
         const color = getStaffColor(idx);
         const isSelected = loc.staff_id === selectedStaffId;
         const labelSize = getLabelSize(zoom);
+        const hasPhoto = !!loc.staff_profiles?.photo_url;
+        const markerSize = Math.max(20, Math.round(32 * Math.min(1, zoom / 14)));
         return (
           <AdvancedMarker
             key={loc.staff_id}
@@ -499,18 +501,38 @@ function StaffMarkers({
               >
                 {loc.staff_profiles?.full_name || "Unknown"}
               </div>
-              {/* GPS dot – shrinks when zooming out to stay geographically accurate */}
-              <div
-                style={{
-                  width: `${Math.max(4, Math.round(12 * Math.min(1, zoom / 14)))}px`,
-                  height: `${Math.max(4, Math.round(12 * Math.min(1, zoom / 14)))}px`,
-                  borderRadius: "50%",
-                  background: color.bg,
-                  border: `${Math.max(1, Math.round(2 * Math.min(1, zoom / 14)))}px solid white`,
-                  boxShadow: `0 0 0 1px ${color.ring}, 0 1px 4px rgba(0,0,0,0.3)`,
-                  transition: "width 0.15s, height 0.15s",
-                }}
-              />
+              {/* Photo avatar or GPS dot */}
+              {hasPhoto ? (
+                <div
+                  style={{
+                    width: `${markerSize}px`,
+                    height: `${markerSize}px`,
+                    borderRadius: "50%",
+                    overflow: "hidden",
+                    border: `${Math.max(2, Math.round(3 * Math.min(1, zoom / 14)))}px solid white`,
+                    boxShadow: `0 0 0 1px ${color.ring}, 0 1px 4px rgba(0,0,0,0.3)`,
+                    transition: "width 0.15s, height 0.15s",
+                  }}
+                >
+                  <img
+                    src={loc.staff_profiles!.photo_url!}
+                    alt={loc.staff_profiles?.full_name || ""}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                </div>
+              ) : (
+                <div
+                  style={{
+                    width: `${Math.max(4, Math.round(12 * Math.min(1, zoom / 14)))}px`,
+                    height: `${Math.max(4, Math.round(12 * Math.min(1, zoom / 14)))}px`,
+                    borderRadius: "50%",
+                    background: color.bg,
+                    border: `${Math.max(1, Math.round(2 * Math.min(1, zoom / 14)))}px solid white`,
+                    boxShadow: `0 0 0 1px ${color.ring}, 0 1px 4px rgba(0,0,0,0.3)`,
+                    transition: "width 0.15s, height 0.15s",
+                  }}
+                />
+              )}
             </div>
           </AdvancedMarker>
         );
