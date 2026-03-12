@@ -597,7 +597,7 @@ const LiveMap = () => {
   const fetchLocations = useCallback(async () => {
     const { data } = await supabase
       .from("staff_locations")
-      .select("*, staff_profiles!inner(full_name, username, is_active)")
+      .select("*, staff_profiles!inner(full_name, username, is_active, photo_url)")
       .eq("staff_profiles.is_active", true);
     if (data) setLocations(data as unknown as StaffLocation[]);
   }, []);
