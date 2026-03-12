@@ -476,6 +476,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   const [selectedGeofence, setSelectedGeofence] = useState<Geofence | null>(null);
   const [events, setEvents] = useState<GeofenceEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   // Creation flow: step 1 = name dialog, step 2 = placing on map
   const [nameDialogOpen, setNameDialogOpen] = useState(false);
