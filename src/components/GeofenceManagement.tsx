@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { startOfDay, endOfDay } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -9,6 +10,12 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +38,7 @@ import {
   Plus as PlusIcon,
   Check,
   List,
+  Calendar as CalendarIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -468,6 +476,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   const [selectedGeofence, setSelectedGeofence] = useState<Geofence | null>(null);
   const [events, setEvents] = useState<GeofenceEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   // Creation flow: step 1 = name dialog, step 2 = placing on map
   const [nameDialogOpen, setNameDialogOpen] = useState(false);
@@ -493,14 +502,18 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
     if (data) setGeofences(data as Geofence[]);
   }, []);
 
-  const fetchEvents = useCallback(async (geofenceId: string) => {
+  const fetchEvents = useCallback(async (geofenceId: string, date: Date) => {
     setLoadingEvents(true);
+    const dayStart = startOfDay(date).toISOString();
+    const dayEnd = endOfDay(date).toISOString();
     const { data } = await supabase
       .from("geofence_events")
       .select("*, staff_profiles(full_name, photo_url)")
       .eq("geofence_id", geofenceId)
+      .gte("created_at", dayStart)
+      .lte("created_at", dayEnd)
       .order("created_at", { ascending: false })
-      .limit(200);
+      .limit(500);
     if (data) setEvents(data as GeofenceEvent[]);
     setLoadingEvents(false);
   }, []);
@@ -522,13 +535,20 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
           table: "geofence_events",
           filter: `geofence_id=eq.${selectedGeofence.id}`,
         },
-        () => fetchEvents(selectedGeofence.id)
+        () => fetchEvents(selectedGeofence.id, selectedDate)
       )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [selectedGeofence, fetchEvents]);
+  }, [selectedGeofence, selectedDate, fetchEvents]);
+
+  // Re-fetch events when date changes
+  useEffect(() => {
+    if (selectedGeofence) {
+      fetchEvents(selectedGeofence.id, selectedDate);
+    }
+  }, [selectedDate, selectedGeofence, fetchEvents]);
 
   /* ── Creation flow ── */
   const startCreate = () => {
@@ -643,7 +663,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
 
   const selectGeofence = (gf: Geofence) => {
     setSelectedGeofence(gf);
-    fetchEvents(gf.id);
+    fetchEvents(gf.id, selectedDate);
   };
 
   const editingGeofenceName = editingId
@@ -786,7 +806,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                   </div>
                 </div>
                 <Tabs defaultValue="crossings" className="w-full">
-                  <div className="px-4 py-2 border-b border-border">
+                  <div className="px-4 py-2 border-b border-border space-y-2">
                     <TabsList className="w-full h-8">
                       <TabsTrigger value="crossings" className="text-xs flex-1">
                         <ArrowRightLeft className="h-3 w-3 mr-1" />
@@ -797,6 +817,36 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                         Duration
                       </TabsTrigger>
                     </TabsList>
+                    <div className="flex items-center gap-2">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-7 text-xs w-full justify-start font-normal">
+                            <CalendarIcon className="h-3 w-3 mr-1.5" />
+                            {format(selectedDate, "MMM d, yyyy")}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={selectedDate}
+                            onSelect={(d) => d && setSelectedDate(d)}
+                            disabled={(date) => date > new Date()}
+                            initialFocus
+                            className="p-3 pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      {format(selectedDate, "yyyy-MM-dd") !== format(new Date(), "yyyy-MM-dd") && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs shrink-0"
+                          onClick={() => setSelectedDate(new Date())}
+                        >
+                          Today
+                        </Button>
+                      )}
+                    </div>
                   </div>
 
                   <TabsContent value="crossings" className="mt-0">
