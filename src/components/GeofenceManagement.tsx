@@ -822,7 +822,14 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                           return (
                             <div key={ev.id} className="px-4 py-2.5">
                               <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium">{ev.staff_profiles?.full_name || "Unknown"}</p>
+                                <div className="flex items-center gap-2">
+                                  <StaffAvatar
+                                    photoUrl={ev.staff_profiles?.photo_url}
+                                    fullName={ev.staff_profiles?.full_name || "Unknown"}
+                                    size="sm"
+                                  />
+                                  <p className="text-sm font-medium">{ev.staff_profiles?.full_name || "Unknown"}</p>
+                                </div>
                                 <Badge
                                   variant={isExited || isLoggedInOutside ? "secondary" : "default"}
                                   className={badgeClass}
