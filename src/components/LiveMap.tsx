@@ -468,7 +468,7 @@ function StaffMarkers({
         const isSelected = loc.staff_id === selectedStaffId;
         const labelSize = getLabelSize(zoom);
         const hasPhoto = !!loc.staff_profiles?.photo_url;
-        const markerSize = Math.max(20, Math.round(32 * Math.min(1, zoom / 14)));
+        const markerSize = Math.max(26, Math.round(40 * Math.min(1, zoom / 14)));
         return (
           <AdvancedMarker
             key={loc.staff_id}
