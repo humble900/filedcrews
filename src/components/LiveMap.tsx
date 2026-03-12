@@ -754,16 +754,17 @@ const LiveMap = () => {
                       if (isMobile) setSidebarOpen(false);
                     }}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ background: color.bg }}
-                        />
-                        <p className={`font-medium text-sm ${isSelected && !isHidden ? "text-primary" : ""}`}>
-                          {loc.staff_profiles?.full_name}
-                        </p>
-                      </div>
+                     <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-2">
+                         <StaffAvatar
+                           photoUrl={loc.staff_profiles?.photo_url}
+                           fullName={loc.staff_profiles?.full_name || "?"}
+                           size="sm"
+                         />
+                         <p className={`font-medium text-sm ${isSelected && !isHidden ? "text-primary" : ""}`}>
+                           {loc.staff_profiles?.full_name}
+                         </p>
+                       </div>
                       <div className="flex items-center gap-0.5">
                         <Button
                           variant="ghost"
