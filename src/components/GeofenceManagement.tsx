@@ -424,7 +424,14 @@ function DurationLog({ events }: { events: GeofenceEvent[] }) {
       {sessions.map((s, i) => (
         <div key={i} className="px-4 py-2.5">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">{s.staffName}</p>
+            <div className="flex items-center gap-2">
+              <StaffAvatar
+                photoUrl={s.staffPhotoUrl}
+                fullName={s.staffName}
+                size="sm"
+              />
+              <p className="text-sm font-medium">{s.staffName}</p>
+            </div>
             <Badge
               variant={s.state === "inside" ? "default" : "secondary"}
               className={s.state === "inside" ? "bg-green-600 hover:bg-green-700" : ""}
