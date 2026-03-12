@@ -6,6 +6,7 @@ import { MapPin, Clock, History, X, CircleDot, Loader2, MapPinHouse, EyeOff, Eye
 import { formatDistanceToNow, format } from "date-fns";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
+import StaffAvatar from "./StaffAvatar";
 
 /* ── Address lookup via reverse geocoding ── */
 const addressCache: Record<string, string> = {};
