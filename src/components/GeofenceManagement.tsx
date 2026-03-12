@@ -163,7 +163,7 @@ interface GeofenceEvent {
   staff_id: string;
   event_type: string;
   created_at: string;
-  staff_profiles?: { full_name: string } | null;
+  staff_profiles?: { full_name: string; photo_url?: string | null } | null;
 }
 
 /* ── Circle overlay using vanilla Maps API ── */
