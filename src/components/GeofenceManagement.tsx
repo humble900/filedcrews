@@ -806,7 +806,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                   </div>
                 </div>
                 <Tabs defaultValue="crossings" className="w-full">
-                  <div className="px-4 py-2 border-b border-border">
+                  <div className="px-4 py-2 border-b border-border space-y-2">
                     <TabsList className="w-full h-8">
                       <TabsTrigger value="crossings" className="text-xs flex-1">
                         <ArrowRightLeft className="h-3 w-3 mr-1" />
@@ -817,6 +817,36 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                         Duration
                       </TabsTrigger>
                     </TabsList>
+                    <div className="flex items-center gap-2">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-7 text-xs w-full justify-start font-normal">
+                            <CalendarIcon className="h-3 w-3 mr-1.5" />
+                            {format(selectedDate, "MMM d, yyyy")}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={selectedDate}
+                            onSelect={(d) => d && setSelectedDate(d)}
+                            disabled={(date) => date > new Date()}
+                            initialFocus
+                            className="p-3 pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      {format(selectedDate, "yyyy-MM-dd") !== format(new Date(), "yyyy-MM-dd") && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs shrink-0"
+                          onClick={() => setSelectedDate(new Date())}
+                        >
+                          Today
+                        </Button>
+                      )}
+                    </div>
                   </div>
 
                   <TabsContent value="crossings" className="mt-0">
