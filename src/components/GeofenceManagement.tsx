@@ -486,7 +486,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
     setLoadingEvents(true);
     const { data } = await supabase
       .from("geofence_events")
-      .select("*, staff_profiles(full_name)")
+      .select("*, staff_profiles(full_name, photo_url)")
       .eq("geofence_id", geofenceId)
       .order("created_at", { ascending: false })
       .limit(200);
