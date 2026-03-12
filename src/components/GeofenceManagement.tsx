@@ -656,7 +656,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
 
   const selectGeofence = (gf: Geofence) => {
     setSelectedGeofence(gf);
-    fetchEvents(gf.id);
+    fetchEvents(gf.id, selectedDate);
   };
 
   const editingGeofenceName = editingId
