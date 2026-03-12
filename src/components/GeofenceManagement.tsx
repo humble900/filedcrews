@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import StaffAvatar from "./StaffAvatar";
 import {
   APIProvider,
   Map,
@@ -162,7 +163,7 @@ interface GeofenceEvent {
   staff_id: string;
   event_type: string;
   created_at: string;
-  staff_profiles?: { full_name: string } | null;
+  staff_profiles?: { full_name: string; photo_url?: string | null } | null;
 }
 
 /* ── Circle overlay using vanilla Maps API ── */
@@ -369,37 +370,41 @@ function DurationLog({ events }: { events: GeofenceEvent[] }) {
     const insideTypes = new Set(["entered", "inside", "logged_in", "logged_in_inside"]);
     const result: {
       staffName: string;
+      staffPhotoUrl: string | null;
       state: "inside" | "outside";
       from: Date;
       to: Date | null;
       duration: number | null;
     }[] = [];
 
-    const staffState: globalThis.Map<string, { state: "inside" | "outside"; from: Date; staffName: string }> = new globalThis.Map();
+    const staffState: globalThis.Map<string, { state: "inside" | "outside"; from: Date; staffName: string; staffPhotoUrl: string | null }> = new globalThis.Map();
 
     for (const ev of sorted) {
       const isInside = insideTypes.has(ev.event_type);
       const currentState: "inside" | "outside" = isInside ? "inside" : "outside";
       const staffName = ev.staff_profiles?.full_name || "Unknown";
+      const staffPhotoUrl = ev.staff_profiles?.photo_url || null;
       const time = new Date(ev.created_at);
 
       const prev = staffState.get(ev.staff_id);
       if (prev && prev.state !== currentState) {
         result.push({
           staffName: prev.staffName,
+          staffPhotoUrl: prev.staffPhotoUrl,
           state: prev.state,
           from: prev.from,
           to: time,
           duration: time.getTime() - prev.from.getTime(),
         });
       }
-      staffState.set(ev.staff_id, { state: currentState, from: time, staffName });
+      staffState.set(ev.staff_id, { state: currentState, from: time, staffName, staffPhotoUrl });
     }
 
     const now = new Date();
     staffState.forEach((val) => {
       result.push({
         staffName: val.staffName,
+        staffPhotoUrl: val.staffPhotoUrl,
         state: val.state,
         from: val.from,
         to: null,
@@ -419,7 +424,14 @@ function DurationLog({ events }: { events: GeofenceEvent[] }) {
       {sessions.map((s, i) => (
         <div key={i} className="px-4 py-2.5">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">{s.staffName}</p>
+            <div className="flex items-center gap-2">
+              <StaffAvatar
+                photoUrl={s.staffPhotoUrl}
+                fullName={s.staffName}
+                size="sm"
+              />
+              <p className="text-sm font-medium">{s.staffName}</p>
+            </div>
             <Badge
               variant={s.state === "inside" ? "default" : "secondary"}
               className={s.state === "inside" ? "bg-green-600 hover:bg-green-700" : ""}
@@ -485,7 +497,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
     setLoadingEvents(true);
     const { data } = await supabase
       .from("geofence_events")
-      .select("*, staff_profiles(full_name)")
+      .select("*, staff_profiles(full_name, photo_url)")
       .eq("geofence_id", geofenceId)
       .order("created_at", { ascending: false })
       .limit(200);
@@ -821,7 +833,14 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                           return (
                             <div key={ev.id} className="px-4 py-2.5">
                               <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium">{ev.staff_profiles?.full_name || "Unknown"}</p>
+                                <div className="flex items-center gap-2">
+                                  <StaffAvatar
+                                    photoUrl={ev.staff_profiles?.photo_url}
+                                    fullName={ev.staff_profiles?.full_name || "Unknown"}
+                                    size="sm"
+                                  />
+                                  <p className="text-sm font-medium">{ev.staff_profiles?.full_name || "Unknown"}</p>
+                                </div>
                                 <Badge
                                   variant={isExited || isLoggedInOutside ? "secondary" : "default"}
                                   className={badgeClass}
