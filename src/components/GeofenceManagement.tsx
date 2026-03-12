@@ -502,14 +502,18 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
     if (data) setGeofences(data as Geofence[]);
   }, []);
 
-  const fetchEvents = useCallback(async (geofenceId: string) => {
+  const fetchEvents = useCallback(async (geofenceId: string, date: Date) => {
     setLoadingEvents(true);
+    const dayStart = startOfDay(date).toISOString();
+    const dayEnd = endOfDay(date).toISOString();
     const { data } = await supabase
       .from("geofence_events")
       .select("*, staff_profiles(full_name, photo_url)")
       .eq("geofence_id", geofenceId)
+      .gte("created_at", dayStart)
+      .lte("created_at", dayEnd)
       .order("created_at", { ascending: false })
-      .limit(200);
+      .limit(500);
     if (data) setEvents(data as GeofenceEvent[]);
     setLoadingEvents(false);
   }, []);
