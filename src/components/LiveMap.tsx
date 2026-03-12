@@ -200,6 +200,7 @@ interface StaffLocation {
   staff_profiles: {
     full_name: string;
     username: string;
+    photo_url: string | null;
   } | null;
 }
 
