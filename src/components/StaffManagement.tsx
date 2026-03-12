@@ -20,6 +20,8 @@ import {
 import { UserPlus, Users, Trash2, Copy, X, CheckCircle, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import StaffAvatar from "./StaffAvatar";
+import StaffPhotoUpload from "./StaffPhotoUpload";
 
 interface CreatedStaff {
   fullName: string;
@@ -216,12 +218,20 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
             <div className="divide-y divide-border">
               {staff.map((s) => (
                 <div key={s.id} className="flex flex-col sm:flex-row sm:items-center justify-between py-3 gap-2">
-                  <div>
-                    <p className={`font-medium ${!s.is_active ? "text-muted-foreground" : ""}`}>{s.full_name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Username: <span className="font-mono">@{s.username}</span>
-                    </p>
-                  </div>
+                   <div className="flex items-center gap-3">
+                     <StaffPhotoUpload
+                       staffId={s.id}
+                       fullName={s.full_name}
+                       currentPhotoUrl={(s as any).photo_url}
+                       onPhotoUpdated={refetch}
+                     />
+                     <div>
+                       <p className={`font-medium ${!s.is_active ? "text-muted-foreground" : ""}`}>{s.full_name}</p>
+                       <p className="text-xs text-muted-foreground">
+                         Username: <span className="font-mono">@{s.username}</span>
+                       </p>
+                     </div>
+                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-muted-foreground hidden sm:inline">
                       Joined {format(new Date(s.created_at), "MMM d, yyyy")}

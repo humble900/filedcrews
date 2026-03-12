@@ -6,6 +6,7 @@ import { MapPin, Clock, History, X, CircleDot, Loader2, MapPinHouse, EyeOff, Eye
 import { formatDistanceToNow, format } from "date-fns";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
+import StaffAvatar from "./StaffAvatar";
 
 /* ── Address lookup via reverse geocoding ── */
 const addressCache: Record<string, string> = {};
@@ -199,6 +200,7 @@ interface StaffLocation {
   staff_profiles: {
     full_name: string;
     username: string;
+    photo_url: string | null;
   } | null;
 }
 
@@ -465,6 +467,8 @@ function StaffMarkers({
         const color = getStaffColor(idx);
         const isSelected = loc.staff_id === selectedStaffId;
         const labelSize = getLabelSize(zoom);
+        const hasPhoto = !!loc.staff_profiles?.photo_url;
+        const markerSize = Math.max(20, Math.round(32 * Math.min(1, zoom / 14)));
         return (
           <AdvancedMarker
             key={loc.staff_id}
@@ -497,18 +501,38 @@ function StaffMarkers({
               >
                 {loc.staff_profiles?.full_name || "Unknown"}
               </div>
-              {/* GPS dot – shrinks when zooming out to stay geographically accurate */}
-              <div
-                style={{
-                  width: `${Math.max(4, Math.round(12 * Math.min(1, zoom / 14)))}px`,
-                  height: `${Math.max(4, Math.round(12 * Math.min(1, zoom / 14)))}px`,
-                  borderRadius: "50%",
-                  background: color.bg,
-                  border: `${Math.max(1, Math.round(2 * Math.min(1, zoom / 14)))}px solid white`,
-                  boxShadow: `0 0 0 1px ${color.ring}, 0 1px 4px rgba(0,0,0,0.3)`,
-                  transition: "width 0.15s, height 0.15s",
-                }}
-              />
+              {/* Photo avatar or GPS dot */}
+              {hasPhoto ? (
+                <div
+                  style={{
+                    width: `${markerSize}px`,
+                    height: `${markerSize}px`,
+                    borderRadius: "50%",
+                    overflow: "hidden",
+                    border: `${Math.max(2, Math.round(3 * Math.min(1, zoom / 14)))}px solid white`,
+                    boxShadow: `0 0 0 1px ${color.ring}, 0 1px 4px rgba(0,0,0,0.3)`,
+                    transition: "width 0.15s, height 0.15s",
+                  }}
+                >
+                  <img
+                    src={loc.staff_profiles!.photo_url!}
+                    alt={loc.staff_profiles?.full_name || ""}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                </div>
+              ) : (
+                <div
+                  style={{
+                    width: `${Math.max(4, Math.round(12 * Math.min(1, zoom / 14)))}px`,
+                    height: `${Math.max(4, Math.round(12 * Math.min(1, zoom / 14)))}px`,
+                    borderRadius: "50%",
+                    background: color.bg,
+                    border: `${Math.max(1, Math.round(2 * Math.min(1, zoom / 14)))}px solid white`,
+                    boxShadow: `0 0 0 1px ${color.ring}, 0 1px 4px rgba(0,0,0,0.3)`,
+                    transition: "width 0.15s, height 0.15s",
+                  }}
+                />
+              )}
             </div>
           </AdvancedMarker>
         );
@@ -595,7 +619,7 @@ const LiveMap = () => {
   const fetchLocations = useCallback(async () => {
     const { data } = await supabase
       .from("staff_locations")
-      .select("*, staff_profiles!inner(full_name, username, is_active)")
+      .select("*, staff_profiles!inner(full_name, username, is_active, photo_url)")
       .eq("staff_profiles.is_active", true);
     if (data) setLocations(data as unknown as StaffLocation[]);
   }, []);
@@ -752,16 +776,17 @@ const LiveMap = () => {
                       if (isMobile) setSidebarOpen(false);
                     }}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ background: color.bg }}
-                        />
-                        <p className={`font-medium text-sm ${isSelected && !isHidden ? "text-primary" : ""}`}>
-                          {loc.staff_profiles?.full_name}
-                        </p>
-                      </div>
+                     <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-2">
+                         <StaffAvatar
+                           photoUrl={loc.staff_profiles?.photo_url}
+                           fullName={loc.staff_profiles?.full_name || "?"}
+                           size="sm"
+                         />
+                         <p className={`font-medium text-sm ${isSelected && !isHidden ? "text-primary" : ""}`}>
+                           {loc.staff_profiles?.full_name}
+                         </p>
+                       </div>
                       <div className="flex items-center gap-0.5">
                         <Button
                           variant="ghost"
