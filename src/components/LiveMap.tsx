@@ -331,26 +331,50 @@ function useFitBounds() {
   );
 }
 
-function FitOnce({ locations }: { locations: StaffLocation[] }) {
+function FitOnce({
+  locations,
+  suppressAutoFitOnMount,
+}: {
+  locations: StaffLocation[];
+  suppressAutoFitOnMount: boolean;
+}) {
   const fitBounds = useFitBounds();
   const hasFitted = useRef(false);
+
   useEffect(() => {
+    if (suppressAutoFitOnMount) {
+      hasFitted.current = true;
+      return;
+    }
     if (hasFitted.current || locations.length === 0) return;
     fitBounds(locations.map((l) => ({ lat: l.latitude, lng: l.longitude })));
     hasFitted.current = true;
-  }, [locations, fitBounds]);
+  }, [locations, fitBounds, suppressAutoFitOnMount]);
+
   return null;
 }
 
-function FitHistory({ points }: { points: HistoryPoint[] }) {
+function FitHistory({
+  points,
+  suppressAutoFitOnMount,
+}: {
+  points: HistoryPoint[];
+  suppressAutoFitOnMount: boolean;
+}) {
   const fitBounds = useFitBounds();
   const prevLen = useRef(0);
+
   useEffect(() => {
+    if (suppressAutoFitOnMount) {
+      prevLen.current = points.length;
+      return;
+    }
     if (points.length > 1 && points.length !== prevLen.current) {
       fitBounds(points.map((p) => ({ lat: p.latitude, lng: p.longitude })));
       prevLen.current = points.length;
     }
-  }, [points, fitBounds]);
+  }, [points, fitBounds, suppressAutoFitOnMount]);
+
   return null;
 }
 
