@@ -777,6 +777,24 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
               </div>
             </div>
 
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Face ID
+              </label>
+              <div className="flex items-center justify-between mt-2">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium">Ask for Face ID</p>
+                  <p className="text-xs text-muted-foreground">
+                    When enabled, staff will be asked to optionally submit a selfie when entering this geofence.
+                  </p>
+                </div>
+                <Switch
+                  checked={editAskForFaceId}
+                  onCheckedChange={setEditAskForFaceId}
+                />
+              </div>
+            </div>
+
             <Button className="w-full h-12 text-base font-semibold" onClick={handleDone}>
               <Check className="h-5 w-5 mr-2" />
               Done
