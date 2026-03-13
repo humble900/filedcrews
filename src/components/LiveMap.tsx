@@ -781,7 +781,7 @@ const LiveMap = () => {
                          <StaffAvatar
                            photoUrl={loc.staff_profiles?.photo_url}
                            fullName={loc.staff_profiles?.full_name || "?"}
-                           size="sm"
+                           size="md"
                          />
                          <p className={`font-medium text-sm ${isSelected && !isHidden ? "text-primary" : ""}`}>
                            {loc.staff_profiles?.full_name}
