@@ -628,6 +628,9 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
 
   const handlePlace = useCallback(
     async (lat: number, lng: number) => {
+      // Capture current zoom BEFORE any state changes
+      const currentZoom = mapInstanceRef.current?.getZoom() ?? null;
+
       setPlacing(false);
 
       // Insert into DB immediately with 500m default
@@ -652,11 +655,12 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
       setSuppressAutoFit(true);
       await fetchGeofences();
 
-      // Enter edit mode
+      // Enter edit mode preserving current zoom
       setEditingId(data.id);
       setEditCenter({ lat, lng });
       setEditRadius(500);
       setEditAskForFaceId(false);
+      setEditZoom(currentZoom);
       setEditMode(true);
     },
     [pendingName, fetchGeofences, companyId]
