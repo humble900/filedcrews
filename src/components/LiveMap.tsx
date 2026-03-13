@@ -910,7 +910,7 @@ const LiveMap = () => {
                       Normal
                     </button>
                     <button
-                      onClick={() => setMapStyle("clean")}
+                      onClick={() => switchStyle("clean")}
                       style={{
                         padding: "4px 10px",
                         borderRadius: "6px",
