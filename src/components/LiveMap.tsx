@@ -571,17 +571,11 @@ const LiveMap = () => {
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
 
-  // Clean map toggle (persisted)
-  const [cleanMap, setCleanMap] = useState<boolean>(() => {
-    try { return localStorage.getItem("cleanMap") === "true"; } catch { return false; }
-  });
-  const toggleCleanMap = useCallback(() => {
-    setCleanMap(prev => {
-      const next = !prev;
-      localStorage.setItem("cleanMap", String(next));
-      return next;
-    });
-  }, []);
+  // Map style selector (normal = full detail, clean = simplified)
+  const [mapStyle, setMapStyle] = useState<"normal" | "clean">("normal");
+  const mapId = mapStyle === "normal" 
+    ? "f3ab175d00da0a6b2246ec75" 
+    : "f3ab175d00da0a6b6e36641d";
 
   // Hidden staff (persisted in localStorage)
   const [hiddenStaffIds, setHiddenStaffIds] = useState<Set<string>>(() => {
