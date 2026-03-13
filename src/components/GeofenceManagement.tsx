@@ -333,14 +333,12 @@ function PlacementMode({
 /* ── Fit map to geofences ── */
 function FitGeofences({ geofences }: { geofences: Geofence[] }) {
   const map = useMap();
-  const hasFitted = useRef(false);
 
   useEffect(() => {
-    if (hasFitted.current || !map || geofences.length === 0) return;
+    if (!map || geofences.length === 0) return;
     const bounds = new google.maps.LatLngBounds();
     geofences.forEach((gf) => bounds.extend({ lat: gf.latitude, lng: gf.longitude }));
     map.fitBounds(bounds, 120);
-    hasFitted.current = true;
   }, [map, geofences]);
 
   return null;
