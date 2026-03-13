@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Clock, History, X, CircleDot, Loader2, MapPinHouse, EyeOff, Eye, Layers, Users } from "lucide-react";
+import { MapPin, Clock, History, X, CircleDot, Loader2, MapPinHouse, EyeOff, Eye, Users } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -571,17 +571,11 @@ const LiveMap = () => {
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
 
-  // Clean map toggle (persisted)
-  const [cleanMap, setCleanMap] = useState<boolean>(() => {
-    try { return localStorage.getItem("cleanMap") === "true"; } catch { return false; }
-  });
-  const toggleCleanMap = useCallback(() => {
-    setCleanMap(prev => {
-      const next = !prev;
-      localStorage.setItem("cleanMap", String(next));
-      return next;
-    });
-  }, []);
+  // Map style selector (normal = full detail, clean = simplified)
+  const [mapStyle, setMapStyle] = useState<"normal" | "clean">("normal");
+  const mapId = mapStyle === "normal" 
+    ? "f3ab175d00da0a6b2246ec75" 
+    : "f3ab175d00da0a6b6e36641d";
 
   // Hidden staff (persisted in localStorage)
   const [hiddenStaffIds, setHiddenStaffIds] = useState<Set<string>>(() => {
@@ -850,8 +844,8 @@ const LiveMap = () => {
           <Map
             defaultCenter={{ lat: 24.7136, lng: 46.6753 }}
             defaultZoom={6}
-            mapId="f3ab175d00da0a6b6e36641d"
-            styles={cleanMap ? CLEAN_MAP_STYLES : []}
+            mapId={mapId}
+            styles={mapStyle === "clean" ? CLEAN_MAP_STYLES : []}
             style={{ width: "100%", height: "100%" }}
             gestureHandling="greedy"
             disableDefaultUI={true}
@@ -870,29 +864,59 @@ const LiveMap = () => {
             <PlaceSearch />
             <HistoryOverlay points={historyPoints} selectedPointId={selectedPointId} />
 
+            {/* Map Style Selector */}
             <MapControl position={ControlPosition.TOP_RIGHT}>
               <div style={{ padding: "10px" }}>
-                <button
-                  onClick={toggleCleanMap}
-                  title={cleanMap ? "Show all details" : "Simplify map"}
+                <div
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "6px",
-                    padding: "6px 10px",
+                    gap: "8px",
+                    padding: "6px 12px",
                     borderRadius: "8px",
                     border: "1px solid hsl(var(--border))",
-                    background: cleanMap ? "hsl(var(--primary))" : "hsl(var(--background))",
-                    color: cleanMap ? "hsl(var(--primary-foreground))" : "hsl(var(--foreground))",
+                    background: "hsl(var(--background))",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
                     fontSize: "12px",
                     fontWeight: 500,
-                    cursor: "pointer",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
                   }}
                 >
-                  <Layers style={{ width: 14, height: 14 }} />
-                  {cleanMap ? "Clean" : "Default"}
-                </button>
+                  <span style={{ color: "hsl(var(--muted-foreground))" }}>Style:</span>
+                  <div style={{ display: "flex", gap: "4px" }}>
+                    <button
+                      onClick={() => setMapStyle("normal")}
+                      style={{
+                        padding: "4px 10px",
+                        borderRadius: "6px",
+                        border: "none",
+                        background: mapStyle === "normal" ? "hsl(var(--primary))" : "transparent",
+                        color: mapStyle === "normal" ? "hsl(var(--primary-foreground))" : "hsl(var(--foreground))",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        fontWeight: 500,
+                        transition: "background 0.15s, color 0.15s",
+                      }}
+                    >
+                      Normal
+                    </button>
+                    <button
+                      onClick={() => setMapStyle("clean")}
+                      style={{
+                        padding: "4px 10px",
+                        borderRadius: "6px",
+                        border: "none",
+                        background: mapStyle === "clean" ? "hsl(var(--primary))" : "transparent",
+                        color: mapStyle === "clean" ? "hsl(var(--primary-foreground))" : "hsl(var(--foreground))",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        fontWeight: 500,
+                        transition: "background 0.15s, color 0.15s",
+                      }}
+                    >
+                      Clean
+                    </button>
+                  </div>
+                </div>
               </div>
             </MapControl>
 
