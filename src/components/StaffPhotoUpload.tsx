@@ -9,7 +9,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Camera, Loader2, Trash2 } from "lucide-react";
+import { Camera, Loader2, Trash2, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import StaffAvatar from "./StaffAvatar";
@@ -40,7 +40,6 @@ async function getCroppedBlob(
   const ctx = canvas.getContext("2d")!;
   ctx.imageSmoothingQuality = "high";
 
-  // Convert % crop to pixel values on the natural image
   const isPct = crop.unit === "%";
   const cropX = isPct ? (crop.x / 100) * image.naturalWidth : crop.x * (image.naturalWidth / image.width);
   const cropY = isPct ? (crop.y / 100) * image.naturalHeight : crop.y * (image.naturalHeight / image.height);
@@ -60,24 +59,42 @@ export default function StaffPhotoUpload({
   currentPhotoUrl,
   onPhotoUpdated,
 }: StaffPhotoUploadProps) {
-  const [open, setOpen] = useState(false);
+  const [pickOpen, setPickOpen] = useState(false);
+  const [cropOpen, setCropOpen] = useState(false);
   const [imgSrc, setImgSrc] = useState("");
   const [crop, setCrop] = useState<Crop>();
   const [uploading, setUploading] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const processFile = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImgSrc(reader.result as string);
+      setPickOpen(false);
+      setCropOpen(true);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const onSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      setImgSrc(reader.result as string);
-      setOpen(true);
-    };
-    reader.readAsDataURL(file);
+    processFile(file);
     e.target.value = "";
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) processFile(file);
   };
 
   const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -113,7 +130,7 @@ export default function StaffPhotoUpload({
 
       toast.success("Photo updated");
       onPhotoUpdated();
-      setOpen(false);
+      setCropOpen(false);
       setImgSrc("");
     } catch (err: any) {
       toast.error(err.message || "Failed to upload photo");
@@ -154,7 +171,7 @@ export default function StaffPhotoUpload({
         <button
           type="button"
           className="relative group"
-          onClick={() => inputRef.current?.click()}
+          onClick={() => setPickOpen(true)}
           title="Change photo"
         >
           <StaffAvatar photoUrl={currentPhotoUrl} fullName={fullName} size="lg" />
@@ -175,7 +192,33 @@ export default function StaffPhotoUpload({
         )}
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      {/* Pick / Drop modal */}
+      <Dialog open={pickOpen} onOpenChange={setPickOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Upload Photo</DialogTitle>
+          </DialogHeader>
+          <div
+            className={`flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-8 transition-colors cursor-pointer ${
+              dragging
+                ? "border-primary bg-primary/5"
+                : "border-muted-foreground/25 hover:border-primary/50"
+            }`}
+            onClick={() => inputRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={onDrop}
+          >
+            <Upload className="h-10 w-10 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground text-center">
+              Drag & drop an image here, or <span className="text-primary font-medium">click to browse</span>
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Crop modal */}
+      <Dialog open={cropOpen} onOpenChange={setCropOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Crop Photo</DialogTitle>
@@ -200,7 +243,7 @@ export default function StaffPhotoUpload({
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setOpen(false); setImgSrc(""); }}>
+            <Button variant="outline" onClick={() => { setCropOpen(false); setImgSrc(""); }}>
               Cancel
             </Button>
             <Button onClick={handleUpload} disabled={uploading}>
