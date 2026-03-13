@@ -339,7 +339,7 @@ function FitGeofences({ geofences }: { geofences: Geofence[] }) {
     if (hasFitted.current || !map || geofences.length === 0) return;
     const bounds = new google.maps.LatLngBounds();
     geofences.forEach((gf) => bounds.extend({ lat: gf.latitude, lng: gf.longitude }));
-    map.fitBounds(bounds, 60);
+    map.fitBounds(bounds, 120);
     hasFitted.current = true;
   }, [map, geofences]);
 
