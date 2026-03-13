@@ -45,10 +45,10 @@ const TrackerDownload = () => {
       {/* Installation Notice */}
       <Alert className="border-amber-500/50 bg-amber-500/10">
         <ShieldAlert className="h-5 w-5 text-amber-500" />
-        <AlertTitle className="text-base font-semibold">
+        <AlertTitle className="text-lg font-semibold">
           Android Installation — Permission Required
         </AlertTitle>
-        <AlertDescription className="mt-3 space-y-4 text-sm text-muted-foreground">
+        <AlertDescription className="mt-3 space-y-4 text-base text-muted-foreground">
           <p>
             Because this app is installed directly (not from the Google Play Store), Android will ask you to allow installation from an <strong className="text-foreground">unknown source</strong>. This is completely normal and safe.
           </p>
@@ -63,7 +63,7 @@ const TrackerDownload = () => {
             </ol>
           </div>
 
-          <p className="text-xs">
+          <p className="text-sm">
             💡 The exact wording may vary slightly depending on your phone brand and Android version. If in doubt, watch the tutorial video below.
           </p>
 
