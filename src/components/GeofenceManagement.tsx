@@ -616,6 +616,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
       setEditingId(data.id);
       setEditCenter({ lat, lng });
       setEditRadius(500);
+      setEditAskForFaceId(false);
       setEditMode(true);
     },
     [pendingName, fetchGeofences, companyId]
