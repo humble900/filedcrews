@@ -854,59 +854,89 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                       <div className="flex justify-center py-6">
                         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                       </div>
-                    ) : events.length === 0 ? (
-                      <p className="px-4 py-6 text-xs text-muted-foreground text-center">No crossings detected yet.</p>
-                    ) : (
-                      <div className="divide-y divide-border">
-                        {events.map((ev) => {
-                          const isEntered = ev.event_type === "entered" || ev.event_type === "inside";
-                          const isLoggedInInside = ev.event_type === "logged_in_inside" || ev.event_type === "logged_in";
-                          const isLoggedInOutside = ev.event_type === "logged_in_outside";
-                          const isExited = ev.event_type === "exited" || ev.event_type === "outside";
+                    ) : (() => {
+                      const inTypes = new Set(["entered", "inside", "logged_in_inside", "logged_in"]);
+                      const outTypes = new Set(["exited", "outside"]);
+                      const inEvents = events.filter((ev) => inTypes.has(ev.event_type));
+                      const outEvents = events.filter((ev) => outTypes.has(ev.event_type));
 
-                          let badgeClass = "";
-                          let label = ev.event_type;
-                          if (isEntered) {
-                            badgeClass = "bg-green-600 hover:bg-green-700";
-                            label = "Entered";
-                          } else if (isLoggedInInside) {
-                            badgeClass = "bg-blue-600 hover:bg-blue-700";
-                            label = "Logged in (inside)";
-                          } else if (isLoggedInOutside) {
-                            badgeClass = "bg-orange-500 hover:bg-orange-600";
-                            label = "Logged in (outside)";
-                          } else if (isExited) {
-                            badgeClass = "";
-                            label = "Exited";
-                          }
+                      const renderEvent = (ev: GeofenceEvent) => {
+                        const isEntered = ev.event_type === "entered" || ev.event_type === "inside";
+                        const isLoggedInInside = ev.event_type === "logged_in_inside" || ev.event_type === "logged_in";
+                        const isExited = ev.event_type === "exited" || ev.event_type === "outside";
 
-                          return (
-                            <div key={ev.id} className="px-4 py-2.5">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <StaffAvatar
-                                    photoUrl={ev.staff_profiles?.photo_url}
-                                    fullName={ev.staff_profiles?.full_name || "Unknown"}
-                                    size="sm"
-                                  />
-                                  <p className="text-sm font-medium">{ev.staff_profiles?.full_name || "Unknown"}</p>
-                                </div>
-                                <Badge
-                                  variant={isExited || isLoggedInOutside ? "secondary" : "default"}
-                                  className={badgeClass}
-                                >
-                                  <ArrowRightLeft className="h-3 w-3 mr-1" />
-                                  {label}
-                                </Badge>
+                        let badgeClass = "";
+                        let label = ev.event_type;
+                        if (isEntered) {
+                          badgeClass = "bg-green-600 hover:bg-green-700";
+                          label = "Entered";
+                        } else if (isLoggedInInside) {
+                          badgeClass = "bg-blue-600 hover:bg-blue-700";
+                          label = "Started inside";
+                        } else if (isExited) {
+                          badgeClass = "";
+                          label = "Exited";
+                        }
+
+                        return (
+                          <div key={ev.id} className="px-4 py-2.5">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <StaffAvatar
+                                  photoUrl={ev.staff_profiles?.photo_url}
+                                  fullName={ev.staff_profiles?.full_name || "Unknown"}
+                                  size="sm"
+                                />
+                                <p className="text-sm font-medium">{ev.staff_profiles?.full_name || "Unknown"}</p>
                               </div>
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                {format(new Date(ev.created_at), "MMM d, yyyy – HH:mm:ss")}
-                              </p>
+                              <Badge
+                                variant={isExited ? "secondary" : "default"}
+                                className={badgeClass}
+                              >
+                                <ArrowRightLeft className="h-3 w-3 mr-1" />
+                                {label}
+                              </Badge>
                             </div>
-                          );
-                        })}
-                      </div>
-                    )}
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {format(new Date(ev.created_at), "MMM d, yyyy – HH:mm:ss")}
+                            </p>
+                          </div>
+                        );
+                      };
+
+                      return (
+                        <Tabs defaultValue="in" className="w-full">
+                          <div className="px-4 py-1.5 border-b border-border">
+                            <TabsList className="w-full h-7">
+                              <TabsTrigger value="in" className="text-xs flex-1">
+                                In ({inEvents.length})
+                              </TabsTrigger>
+                              <TabsTrigger value="out" className="text-xs flex-1">
+                                Out ({outEvents.length})
+                              </TabsTrigger>
+                            </TabsList>
+                          </div>
+                          <TabsContent value="in" className="mt-0">
+                            {inEvents.length === 0 ? (
+                              <p className="px-4 py-6 text-xs text-muted-foreground text-center">No entries detected.</p>
+                            ) : (
+                              <div className="divide-y divide-border">
+                                {inEvents.map(renderEvent)}
+                              </div>
+                            )}
+                          </TabsContent>
+                          <TabsContent value="out" className="mt-0">
+                            {outEvents.length === 0 ? (
+                              <p className="px-4 py-6 text-xs text-muted-foreground text-center">No exits detected.</p>
+                            ) : (
+                              <div className="divide-y divide-border">
+                                {outEvents.map(renderEvent)}
+                              </div>
+                            )}
+                          </TabsContent>
+                        </Tabs>
+                      );
+                    })()}
                   </TabsContent>
 
                   <TabsContent value="duration" className="mt-0">
