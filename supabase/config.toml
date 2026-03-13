@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.face-verify]
 verify_jwt = false
+
+[functions.staff_register_push_token]
+verify_jwt = false

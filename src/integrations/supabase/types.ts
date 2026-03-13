@@ -42,6 +42,9 @@ export type Database = {
         Row: {
           created_at: string
           event_type: string
+          face_check_at: string | null
+          face_check_confidence: string | null
+          face_check_status: string | null
           geofence_id: string
           id: string
           staff_id: string
@@ -49,6 +52,9 @@ export type Database = {
         Insert: {
           created_at?: string
           event_type: string
+          face_check_at?: string | null
+          face_check_confidence?: string | null
+          face_check_status?: string | null
           geofence_id: string
           id?: string
           staff_id: string
@@ -56,6 +62,9 @@ export type Database = {
         Update: {
           created_at?: string
           event_type?: string
+          face_check_at?: string | null
+          face_check_confidence?: string | null
+          face_check_status?: string | null
           geofence_id?: string
           id?: string
           staff_id?: string
@@ -79,6 +88,7 @@ export type Database = {
       }
       geofences: {
         Row: {
+          ask_for_face_id: boolean
           check_in_time: string | null
           check_out_time: string | null
           company_id: string | null
@@ -91,6 +101,7 @@ export type Database = {
           radius_meters: number
         }
         Insert: {
+          ask_for_face_id?: boolean
           check_in_time?: string | null
           check_out_time?: string | null
           company_id?: string | null
@@ -103,6 +114,7 @@ export type Database = {
           radius_meters?: number
         }
         Update: {
+          ask_for_face_id?: boolean
           check_in_time?: string | null
           check_out_time?: string | null
           company_id?: string | null
@@ -196,6 +208,7 @@ export type Database = {
           auth_user_id: string | null
           company_id: string | null
           created_at: string
+          expo_push_token: string | null
           full_name: string
           id: string
           is_active: boolean
@@ -207,6 +220,7 @@ export type Database = {
           auth_user_id?: string | null
           company_id?: string | null
           created_at?: string
+          expo_push_token?: string | null
           full_name: string
           id?: string
           is_active?: boolean
@@ -218,6 +232,7 @@ export type Database = {
           auth_user_id?: string | null
           company_id?: string | null
           created_at?: string
+          expo_push_token?: string | null
           full_name?: string
           id?: string
           is_active?: boolean

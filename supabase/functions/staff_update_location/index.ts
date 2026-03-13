@@ -18,6 +18,30 @@ function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number)
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+/** Fire-and-forget Expo push. Never throws. */
+async function sendExpoPush(
+  token: string,
+  title: string,
+  body: string,
+  data: Record<string, unknown>
+): Promise<void> {
+  try {
+    await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to: token,
+        title,
+        body,
+        data,
+        sound: "default",
+      }),
+    });
+  } catch (e) {
+    console.error("Expo push failed (non-blocking):", e);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -66,7 +90,7 @@ Deno.serve(async (req) => {
     // Find staff profile
     const { data: staff, error: staffError } = await supabaseAdmin
       .from("staff_profiles")
-      .select("id, company_id")
+      .select("id, company_id, expo_push_token")
       .eq("auth_user_id", userId)
       .single();
 
@@ -101,7 +125,7 @@ Deno.serve(async (req) => {
     // ── Geofence detection ──
     const geofenceQuery = supabaseAdmin
       .from("geofences")
-      .select("id, latitude, longitude, radius_meters")
+      .select("id, latitude, longitude, radius_meters, ask_for_face_id")
       .eq("is_active", true);
     
     if (staff.company_id) {
@@ -151,13 +175,34 @@ Deno.serve(async (req) => {
         }
 
         if (eventType) {
-          await supabaseAdmin
+          // Determine face_check_status for entry events
+          const isEntryEvent = eventType === "entered" || eventType === "logged_in_inside";
+          const shouldRequestFace = isEntryEvent && gf.ask_for_face_id === true;
+
+          const { data: insertedEvent } = await supabaseAdmin
             .from("geofence_events")
             .insert({
               geofence_id: gf.id,
               staff_id: staff.id,
               event_type: eventType,
-            });
+              face_check_status: shouldRequestFace ? "requested" : "not_requested",
+            })
+            .select("id")
+            .single();
+
+          // Send push notification for face verification (fire-and-forget)
+          if (shouldRequestFace && staff.expo_push_token && insertedEvent) {
+            sendExpoPush(
+              staff.expo_push_token,
+              "Face verification requested",
+              "Please take a selfie to verify while inside this site.",
+              {
+                type: "FACE_VERIFY_REQUEST",
+                geofenceEventId: insertedEvent.id,
+                staffId: staff.id,
+              }
+            );
+          }
         }
       }
     }
