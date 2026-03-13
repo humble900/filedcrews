@@ -62,16 +62,15 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData?.user) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const userId = claimsData.claims.sub;
+    const userId = userData.user.id;
     const { latitude, longitude, accuracy } = await req.json();
 
     if (latitude == null || longitude == null) {
@@ -123,21 +122,23 @@ Deno.serve(async (req) => {
       });
 
     // ── Geofence detection ──
-    const geofenceQuery = supabaseAdmin
+    let geofenceQuery = supabaseAdmin
       .from("geofences")
       .select("id, latitude, longitude, radius_meters, ask_for_face_id")
       .eq("is_active", true);
     
     if (staff.company_id) {
-      geofenceQuery.eq("company_id", staff.company_id);
+      geofenceQuery = geofenceQuery.eq("company_id", staff.company_id);
     }
     
-    const { data: geofences } = await geofenceQuery;
+    const { data: geofences, error: gfError } = await geofenceQuery;
+    
 
     if (geofences && geofences.length > 0) {
       for (const gf of geofences) {
         const dist = haversineMeters(latitude, longitude, gf.latitude, gf.longitude);
         const isInside = dist <= gf.radius_meters;
+        
 
         // Get last event for this staff+geofence
         const { data: lastEvent } = await supabaseAdmin
@@ -174,12 +175,14 @@ Deno.serve(async (req) => {
           }
         }
 
+        
+
         if (eventType) {
           // Determine face_check_status for entry events
           const isEntryEvent = eventType === "entered" || eventType === "logged_in_inside";
           const shouldRequestFace = isEntryEvent && gf.ask_for_face_id === true;
 
-          const { data: insertedEvent } = await supabaseAdmin
+          const { data: insertedEvent, error: insertError } = await supabaseAdmin
             .from("geofence_events")
             .insert({
               geofence_id: gf.id,
@@ -189,6 +192,7 @@ Deno.serve(async (req) => {
             })
             .select("id")
             .single();
+          
 
           // Send push notification for face verification (fire-and-forget)
           if (shouldRequestFace && staff.expo_push_token && insertedEvent) {
