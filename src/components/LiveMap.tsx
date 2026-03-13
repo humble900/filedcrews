@@ -550,13 +550,8 @@ function getStaffColor(index: number) {
 }
 
 /* ── Main component ── */
-const CLEAN_MAP_STYLES: google.maps.MapTypeStyle[] = [
-  { featureType: "poi.business", stylers: [{ visibility: "off" }] },
-  { featureType: "poi.attraction", stylers: [{ visibility: "off" }] },
-  { featureType: "poi.government", stylers: [{ visibility: "off" }] },
-  { featureType: "poi.sports_complex", stylers: [{ visibility: "off" }] },
-  { featureType: "transit", stylers: [{ visibility: "off" }] },
-];
+const NORMAL_MAP_ID = "f3ab175d00da0a6b2246ec75";
+const CLEAN_MAP_ID = "f3ab175d00da0a6b6e36641d";
 
 const LiveMap = () => {
   const isMobile = useIsMobile();
@@ -573,9 +568,7 @@ const LiveMap = () => {
 
   // Map style selector (normal = full detail, clean = simplified)
   const [mapStyle, setMapStyle] = useState<"normal" | "clean">("normal");
-  const mapId = mapStyle === "normal" 
-    ? "f3ab175d00da0a6b2246ec75" 
-    : "f3ab175d00da0a6b6e36641d";
+  const activeMapId = mapStyle === "normal" ? NORMAL_MAP_ID : CLEAN_MAP_ID;
 
   // Hidden staff (persisted in localStorage)
   const [hiddenStaffIds, setHiddenStaffIds] = useState<Set<string>>(() => {
@@ -842,10 +835,10 @@ const LiveMap = () => {
       <div className="flex-1 rounded-xl overflow-hidden border border-border">
         <APIProvider apiKey={apiKey}>
           <Map
+            key={mapStyle}
             defaultCenter={{ lat: 24.7136, lng: 46.6753 }}
             defaultZoom={6}
-            mapId={mapId}
-            styles={mapStyle === "clean" ? CLEAN_MAP_STYLES : []}
+            mapId={activeMapId}
             style={{ width: "100%", height: "100%" }}
             gestureHandling="greedy"
             disableDefaultUI={true}
