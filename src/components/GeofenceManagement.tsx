@@ -165,6 +165,7 @@ interface Geofence {
   created_at: string;
   check_in_time: string | null;
   check_out_time: string | null;
+  ask_for_face_id: boolean;
 }
 
 interface GeofenceEvent {
@@ -505,6 +506,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editCenter, setEditCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [editRadius, setEditRadius] = useState(500);
+  const [editAskForFaceId, setEditAskForFaceId] = useState(false);
 
   // Clock-in/out dialog
   const [clockDialogOpen, setClockDialogOpen] = useState(false);
@@ -614,6 +616,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
       setEditingId(data.id);
       setEditCenter({ lat, lng });
       setEditRadius(500);
+      setEditAskForFaceId(false);
       setEditMode(true);
     },
     [pendingName, fetchGeofences, companyId]
@@ -624,6 +627,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
     setEditingId(gf.id);
     setEditCenter({ lat: gf.latitude, lng: gf.longitude });
     setEditRadius(gf.radius_meters);
+    setEditAskForFaceId(gf.ask_for_face_id);
     setEditMode(true);
     setSelectedGeofence(null);
     setEvents([]);
@@ -638,6 +642,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
         latitude: editCenter.lat,
         longitude: editCenter.lng,
         radius_meters: editRadius,
+        ask_for_face_id: editAskForFaceId,
       })
       .eq("id", editingId);
 
@@ -769,6 +774,24 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                 <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setEditCenter((prev) => prev ? { ...prev, lat: prev.lat - 0.0005 } : prev)}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
                 </Button>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Face ID
+              </label>
+              <div className="flex items-center justify-between mt-2">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium">Ask for Face ID</p>
+                  <p className="text-xs text-muted-foreground">
+                    When enabled, staff will be asked to optionally submit a selfie when entering this geofence.
+                  </p>
+                </div>
+                <Switch
+                  checked={editAskForFaceId}
+                  onCheckedChange={setEditAskForFaceId}
+                />
               </div>
             </div>
 
