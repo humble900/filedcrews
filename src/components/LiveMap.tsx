@@ -321,6 +321,11 @@ function useFitBounds() {
       const bounds = new google.maps.LatLngBounds();
       coords.forEach((c) => bounds.extend(c));
       map.fitBounds(bounds, 40);
+      // Cap zoom so it doesn't zoom in too much (e.g. single marker)
+      google.maps.event.addListenerOnce(map, "idle", () => {
+        const z = map.getZoom();
+        if (z && z > 14) map.setZoom(14);
+      });
     },
     [map]
   );
