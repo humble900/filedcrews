@@ -668,10 +668,12 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
 
   /* ── Edit mode ── */
   const enterEditMode = (gf: Geofence) => {
+    const currentZoom = mapInstanceRef.current?.getZoom() ?? null;
     setEditingId(gf.id);
     setEditCenter({ lat: gf.latitude, lng: gf.longitude });
     setEditRadius(gf.radius_meters);
     setEditAskForFaceId(gf.ask_for_face_id);
+    setEditZoom(currentZoom);
     setEditMode(true);
     setSelectedGeofence(null);
     setEvents([]);
