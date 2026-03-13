@@ -176,12 +176,14 @@ Deno.serve(async (req) => {
           }
         }
 
+        console.log("Event decision:", JSON.stringify({ gfId: gf.id, eventType, lastEvent }));
+
         if (eventType) {
           // Determine face_check_status for entry events
           const isEntryEvent = eventType === "entered" || eventType === "logged_in_inside";
           const shouldRequestFace = isEntryEvent && gf.ask_for_face_id === true;
 
-          const { data: insertedEvent } = await supabaseAdmin
+          const { data: insertedEvent, error: insertError } = await supabaseAdmin
             .from("geofence_events")
             .insert({
               geofence_id: gf.id,
@@ -191,6 +193,7 @@ Deno.serve(async (req) => {
             })
             .select("id")
             .single();
+          console.log("Event insert result:", JSON.stringify({ insertedEvent, insertError }));
 
           // Send push notification for face verification (fire-and-forget)
           if (shouldRequestFace && staff.expo_push_token && insertedEvent) {
