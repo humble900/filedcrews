@@ -570,6 +570,23 @@ const LiveMap = () => {
   const [mapStyle, setMapStyle] = useState<"normal" | "clean">("normal");
   const activeMapId = mapStyle === "normal" ? NORMAL_MAP_ID : CLEAN_MAP_ID;
 
+  // Persist zoom/center across style switches
+  const savedViewRef = useRef<{ center: { lat: number; lng: number }; zoom: number } | null>(null);
+
+  const switchStyle = useCallback((style: "normal" | "clean") => {
+    if (style === mapStyle) return;
+    const m = mapInstanceRef.current;
+    if (m) {
+      const center = m.getCenter();
+      const zoom = m.getZoom();
+      if (center && zoom != null) {
+        savedViewRef.current = { center: center.toJSON(), zoom };
+      }
+    }
+    mapInstanceRef.current = null;
+    setMapStyle(style);
+  }, [mapStyle]);
+
   // Hidden staff (persisted in localStorage)
   const [hiddenStaffIds, setHiddenStaffIds] = useState<Set<string>>(() => {
     try {
@@ -836,8 +853,8 @@ const LiveMap = () => {
         <APIProvider apiKey={apiKey}>
           <Map
             key={mapStyle}
-            defaultCenter={{ lat: 24.7136, lng: 46.6753 }}
-            defaultZoom={6}
+            defaultCenter={savedViewRef.current?.center ?? { lat: 24.7136, lng: 46.6753 }}
+            defaultZoom={savedViewRef.current?.zoom ?? 6}
             mapId={activeMapId}
             style={{ width: "100%", height: "100%" }}
             gestureHandling="greedy"
@@ -877,7 +894,7 @@ const LiveMap = () => {
                   <span style={{ color: "hsl(var(--muted-foreground))" }}>Style:</span>
                   <div style={{ display: "flex", gap: "4px" }}>
                     <button
-                      onClick={() => setMapStyle("normal")}
+                      onClick={() => switchStyle("normal")}
                       style={{
                         padding: "4px 10px",
                         borderRadius: "6px",
@@ -893,7 +910,7 @@ const LiveMap = () => {
                       Normal
                     </button>
                     <button
-                      onClick={() => setMapStyle("clean")}
+                      onClick={() => switchStyle("clean")}
                       style={{
                         padding: "4px 10px",
                         borderRadius: "6px",
