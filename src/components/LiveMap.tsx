@@ -850,7 +850,7 @@ const LiveMap = () => {
           <Map
             defaultCenter={{ lat: 24.7136, lng: 46.6753 }}
             defaultZoom={6}
-            {...(cleanMap ? { styles: CLEAN_MAP_STYLES } : { mapId: "staff-tracker-map" })}
+            styles={cleanMap ? CLEAN_MAP_STYLES : []}
             style={{ width: "100%", height: "100%" }}
             gestureHandling="greedy"
             disableDefaultUI={true}
