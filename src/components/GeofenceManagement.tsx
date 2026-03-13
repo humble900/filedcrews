@@ -1188,7 +1188,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                 onChange={(e) => setClockOutTime(e.target.value)}
                 className="mt-1"
               />
-              <p className="text-xs text-muted-foreground mt-1">Staff leaving before this time will be marked "Early"</p>
+              <p className="text-xs text-muted-foreground mt-1">Before → "Early" · After → "Late"</p>
             </div>
           </div>
           <DialogFooter className="gap-2">
