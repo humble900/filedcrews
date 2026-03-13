@@ -79,6 +79,8 @@ export type Database = {
       }
       geofences: {
         Row: {
+          check_in_time: string | null
+          check_out_time: string | null
           company_id: string | null
           created_at: string
           id: string
@@ -89,6 +91,8 @@ export type Database = {
           radius_meters: number
         }
         Insert: {
+          check_in_time?: string | null
+          check_out_time?: string | null
           company_id?: string | null
           created_at?: string
           id?: string
@@ -99,6 +103,8 @@ export type Database = {
           radius_meters?: number
         }
         Update: {
+          check_in_time?: string | null
+          check_out_time?: string | null
           company_id?: string | null
           created_at?: string
           id?: string
