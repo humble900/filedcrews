@@ -568,9 +568,7 @@ const LiveMap = () => {
 
   // Map style selector (normal = full detail, clean = simplified)
   const [mapStyle, setMapStyle] = useState<"normal" | "clean">("normal");
-  const mapId = mapStyle === "normal" 
-    ? "f3ab175d00da0a6b2246ec75" 
-    : "f3ab175d00da0a6b6e36641d";
+  const activeMapId = mapStyle === "normal" ? NORMAL_MAP_ID : CLEAN_MAP_ID;
 
   // Hidden staff (persisted in localStorage)
   const [hiddenStaffIds, setHiddenStaffIds] = useState<Set<string>>(() => {
