@@ -541,7 +541,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   const [editMode, setEditMode] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editCenter, setEditCenter] = useState<{ lat: number; lng: number } | null>(null);
-  const [editRadius, setEditRadius] = useState(500);
+  const [editRadius, setEditRadius] = useState(170);
   const [editAskForFaceId, setEditAskForFaceId] = useState(false);
 
   // Preserved zoom for edit mode after placement
@@ -633,14 +633,14 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
 
       setPlacing(false);
 
-      // Insert into DB immediately with 500m default
+      // Insert into DB immediately with 170m default
       const { data, error } = await supabase
         .from("geofences")
         .insert({
           name: pendingName.trim(),
           latitude: lat,
           longitude: lng,
-          radius_meters: 500,
+          radius_meters: 170,
           company_id: companyId,
         })
         .select()
@@ -658,7 +658,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
       // Enter edit mode preserving current zoom
       setEditingId(data.id);
       setEditCenter({ lat, lng });
-      setEditRadius(500);
+      setEditRadius(170);
       setEditAskForFaceId(false);
       setEditZoom(currentZoom);
       setEditMode(true);
