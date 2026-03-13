@@ -835,10 +835,10 @@ const LiveMap = () => {
       <div className="flex-1 rounded-xl overflow-hidden border border-border">
         <APIProvider apiKey={apiKey}>
           <Map
+            key={mapStyle}
             defaultCenter={{ lat: 24.7136, lng: 46.6753 }}
             defaultZoom={6}
-            mapId={mapId}
-            styles={mapStyle === "clean" ? CLEAN_MAP_STYLES : []}
+            mapId={activeMapId}
             style={{ width: "100%", height: "100%" }}
             gestureHandling="greedy"
             disableDefaultUI={true}
