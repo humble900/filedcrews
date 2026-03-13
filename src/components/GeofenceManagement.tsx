@@ -544,6 +544,9 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   const [editRadius, setEditRadius] = useState(500);
   const [editAskForFaceId, setEditAskForFaceId] = useState(false);
 
+  // Preserved zoom for edit mode after placement
+  const [editZoom, setEditZoom] = useState<number | null>(null);
+
   // Clock-in/out dialog
   const [clockDialogOpen, setClockDialogOpen] = useState(false);
   const [clockInTime, setClockInTime] = useState("");
