@@ -490,6 +490,9 @@ interface Props {
   companyId: string;
 }
 
+const NORMAL_MAP_ID = "f3ab175d00da0a6b2246ec75";
+const CLEAN_MAP_ID = "f3ab175d00da0a6b6e36641d";
+
 const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -498,6 +501,34 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   const [events, setEvents] = useState<GeofenceEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+
+  // Map style (synced with LiveMap via same localStorage key)
+  const [mapStyle, setMapStyle] = useState<"normal" | "clean">(() => {
+    try {
+      const stored = localStorage.getItem("mapStyle");
+      return stored === "normal" || stored === "clean" ? stored : "normal";
+    } catch { return "normal"; }
+  });
+  const activeMapId = mapStyle === "normal" ? NORMAL_MAP_ID : CLEAN_MAP_ID;
+  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+  const savedViewRef = useRef<{ center: { lat: number; lng: number }; zoom: number } | null>(null);
+  const [suppressAutoFit, setSuppressAutoFit] = useState(false);
+
+  const switchStyle = useCallback((style: "normal" | "clean") => {
+    if (style === mapStyle) return;
+    const m = mapInstanceRef.current;
+    if (m) {
+      const center = m.getCenter();
+      const zoom = m.getZoom();
+      if (center && zoom != null) {
+        savedViewRef.current = { center: center.toJSON(), zoom };
+        setSuppressAutoFit(true);
+      }
+    }
+    mapInstanceRef.current = null;
+    setMapStyle(style);
+    localStorage.setItem("mapStyle", style);
+  }, [mapStyle]);
 
   // Creation flow: step 1 = name dialog, step 2 = placing on map
   const [nameDialogOpen, setNameDialogOpen] = useState(false);
