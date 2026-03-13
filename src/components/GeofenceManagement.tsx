@@ -646,6 +646,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
       }
 
       toast.success("Geofence created — adjust size and position");
+      setSuppressAutoFit(true);
       await fetchGeofences();
 
       // Enter edit mode
