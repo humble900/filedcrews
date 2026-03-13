@@ -642,6 +642,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
         latitude: editCenter.lat,
         longitude: editCenter.lng,
         radius_meters: editRadius,
+        ask_for_face_id: editAskForFaceId,
       })
       .eq("id", editingId);
 
