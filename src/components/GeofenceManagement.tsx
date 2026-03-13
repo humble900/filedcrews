@@ -547,10 +547,29 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   // Preserved zoom for edit mode after placement
   const [editZoom, setEditZoom] = useState<number | null>(null);
 
+  // Show staff on map
+  const [showStaff, setShowStaff] = useState(false);
+  const [staffLocations, setStaffLocations] = useState<{ staff_id: string; latitude: number; longitude: number; staff_profiles: { full_name: string; photo_url: string | null } | null }[]>([]);
+
   // Clock-in/out dialog
   const [clockDialogOpen, setClockDialogOpen] = useState(false);
   const [clockInTime, setClockInTime] = useState("");
   const [clockOutTime, setClockOutTime] = useState("");
+
+  // Fetch staff locations when toggle is on
+  useEffect(() => {
+    if (!showStaff) { setStaffLocations([]); return; }
+    const fetchStaff = async () => {
+      const { data } = await supabase
+        .from("staff_locations")
+        .select("staff_id, latitude, longitude, staff_profiles!inner(full_name, photo_url, is_active)")
+        .eq("staff_profiles.is_active", true);
+      if (data) setStaffLocations(data as any);
+    };
+    fetchStaff();
+    const interval = setInterval(fetchStaff, 8000);
+    return () => clearInterval(interval);
+  }, [showStaff]);
 
   // Notify parent about edit mode changes
   useEffect(() => {
