@@ -490,6 +490,9 @@ interface Props {
   companyId: string;
 }
 
+const NORMAL_MAP_ID = "f3ab175d00da0a6b2246ec75";
+const CLEAN_MAP_ID = "f3ab175d00da0a6b6e36641d";
+
 const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -498,6 +501,34 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   const [events, setEvents] = useState<GeofenceEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+
+  // Map style (synced with LiveMap via same localStorage key)
+  const [mapStyle, setMapStyle] = useState<"normal" | "clean">(() => {
+    try {
+      const stored = localStorage.getItem("mapStyle");
+      return stored === "normal" || stored === "clean" ? stored : "normal";
+    } catch { return "normal"; }
+  });
+  const activeMapId = mapStyle === "normal" ? NORMAL_MAP_ID : CLEAN_MAP_ID;
+  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+  const savedViewRef = useRef<{ center: { lat: number; lng: number }; zoom: number } | null>(null);
+  const [suppressAutoFit, setSuppressAutoFit] = useState(false);
+
+  const switchStyle = useCallback((style: "normal" | "clean") => {
+    if (style === mapStyle) return;
+    const m = mapInstanceRef.current;
+    if (m) {
+      const center = m.getCenter();
+      const zoom = m.getZoom();
+      if (center && zoom != null) {
+        savedViewRef.current = { center: center.toJSON(), zoom };
+        setSuppressAutoFit(true);
+      }
+    }
+    mapInstanceRef.current = null;
+    setMapStyle(style);
+    localStorage.setItem("mapStyle", style);
+  }, [mapStyle]);
 
   // Creation flow: step 1 = name dialog, step 2 = placing on map
   const [nameDialogOpen, setNameDialogOpen] = useState(false);
@@ -1125,14 +1156,22 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
       <div className="flex-1 rounded-xl overflow-hidden border border-border relative">
         <APIProvider apiKey={apiKey}>
           <Map
-            defaultCenter={{ lat: 24.7136, lng: 46.6753 }}
-            defaultZoom={6}
-            mapId="f3ab175d00da0a6b6e36641d"
+            key={mapStyle}
+            defaultCenter={savedViewRef.current?.center ?? { lat: 24.7136, lng: 46.6753 }}
+            defaultZoom={savedViewRef.current?.zoom ?? 6}
+            mapId={activeMapId}
             style={{ width: "100%", height: "100%" }}
             gestureHandling="greedy"
             disableDefaultUI
-            zoomControl
+            zoomControl={!isMobile}
             fullscreenControl
+            mapTypeControl={false}
+            streetViewControl={false}
+            onIdle={(e) => {
+              if (!e.map) return;
+              mapInstanceRef.current = e.map;
+              if (suppressAutoFit) setSuppressAutoFit(false);
+            }}
           >
             <GeoPlaceSearch />
             <FitGeofences geofences={geofences} />
@@ -1170,6 +1209,62 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                   </div>
                 </AdvancedMarker>
               ))}
+
+            {/* Map Style Selector */}
+            <MapControl position={ControlPosition.TOP_RIGHT}>
+              <div style={{ padding: "10px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "6px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid hsl(var(--border))",
+                    background: "hsl(var(--background))",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                    fontSize: "12px",
+                    fontWeight: 500,
+                  }}
+                >
+                  <span style={{ color: "hsl(var(--muted-foreground))" }}>Style:</span>
+                  <div style={{ display: "flex", gap: "4px" }}>
+                    <button
+                      onClick={() => switchStyle("normal")}
+                      style={{
+                        padding: "4px 10px",
+                        borderRadius: "6px",
+                        border: "none",
+                        background: mapStyle === "normal" ? "hsl(var(--primary))" : "transparent",
+                        color: mapStyle === "normal" ? "hsl(var(--primary-foreground))" : "hsl(var(--foreground))",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        fontWeight: 500,
+                        transition: "background 0.15s, color 0.15s",
+                      }}
+                    >
+                      Normal
+                    </button>
+                    <button
+                      onClick={() => switchStyle("clean")}
+                      style={{
+                        padding: "4px 10px",
+                        borderRadius: "6px",
+                        border: "none",
+                        background: mapStyle === "clean" ? "hsl(var(--primary))" : "transparent",
+                        color: mapStyle === "clean" ? "hsl(var(--primary-foreground))" : "hsl(var(--foreground))",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        fontWeight: 500,
+                        transition: "background 0.15s, color 0.15s",
+                      }}
+                    >
+                      Clean
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </MapControl>
           </Map>
         </APIProvider>
 
