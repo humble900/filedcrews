@@ -850,6 +850,7 @@ const LiveMap = () => {
           <Map
             defaultCenter={{ lat: 24.7136, lng: 46.6753 }}
             defaultZoom={6}
+            mapId="f3ab175d00da0a6b6e36641d"
             styles={cleanMap ? CLEAN_MAP_STYLES : []}
             style={{ width: "100%", height: "100%" }}
             gestureHandling="greedy"

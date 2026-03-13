@@ -1065,7 +1065,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
           <Map
             defaultCenter={{ lat: 24.7136, lng: 46.6753 }}
             defaultZoom={6}
-            mapId="geofence-map"
+            mapId="f3ab175d00da0a6b6e36641d"
             style={{ width: "100%", height: "100%" }}
             gestureHandling="greedy"
             disableDefaultUI
