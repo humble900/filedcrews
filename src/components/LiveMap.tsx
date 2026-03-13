@@ -892,13 +892,15 @@ const LiveMap = () => {
             mapTypeControl={false}
             streetViewControl={false}
             onIdle={(e) => {
-              if (e.map && !mapInstanceRef.current) {
-                mapInstanceRef.current = e.map;
+              if (!e.map) return;
+              mapInstanceRef.current = e.map;
+              if (suppressAutoFitOnMount) {
+                setSuppressAutoFitOnMount(false);
               }
             }}
           >
-            <FitOnce locations={visibleLocations} />
-            <FitHistory points={historyPoints} />
+            <FitOnce locations={visibleLocations} suppressAutoFitOnMount={suppressAutoFitOnMount} />
+            <FitHistory points={historyPoints} suppressAutoFitOnMount={suppressAutoFitOnMount} />
             <PlaceSearch />
             <HistoryOverlay points={historyPoints} selectedPointId={selectedPointId} />
 
