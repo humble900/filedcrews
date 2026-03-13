@@ -24,11 +24,13 @@ const navItems = [
 function SidebarContent({
   activeTab,
   onTabChange,
+  companyName,
   geofenceEditing,
   onNavigate,
 }: {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  companyName?: string;
   geofenceEditing?: boolean;
   onNavigate?: () => void;
 }) {
