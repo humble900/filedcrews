@@ -7,7 +7,7 @@ import { useState } from "react";
 import locationPermissionGuide from "@/assets/location-permission-guide.jpeg";
 
 const TRACKER_URL =
-  "https://expo.dev/accounts/eusoulegal6/projects/gps-prototype/builds/c3884d4c-5be1-4d58-9201-0ad9a42ceeda";
+  "https://expo.dev/accounts/eusoulegal6/projects/gps-prototype/builds/90dec2d9-dc27-49af-97f4-106f8d3ecdcd";
 
 const TrackerDownload = () => {
   const [copied, setCopied] = useState(false);
