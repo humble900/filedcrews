@@ -133,6 +133,7 @@ export default function DashboardLayout({
         <SidebarContent
           activeTab={activeTab}
           onTabChange={onTabChange}
+          companyName={companyName}
           geofenceEditing={geofenceEditing}
         />
       </aside>
