@@ -132,13 +132,16 @@ Deno.serve(async (req) => {
           eventType = isInside ? "logged_in_inside" : "logged_in_outside";
         } else {
           const lastIsInside = ["inside", "entered", "logged_in", "logged_in_inside"].includes(lastEvent.event_type);
-          const lastTime = new Date(lastEvent.created_at).getTime();
-          const now = Date.now();
-          const gapMs = now - lastTime;
-          const ONE_HOUR = 60 * 60 * 1000;
+          const lastTime = new Date(lastEvent.created_at);
+          const nowDate = new Date();
+          
+          // Check if last event was on a different day (UTC)
+          const lastDay = lastTime.toISOString().slice(0, 10);
+          const today = nowDate.toISOString().slice(0, 10);
+          const isDifferentDay = lastDay !== today;
 
-          if (gapMs > ONE_HOUR) {
-            // Gap > 1 hour → treat as new session
+          if (isDifferentDay) {
+            // New day → treat as new session regardless
             eventType = isInside ? "logged_in_inside" : "logged_in_outside";
           } else if (isInside && !lastIsInside) {
             eventType = "entered";
