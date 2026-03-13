@@ -62,16 +62,17 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    // Try getUser instead of getClaims for broader compatibility
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    console.log("Auth result:", JSON.stringify({ userId: userData?.user?.id, userError: userError?.message }));
+    if (userError || !userData?.user) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const userId = claimsData.claims.sub;
+    const userId = userData.user.id;
     const { latitude, longitude, accuracy } = await req.json();
 
     if (latitude == null || longitude == null) {
@@ -93,6 +94,8 @@ Deno.serve(async (req) => {
       .select("id, company_id, expo_push_token")
       .eq("auth_user_id", userId)
       .single();
+
+    console.log("Staff lookup:", JSON.stringify({ staffId: staff?.id, companyId: staff?.company_id, staffError: staffError?.message }));
 
     if (staffError || !staff) {
       return new Response(
