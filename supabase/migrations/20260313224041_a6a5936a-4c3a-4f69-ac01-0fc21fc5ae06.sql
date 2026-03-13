@@ -1,0 +1,2 @@
+ALTER TABLE public.geofence_events DROP CONSTRAINT geofence_events_event_type_check;
+ALTER TABLE public.geofence_events ADD CONSTRAINT geofence_events_event_type_check CHECK (event_type = ANY (ARRAY['inside'::text, 'outside'::text, 'entered'::text, 'exited'::text, 'logged_in_inside'::text, 'logged_in_outside'::text]));
