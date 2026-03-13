@@ -1178,7 +1178,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                 onChange={(e) => setClockInTime(e.target.value)}
                 className="mt-1"
               />
-              <p className="text-xs text-muted-foreground mt-1">Staff arriving after this time will be marked "Late"</p>
+              <p className="text-xs text-muted-foreground mt-1">Before → "Early" · After → "Late"</p>
             </div>
             <div>
               <label className="text-sm font-medium">Check-Out Time</label>
