@@ -1000,9 +1000,40 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                                 </Badge>
                               </div>
                             </div>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {format(new Date(ev.created_at), "MMM d, yyyy – HH:mm:ss")}
-                            </p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <p className="text-xs text-muted-foreground">
+                                {format(new Date(ev.created_at), "MMM d, yyyy – HH:mm:ss")}
+                              </p>
+                              {ev.face_check_status && ev.face_check_status !== "not_requested" && (() => {
+                                let cls = "";
+                                let text = "";
+                                switch (ev.face_check_status) {
+                                  case "verified":
+                                    cls = "bg-green-100 text-green-800 border-green-200";
+                                    text = "Face ID verified";
+                                    break;
+                                  case "mismatch":
+                                    cls = "bg-red-100 text-red-800 border-red-200";
+                                    text = "Face ID mismatch";
+                                    break;
+                                  case "requested":
+                                    cls = "bg-yellow-100 text-yellow-800 border-yellow-200";
+                                    text = "Face ID requested";
+                                    break;
+                                  case "skipped":
+                                    cls = "bg-gray-100 text-gray-600 border-gray-200";
+                                    text = "Face ID skipped";
+                                    break;
+                                  default:
+                                    return null;
+                                }
+                                return (
+                                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${cls}`}>
+                                    {text}{ev.face_check_confidence ? ` · ${ev.face_check_confidence}` : ""}
+                                  </span>
+                                );
+                              })()}
+                            </div>
                           </div>
                         );
                       };
