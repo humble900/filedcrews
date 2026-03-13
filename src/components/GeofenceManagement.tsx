@@ -351,15 +351,26 @@ function FitGeofences({ geofences }: { geofences: Geofence[] }) {
 }
 
 /* ── Pan to point ── */
-function PanTo({ lat, lng }: { lat: number; lng: number }) {
+function PanTo({ lat, lng, zoom = 14 }: { lat: number; lng: number; zoom?: number }) {
   const map = useMap();
   const done = useRef(false);
   useEffect(() => {
     if (!map || done.current) return;
     map.panTo({ lat, lng });
-    map.setZoom(14);
+    map.setZoom(zoom);
     done.current = true;
-  }, [map, lat, lng]);
+  }, [map, lat, lng, zoom]);
+  return null;
+}
+
+/* ── Pan to selected geofence ── */
+function PanToGeofence({ geofence }: { geofence: Geofence }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!map) return;
+    map.panTo({ lat: geofence.latitude, lng: geofence.longitude });
+    map.setZoom(16);
+  }, [map, geofence.id]);
   return null;
 }
 
