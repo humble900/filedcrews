@@ -909,21 +909,27 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
 
                         if (mode === "in" && selectedGeofence?.check_in_time) {
                           const expected = selectedGeofence.check_in_time.slice(0, 5);
-                          if (evHHMM <= expected) {
+                          if (evHHMM < expected) {
                             punctualityLabel = "Early";
                             punctualityClass = "bg-green-100 text-green-800 border-green-200";
-                          } else {
+                          } else if (evHHMM > expected) {
                             punctualityLabel = "Late";
                             punctualityClass = "bg-red-100 text-red-800 border-red-200";
+                          } else {
+                            punctualityLabel = "On time";
+                            punctualityClass = "bg-green-100 text-green-800 border-green-200";
                           }
                         } else if (mode === "out" && selectedGeofence?.check_out_time) {
                           const expected = selectedGeofence.check_out_time.slice(0, 5);
-                          if (evHHMM >= expected) {
-                            punctualityLabel = "On time";
-                            punctualityClass = "bg-green-100 text-green-800 border-green-200";
-                          } else {
+                          if (evHHMM < expected) {
                             punctualityLabel = "Early";
                             punctualityClass = "bg-orange-100 text-orange-800 border-orange-200";
+                          } else if (evHHMM > expected) {
+                            punctualityLabel = "Late";
+                            punctualityClass = "bg-red-100 text-red-800 border-red-200";
+                          } else {
+                            punctualityLabel = "On time";
+                            punctualityClass = "bg-green-100 text-green-800 border-green-200";
                           }
                         }
 
@@ -1172,7 +1178,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                 onChange={(e) => setClockInTime(e.target.value)}
                 className="mt-1"
               />
-              <p className="text-xs text-muted-foreground mt-1">Staff arriving after this time will be marked "Late"</p>
+              <p className="text-xs text-muted-foreground mt-1">Before → "Early" · After → "Late"</p>
             </div>
             <div>
               <label className="text-sm font-medium">Check-Out Time</label>
@@ -1182,7 +1188,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                 onChange={(e) => setClockOutTime(e.target.value)}
                 className="mt-1"
               />
-              <p className="text-xs text-muted-foreground mt-1">Staff leaving before this time will be marked "Early"</p>
+              <p className="text-xs text-muted-foreground mt-1">Before → "Early" · After → "Late"</p>
             </div>
           </div>
           <DialogFooter className="gap-2">
