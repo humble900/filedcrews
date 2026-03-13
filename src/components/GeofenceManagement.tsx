@@ -977,7 +977,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                               <p className="px-4 py-6 text-xs text-muted-foreground text-center">No entries detected.</p>
                             ) : (
                               <div className="divide-y divide-border">
-                                {inEvents.map(renderEvent)}
+                                {inEvents.map((ev) => renderEvent(ev, "in"))}
                               </div>
                             )}
                           </TabsContent>
