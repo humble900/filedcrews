@@ -175,7 +175,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        console.log("Event decision:", JSON.stringify({ gfId: gf.id, eventType, lastEvent }));
+        
 
         if (eventType) {
           // Determine face_check_status for entry events
