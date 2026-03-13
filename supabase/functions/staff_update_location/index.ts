@@ -123,16 +123,17 @@ Deno.serve(async (req) => {
       });
 
     // ── Geofence detection ──
-    const geofenceQuery = supabaseAdmin
+    let geofenceQuery = supabaseAdmin
       .from("geofences")
       .select("id, latitude, longitude, radius_meters, ask_for_face_id")
       .eq("is_active", true);
     
     if (staff.company_id) {
-      geofenceQuery.eq("company_id", staff.company_id);
+      geofenceQuery = geofenceQuery.eq("company_id", staff.company_id);
     }
     
-    const { data: geofences } = await geofenceQuery;
+    const { data: geofences, error: gfError } = await geofenceQuery;
+    console.log("Geofence query result:", JSON.stringify({ staffId: staff.id, companyId: staff.company_id, geofencesCount: geofences?.length, gfError }));
 
     if (geofences && geofences.length > 0) {
       for (const gf of geofences) {
