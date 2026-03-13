@@ -1096,6 +1096,11 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                       <div className="flex items-center gap-2">
                         <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
                         <p className="font-medium text-sm">{gf.name}</p>
+                        {gf.ask_for_face_id && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-primary/40 text-primary">
+                            Face ID
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <Switch checked={gf.is_active} onCheckedChange={() => toggleActive(gf)} onClick={(e) => e.stopPropagation()} />
