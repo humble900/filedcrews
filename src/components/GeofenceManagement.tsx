@@ -491,6 +491,11 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   const [editCenter, setEditCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [editRadius, setEditRadius] = useState(500);
 
+  // Clock-in/out dialog
+  const [clockDialogOpen, setClockDialogOpen] = useState(false);
+  const [clockInTime, setClockInTime] = useState("");
+  const [clockOutTime, setClockOutTime] = useState("");
+
   // Notify parent about edit mode changes
   useEffect(() => {
     onEditModeChange?.(editMode || placing || nameDialogOpen);
