@@ -541,7 +541,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   const [editMode, setEditMode] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editCenter, setEditCenter] = useState<{ lat: number; lng: number } | null>(null);
-  const [editRadius, setEditRadius] = useState(500);
+  const [editRadius, setEditRadius] = useState(170);
   const [editAskForFaceId, setEditAskForFaceId] = useState(false);
 
   // Preserved zoom for edit mode after placement
