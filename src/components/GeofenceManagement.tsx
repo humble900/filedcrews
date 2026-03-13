@@ -1203,7 +1203,11 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
             {editMode && editCenter && (
               <>
                 <EditableCircle center={editCenter} radius={editRadius} onCenterChange={(lat, lng) => setEditCenter({ lat, lng })} />
-                <PanTo lat={editCenter.lat} lng={editCenter.lng} />
+                {editZoom != null ? (
+                  <PanTo lat={editCenter.lat} lng={editCenter.lng} zoom={editZoom} />
+                ) : (
+                  <PanTo lat={editCenter.lat} lng={editCenter.lng} />
+                )}
               </>
             )}
             {placing && <PlacementMode onPlace={handlePlace} />}
