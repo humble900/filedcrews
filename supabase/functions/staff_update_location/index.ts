@@ -62,9 +62,7 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    // Try getUser instead of getClaims for broader compatibility
     const { data: userData, error: userError } = await supabase.auth.getUser();
-    console.log("Auth result:", JSON.stringify({ userId: userData?.user?.id, userError: userError?.message }));
     if (userError || !userData?.user) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
@@ -94,8 +92,6 @@ Deno.serve(async (req) => {
       .select("id, company_id, expo_push_token")
       .eq("auth_user_id", userId)
       .single();
-
-    console.log("Staff lookup:", JSON.stringify({ staffId: staff?.id, companyId: staff?.company_id, staffError: staffError?.message }));
 
     if (staffError || !staff) {
       return new Response(
