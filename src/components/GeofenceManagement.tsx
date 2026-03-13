@@ -1177,7 +1177,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
             }}
           >
             <GeoPlaceSearch />
-            <FitGeofences geofences={geofences} />
+            <FitGeofences geofences={geofences} suppress={suppressAutoFit} />
             <GeofenceCircles
               geofences={geofences}
               selectedId={selectedGeofence?.id ?? null}
