@@ -24,11 +24,13 @@ const navItems = [
 function SidebarContent({
   activeTab,
   onTabChange,
+  companyName,
   geofenceEditing,
   onNavigate,
 }: {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  companyName?: string;
   geofenceEditing?: boolean;
   onNavigate?: () => void;
 }) {
@@ -41,6 +43,9 @@ function SidebarContent({
           <MapPin className="h-7 w-7 text-sidebar-primary" />
           <span className="text-lg font-bold">Staff Tracker</span>
         </div>
+        {companyName && (
+          <p className="mt-2 text-sm text-sidebar-foreground/60 truncate">{companyName}</p>
+        )}
       </div>
 
       <nav className="flex-1 p-4 space-y-1">
@@ -115,6 +120,7 @@ export default function DashboardLayout({
             <SidebarContent
               activeTab={activeTab}
               onTabChange={onTabChange}
+              companyName={companyName}
               geofenceEditing={geofenceEditing}
               onNavigate={() => setMobileOpen(false)}
             />
@@ -127,6 +133,7 @@ export default function DashboardLayout({
         <SidebarContent
           activeTab={activeTab}
           onTabChange={onTabChange}
+          companyName={companyName}
           geofenceEditing={geofenceEditing}
         />
       </aside>
