@@ -506,6 +506,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editCenter, setEditCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [editRadius, setEditRadius] = useState(500);
+  const [editAskForFaceId, setEditAskForFaceId] = useState(false);
 
   // Clock-in/out dialog
   const [clockDialogOpen, setClockDialogOpen] = useState(false);
