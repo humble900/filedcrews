@@ -1082,7 +1082,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                 <AdvancedMarker key={gf.id} position={{ lat: gf.latitude, lng: gf.longitude }} zIndex={1}>
                   <div style={{
                     background: gf.is_active ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))",
-                    color: "white", padding: "2px 8px", borderRadius: "6px", fontSize: "11px",
+                    color: "white", padding: "3px 10px", borderRadius: "8px", fontSize: "14px",
                     fontWeight: 600, whiteSpace: "nowrap", boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
                     opacity: gf.is_active ? 1 : 0.7,
                   }}>
