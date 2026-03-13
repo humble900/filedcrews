@@ -1245,9 +1245,54 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                 </AdvancedMarker>
               ))}
 
-            {/* Map Style Selector */}
+            {/* Staff location markers */}
+            {showStaff && staffLocations.map((loc, idx) => {
+              const hasPhoto = !!loc.staff_profiles?.photo_url;
+              return (
+                <AdvancedMarker
+                  key={loc.staff_id}
+                  position={{ lat: loc.latitude, lng: loc.longitude }}
+                  title={loc.staff_profiles?.full_name || "Unknown"}
+                  zIndex={2}
+                >
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    <div style={{
+                      background: "hsl(220, 70%, 50%)",
+                      color: "white",
+                      padding: "2px 8px",
+                      borderRadius: "6px",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      whiteSpace: "nowrap",
+                      boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
+                      marginBottom: "3px",
+                    }}>
+                      {loc.staff_profiles?.full_name || "Unknown"}
+                    </div>
+                    {hasPhoto ? (
+                      <div style={{
+                        width: "32px", height: "32px", borderRadius: "50%", overflow: "hidden",
+                        border: "2px solid white",
+                        boxShadow: "0 0 0 1px hsl(220, 70%, 50%), 0 1px 4px rgba(0,0,0,0.3)",
+                      }}>
+                        <img src={loc.staff_profiles!.photo_url!} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      </div>
+                    ) : (
+                      <div style={{
+                        width: "10px", height: "10px", borderRadius: "50%",
+                        background: "hsl(220, 70%, 50%)", border: "2px solid white",
+                        boxShadow: "0 0 0 1px hsl(220, 70%, 50%), 0 1px 4px rgba(0,0,0,0.3)",
+                      }} />
+                    )}
+                  </div>
+                </AdvancedMarker>
+              );
+            })}
+
+            {/* Map controls: Style + Show Staff */}
             <MapControl position={ControlPosition.TOP_RIGHT}>
-              <div style={{ padding: "10px" }}>
+              <div style={{ padding: "10px", display: "flex", flexDirection: "column", gap: "6px", alignItems: "flex-end" }}>
+                {/* Style selector */}
                 <div
                   style={{
                     display: "flex",
@@ -1297,6 +1342,24 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                       Clean
                     </button>
                   </div>
+                </div>
+                {/* Show Staff toggle */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "6px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid hsl(var(--border))",
+                    background: "hsl(var(--background))",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                    fontSize: "12px",
+                    fontWeight: 500,
+                  }}
+                >
+                  <span style={{ color: "hsl(var(--muted-foreground))" }}>Staff</span>
+                  <Switch checked={showStaff} onCheckedChange={setShowStaff} />
                 </div>
               </div>
             </MapControl>
