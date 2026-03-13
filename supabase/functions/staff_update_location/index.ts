@@ -139,6 +139,7 @@ Deno.serve(async (req) => {
       for (const gf of geofences) {
         const dist = haversineMeters(latitude, longitude, gf.latitude, gf.longitude);
         const isInside = dist <= gf.radius_meters;
+        console.log("Geofence check:", JSON.stringify({ gfId: gf.id, dist, radius: gf.radius_meters, isInside, staffLat: latitude, staffLng: longitude, gfLat: gf.latitude, gfLng: gf.longitude }));
 
         // Get last event for this staff+geofence
         const { data: lastEvent } = await supabaseAdmin
