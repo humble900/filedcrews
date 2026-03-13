@@ -165,6 +165,7 @@ interface Geofence {
   created_at: string;
   check_in_time: string | null;
   check_out_time: string | null;
+  ask_for_face_id: boolean;
 }
 
 interface GeofenceEvent {
