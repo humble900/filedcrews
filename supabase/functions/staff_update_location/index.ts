@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
     }
     
     const { data: geofences, error: gfError } = await geofenceQuery;
-    console.log("Geofence query result:", JSON.stringify({ staffId: staff.id, companyId: staff.company_id, geofencesCount: geofences?.length, gfError }));
+    
 
     if (geofences && geofences.length > 0) {
       for (const gf of geofences) {
