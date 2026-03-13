@@ -335,11 +335,13 @@ function PlacementMode({
 }
 
 /* ── Fit map to geofences ── */
-function FitGeofences({ geofences }: { geofences: Geofence[] }) {
+function FitGeofences({ geofences, suppress }: { geofences: Geofence[]; suppress?: boolean }) {
   const map = useMap();
+  const fitted = useRef(false);
 
   useEffect(() => {
-    if (!map || geofences.length === 0) return;
+    if (!map || geofences.length === 0 || suppress || fitted.current) return;
+    fitted.current = true;
     const bounds = new google.maps.LatLngBounds();
     geofences.forEach((gf) => bounds.extend({ lat: gf.latitude, lng: gf.longitude }));
     map.fitBounds(bounds, 120);
@@ -349,7 +351,7 @@ function FitGeofences({ geofences }: { geofences: Geofence[] }) {
       if (z && z > 15) map.setZoom(15);
     });
     return () => google.maps.event.removeListener(listener);
-  }, [map, geofences]);
+  }, [map, geofences, suppress]);
 
   return null;
 }
