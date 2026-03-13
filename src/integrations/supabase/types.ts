@@ -199,6 +199,7 @@ export type Database = {
           full_name: string
           id: string
           is_active: boolean
+          last_face_verified_at: string | null
           photo_url: string | null
           username: string
         }
@@ -209,6 +210,7 @@ export type Database = {
           full_name: string
           id?: string
           is_active?: boolean
+          last_face_verified_at?: string | null
           photo_url?: string | null
           username: string
         }
@@ -219,6 +221,7 @@ export type Database = {
           full_name?: string
           id?: string
           is_active?: boolean
+          last_face_verified_at?: string | null
           photo_url?: string | null
           username?: string
         }

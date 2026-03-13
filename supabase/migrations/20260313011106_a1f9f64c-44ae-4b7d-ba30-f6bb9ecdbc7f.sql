@@ -1,0 +1,1 @@
+ALTER TABLE public.staff_profiles ADD COLUMN last_face_verified_at timestamptz DEFAULT NULL;
