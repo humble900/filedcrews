@@ -853,8 +853,8 @@ const LiveMap = () => {
         <APIProvider apiKey={apiKey}>
           <Map
             key={mapStyle}
-            defaultCenter={{ lat: 24.7136, lng: 46.6753 }}
-            defaultZoom={6}
+            defaultCenter={savedViewRef.current?.center ?? { lat: 24.7136, lng: 46.6753 }}
+            defaultZoom={savedViewRef.current?.zoom ?? 6}
             mapId={activeMapId}
             style={{ width: "100%", height: "100%" }}
             gestureHandling="greedy"
