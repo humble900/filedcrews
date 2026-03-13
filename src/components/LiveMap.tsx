@@ -596,17 +596,21 @@ const LiveMap = () => {
 
   // Persist zoom/center across style switches
   const savedViewRef = useRef<{ center: { lat: number; lng: number }; zoom: number } | null>(null);
+  const [suppressAutoFitOnMount, setSuppressAutoFitOnMount] = useState(false);
 
   const switchStyle = useCallback((style: "normal" | "clean") => {
     if (style === mapStyle) return;
+
     const m = mapInstanceRef.current;
     if (m) {
       const center = m.getCenter();
       const zoom = m.getZoom();
       if (center && zoom != null) {
         savedViewRef.current = { center: center.toJSON(), zoom };
+        setSuppressAutoFitOnMount(true);
       }
     }
+
     mapInstanceRef.current = null;
     setMapStyle(style);
   }, [mapStyle]);
