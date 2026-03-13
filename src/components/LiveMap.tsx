@@ -894,7 +894,7 @@ const LiveMap = () => {
                   <span style={{ color: "hsl(var(--muted-foreground))" }}>Style:</span>
                   <div style={{ display: "flex", gap: "4px" }}>
                     <button
-                      onClick={() => setMapStyle("normal")}
+                      onClick={() => switchStyle("normal")}
                       style={{
                         padding: "4px 10px",
                         borderRadius: "6px",
