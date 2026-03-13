@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
     // Find staff profile
     const { data: staff, error: staffError } = await supabaseAdmin
       .from("staff_profiles")
-      .select("id, company_id, last_face_verified_at")
+      .select("id, company_id")
       .eq("auth_user_id", userId)
       .single();
 
@@ -74,18 +74,6 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Staff profile not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // ── Face verification gate (10-minute window) ──
-    const TEN_MINUTES_MS = 10 * 60 * 1000;
-    const lastVerified = staff.last_face_verified_at
-      ? new Date(staff.last_face_verified_at).getTime()
-      : 0;
-    if (Date.now() - lastVerified > TEN_MINUTES_MS) {
-      return new Response(
-        JSON.stringify({ ok: false, reason: "face_verification_required" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
