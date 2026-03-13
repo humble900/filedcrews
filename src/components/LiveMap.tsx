@@ -550,13 +550,8 @@ function getStaffColor(index: number) {
 }
 
 /* ── Main component ── */
-const CLEAN_MAP_STYLES: google.maps.MapTypeStyle[] = [
-  { featureType: "poi.business", stylers: [{ visibility: "off" }] },
-  { featureType: "poi.attraction", stylers: [{ visibility: "off" }] },
-  { featureType: "poi.government", stylers: [{ visibility: "off" }] },
-  { featureType: "poi.sports_complex", stylers: [{ visibility: "off" }] },
-  { featureType: "transit", stylers: [{ visibility: "off" }] },
-];
+const NORMAL_MAP_ID = "f3ab175d00da0a6b2246ec75";
+const CLEAN_MAP_ID = "f3ab175d00da0a6b6e36641d";
 
 const LiveMap = () => {
   const isMobile = useIsMobile();
