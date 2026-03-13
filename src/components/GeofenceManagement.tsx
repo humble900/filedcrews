@@ -163,6 +163,8 @@ interface Geofence {
   radius_meters: number;
   is_active: boolean;
   created_at: string;
+  check_in_time: string | null;
+  check_out_time: string | null;
 }
 
 interface GeofenceEvent {
@@ -489,6 +491,11 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   const [editCenter, setEditCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [editRadius, setEditRadius] = useState(500);
 
+  // Clock-in/out dialog
+  const [clockDialogOpen, setClockDialogOpen] = useState(false);
+  const [clockInTime, setClockInTime] = useState("");
+  const [clockOutTime, setClockOutTime] = useState("");
+
   // Notify parent about edit mode changes
   useEffect(() => {
     onEditModeChange?.(editMode || placing || nameDialogOpen);
@@ -796,6 +803,14 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                       <Pencil className="h-3 w-3 mr-1" />
                       Edit
                     </Button>
+                    <Button size="sm" variant="ghost" onClick={() => {
+                      setClockInTime(selectedGeofence.check_in_time?.slice(0, 5) || "");
+                      setClockOutTime(selectedGeofence.check_out_time?.slice(0, 5) || "");
+                      setClockDialogOpen(true);
+                    }}>
+                      <Clock className="h-3 w-3 mr-1" />
+                      Set Clock-In/Out
+                    </Button>
                     <Button size="sm" variant="ghost" onClick={() => toggleActive(selectedGeofence)}>
                       {selectedGeofence.is_active ? "Disable" : "Enable"}
                     </Button>
@@ -804,6 +819,14 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                       Delete
                     </Button>
                   </div>
+                  {(selectedGeofence.check_in_time || selectedGeofence.check_out_time) && (
+                    <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      {selectedGeofence.check_in_time && <span>In: {selectedGeofence.check_in_time.slice(0, 5)}</span>}
+                      {selectedGeofence.check_in_time && selectedGeofence.check_out_time && <span>·</span>}
+                      {selectedGeofence.check_out_time && <span>Out: {selectedGeofence.check_out_time.slice(0, 5)}</span>}
+                    </div>
+                  )}
                 </div>
                 <Tabs defaultValue="crossings" className="w-full">
                   <div className="px-4 py-2 border-b border-border space-y-2">
@@ -860,7 +883,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                       const inEvents = events.filter((ev) => inTypes.has(ev.event_type));
                       const outEvents = events.filter((ev) => outTypes.has(ev.event_type));
 
-                      const renderEvent = (ev: GeofenceEvent) => {
+                      const renderEvent = (ev: GeofenceEvent, mode: "in" | "out") => {
                         const isEntered = ev.event_type === "entered" || ev.event_type === "inside";
                         const isLoggedInInside = ev.event_type === "logged_in_inside" || ev.event_type === "logged_in";
                         const isExited = ev.event_type === "exited" || ev.event_type === "outside";
@@ -878,6 +901,32 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                           label = "Exited";
                         }
 
+                        // Late/Early logic
+                        let punctualityLabel: string | null = null;
+                        let punctualityClass = "";
+                        const evTime = new Date(ev.created_at);
+                        const evHHMM = `${String(evTime.getHours()).padStart(2, "0")}:${String(evTime.getMinutes()).padStart(2, "0")}`;
+
+                        if (mode === "in" && selectedGeofence?.check_in_time) {
+                          const expected = selectedGeofence.check_in_time.slice(0, 5);
+                          if (evHHMM <= expected) {
+                            punctualityLabel = "Early";
+                            punctualityClass = "bg-green-100 text-green-800 border-green-200";
+                          } else {
+                            punctualityLabel = "Late";
+                            punctualityClass = "bg-red-100 text-red-800 border-red-200";
+                          }
+                        } else if (mode === "out" && selectedGeofence?.check_out_time) {
+                          const expected = selectedGeofence.check_out_time.slice(0, 5);
+                          if (evHHMM >= expected) {
+                            punctualityLabel = "On time";
+                            punctualityClass = "bg-green-100 text-green-800 border-green-200";
+                          } else {
+                            punctualityLabel = "Early";
+                            punctualityClass = "bg-orange-100 text-orange-800 border-orange-200";
+                          }
+                        }
+
                         return (
                           <div key={ev.id} className="px-4 py-2.5">
                             <div className="flex items-center justify-between">
@@ -889,13 +938,20 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                                 />
                                 <p className="text-sm font-medium">{ev.staff_profiles?.full_name || "Unknown"}</p>
                               </div>
-                              <Badge
-                                variant={isExited ? "secondary" : "default"}
-                                className={badgeClass}
-                              >
-                                <ArrowRightLeft className="h-3 w-3 mr-1" />
-                                {label}
-                              </Badge>
+                              <div className="flex items-center gap-1.5">
+                                {punctualityLabel && (
+                                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${punctualityClass}`}>
+                                    {punctualityLabel}
+                                  </span>
+                                )}
+                                <Badge
+                                  variant={isExited ? "secondary" : "default"}
+                                  className={badgeClass}
+                                >
+                                  <ArrowRightLeft className="h-3 w-3 mr-1" />
+                                  {label}
+                                </Badge>
+                              </div>
                             </div>
                             <p className="text-xs text-muted-foreground mt-0.5">
                               {format(new Date(ev.created_at), "MMM d, yyyy – HH:mm:ss")}
@@ -921,7 +977,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                               <p className="px-4 py-6 text-xs text-muted-foreground text-center">No entries detected.</p>
                             ) : (
                               <div className="divide-y divide-border">
-                                {inEvents.map(renderEvent)}
+                                {inEvents.map((ev) => renderEvent(ev, "in"))}
                               </div>
                             )}
                           </TabsContent>
@@ -930,7 +986,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                               <p className="px-4 py-6 text-xs text-muted-foreground text-center">No exits detected.</p>
                             ) : (
                               <div className="divide-y divide-border">
-                                {outEvents.map(renderEvent)}
+                                {outEvents.map((ev) => renderEvent(ev, "out"))}
                               </div>
                             )}
                           </TabsContent>
@@ -1094,6 +1150,84 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setNameDialogOpen(false)}>Cancel</Button>
             <Button onClick={confirmName} disabled={!pendingName.trim()}>Next</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Clock-In/Out dialog */}
+      <Dialog open={clockDialogOpen} onOpenChange={setClockDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Set Clock-In/Out</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Define expected check-in and check-out times for <span className="font-medium text-foreground">{selectedGeofence?.name}</span>. Crossings will be labeled as Early or Late based on these times.
+          </p>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="text-sm font-medium">Check-In Time</label>
+              <Input
+                type="time"
+                value={clockInTime}
+                onChange={(e) => setClockInTime(e.target.value)}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Staff arriving after this time will be marked "Late"</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Check-Out Time</label>
+              <Input
+                type="time"
+                value={clockOutTime}
+                onChange={(e) => setClockOutTime(e.target.value)}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Staff leaving before this time will be marked "Early"</p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            {(selectedGeofence?.check_in_time || selectedGeofence?.check_out_time) && (
+              <Button
+                variant="outline"
+                className="text-destructive mr-auto"
+                onClick={async () => {
+                  if (!selectedGeofence) return;
+                  const { error } = await supabase
+                    .from("geofences")
+                    .update({ check_in_time: null, check_out_time: null } as any)
+                    .eq("id", selectedGeofence.id);
+                  if (error) { toast.error("Failed to clear times"); return; }
+                  toast.success("Clock-in/out times cleared");
+                  setClockDialogOpen(false);
+                  fetchGeofences();
+                  setSelectedGeofence({ ...selectedGeofence, check_in_time: null, check_out_time: null });
+                }}
+              >
+                Clear
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setClockDialogOpen(false)}>Cancel</Button>
+            <Button
+              onClick={async () => {
+                if (!selectedGeofence) return;
+                const updates: any = {
+                  check_in_time: clockInTime || null,
+                  check_out_time: clockOutTime || null,
+                };
+                const { error } = await supabase
+                  .from("geofences")
+                  .update(updates)
+                  .eq("id", selectedGeofence.id);
+                if (error) { toast.error("Failed to save times"); return; }
+                toast.success("Clock-in/out times saved");
+                setClockDialogOpen(false);
+                fetchGeofences();
+                setSelectedGeofence({ ...selectedGeofence, ...updates });
+              }}
+              disabled={!clockInTime && !clockOutTime}
+            >
+              Save
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
