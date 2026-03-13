@@ -570,6 +570,23 @@ const LiveMap = () => {
   const [mapStyle, setMapStyle] = useState<"normal" | "clean">("normal");
   const activeMapId = mapStyle === "normal" ? NORMAL_MAP_ID : CLEAN_MAP_ID;
 
+  // Persist zoom/center across style switches
+  const savedViewRef = useRef<{ center: { lat: number; lng: number }; zoom: number } | null>(null);
+
+  const switchStyle = useCallback((style: "normal" | "clean") => {
+    if (style === mapStyle) return;
+    const m = mapInstanceRef.current;
+    if (m) {
+      const center = m.getCenter();
+      const zoom = m.getZoom();
+      if (center && zoom != null) {
+        savedViewRef.current = { center: center.toJSON(), zoom };
+      }
+    }
+    mapInstanceRef.current = null;
+    setMapStyle(style);
+  }, [mapStyle]);
+
   // Hidden staff (persisted in localStorage)
   const [hiddenStaffIds, setHiddenStaffIds] = useState<Set<string>>(() => {
     try {
