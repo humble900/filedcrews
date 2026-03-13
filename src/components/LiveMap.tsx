@@ -324,7 +324,7 @@ function useFitBounds() {
       // Cap zoom so it doesn't zoom in too much (e.g. single marker)
       google.maps.event.addListenerOnce(map, "idle", () => {
         const z = map.getZoom();
-        if (z && z > 14) map.setZoom(14);
+        if (z && z > 15) map.setZoom(15);
       });
     },
     [map]
