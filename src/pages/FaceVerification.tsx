@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Upload, CheckCircle2, XCircle, ImageIcon, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const FaceVerification = () => {
   const [referencePhoto, setReferencePhoto] = useState<string | null>(null);
@@ -11,6 +12,8 @@ const FaceVerification = () => {
   const [comparisonPhoto, setComparisonPhoto] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [result, setResult] = useState<{ match: boolean; confidence: string; explanation: string } | null>(null);
+  const [isDraggingRef, setIsDraggingRef] = useState(false);
+  const [isDraggingComp, setIsDraggingComp] = useState(false);
 
   const refInputRef = useRef<HTMLInputElement>(null);
   const compInputRef = useRef<HTMLInputElement>(null);
@@ -70,6 +73,59 @@ const FaceVerification = () => {
     }
   };
 
+  // Drag and drop handlers for reference photo
+  const handleRefDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingRef(true);
+  };
+
+  const handleRefDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingRef(false);
+  };
+
+  const handleRefDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingRef(false);
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleFileSelect(files[0], setReferencePhoto);
+    }
+  };
+
+  // Drag and drop handlers for comparison photo
+  const handleCompDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingComp(true);
+  };
+
+  const handleCompDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingComp(false);
+  };
+
+  const handleCompDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingComp(false);
+    
+    if (!savedReference) {
+      toast({ title: "Save reference first", description: "Please upload and save a reference photo first.", variant: "destructive" });
+      return;
+    }
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleFileSelect(files[0], setComparisonPhoto);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="mx-auto max-w-4xl space-y-6">
@@ -87,7 +143,7 @@ const FaceVerification = () => {
                 Reference Photo
               </CardTitle>
               <CardDescription>
-                {savedReference ? "Reference saved. Click edit to change." : "Upload a reference photo to compare against."}
+                {savedReference ? "Reference saved. Click edit to change." : "Upload or drag a reference photo to compare against."}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -124,10 +180,20 @@ const FaceVerification = () => {
               ) : (
                 <button
                   onClick={() => refInputRef.current?.click()}
-                  className="flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/30 transition hover:border-primary/50 hover:bg-muted/50"
+                  onDragOver={handleRefDragOver}
+                  onDragLeave={handleRefDragLeave}
+                  onDrop={handleRefDrop}
+                  className={cn(
+                    "flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed transition",
+                    isDraggingRef
+                      ? "border-primary bg-primary/10"
+                      : "border-muted-foreground/30 bg-muted/30 hover:border-primary/50 hover:bg-muted/50"
+                  )}
                 >
-                  <Upload className="h-10 w-10 text-muted-foreground/50" />
-                  <span className="text-sm text-muted-foreground">Click to upload</span>
+                  <Upload className={cn("h-10 w-10", isDraggingRef ? "text-primary" : "text-muted-foreground/50")} />
+                  <span className="text-sm text-muted-foreground text-center px-4">
+                    {isDraggingRef ? "Drop photo here" : "Click or drag photo here"}
+                  </span>
                 </button>
               )}
             </CardContent>
@@ -140,7 +206,7 @@ const FaceVerification = () => {
                 <ImageIcon className="h-5 w-5 text-primary" />
                 Comparison Photo
               </CardTitle>
-              <CardDescription>Upload the photo you want to verify.</CardDescription>
+              <CardDescription>Upload or drag the photo you want to verify.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <input
@@ -176,10 +242,25 @@ const FaceVerification = () => {
                     }
                     compInputRef.current?.click();
                   }}
-                  className="flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/30 transition hover:border-primary/50 hover:bg-muted/50"
+                  onDragOver={savedReference ? handleCompDragOver : undefined}
+                  onDragLeave={savedReference ? handleCompDragLeave : undefined}
+                  onDrop={savedReference ? handleCompDrop : undefined}
+                  className={cn(
+                    "flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed transition",
+                    !savedReference && "opacity-50 cursor-not-allowed",
+                    isDraggingComp && savedReference
+                      ? "border-primary bg-primary/10"
+                      : "border-muted-foreground/30 bg-muted/30 hover:border-primary/50 hover:bg-muted/50"
+                  )}
                 >
-                  <Upload className="h-10 w-10 text-muted-foreground/50" />
-                  <span className="text-sm text-muted-foreground">Click to upload</span>
+                  <Upload className={cn("h-10 w-10", isDraggingComp && savedReference ? "text-primary" : "text-muted-foreground/50")} />
+                  <span className="text-sm text-muted-foreground text-center px-4">
+                    {!savedReference
+                      ? "Save reference photo first"
+                      : isDraggingComp
+                        ? "Drop photo here"
+                        : "Click or drag photo here"}
+                  </span>
                 </button>
               )}
             </CardContent>
