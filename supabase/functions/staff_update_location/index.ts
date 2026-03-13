@@ -192,7 +192,7 @@ Deno.serve(async (req) => {
             })
             .select("id")
             .single();
-          console.log("Event insert result:", JSON.stringify({ insertedEvent, insertError }));
+          
 
           // Send push notification for face verification (fire-and-forget)
           if (shouldRequestFace && staff.expo_push_token && insertedEvent) {
