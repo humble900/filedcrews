@@ -1084,6 +1084,9 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
               }}
               excludeId={editMode ? editingId : null}
             />
+            {selectedGeofence && !editMode && (
+              <PanToGeofence geofence={selectedGeofence} />
+            )}
             {editMode && editCenter && (
               <>
                 <EditableCircle center={editCenter} radius={editRadius} onCenterChange={(lat, lng) => setEditCenter({ lat, lng })} />
