@@ -883,7 +883,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                       const inEvents = events.filter((ev) => inTypes.has(ev.event_type));
                       const outEvents = events.filter((ev) => outTypes.has(ev.event_type));
 
-                      const renderEvent = (ev: GeofenceEvent) => {
+                      const renderEvent = (ev: GeofenceEvent, mode: "in" | "out") => {
                         const isEntered = ev.event_type === "entered" || ev.event_type === "inside";
                         const isLoggedInInside = ev.event_type === "logged_in_inside" || ev.event_type === "logged_in";
                         const isExited = ev.event_type === "exited" || ev.event_type === "outside";
@@ -901,6 +901,32 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                           label = "Exited";
                         }
 
+                        // Late/Early logic
+                        let punctualityLabel: string | null = null;
+                        let punctualityClass = "";
+                        const evTime = new Date(ev.created_at);
+                        const evHHMM = `${String(evTime.getHours()).padStart(2, "0")}:${String(evTime.getMinutes()).padStart(2, "0")}`;
+
+                        if (mode === "in" && selectedGeofence?.check_in_time) {
+                          const expected = selectedGeofence.check_in_time.slice(0, 5);
+                          if (evHHMM <= expected) {
+                            punctualityLabel = "Early";
+                            punctualityClass = "bg-green-100 text-green-800 border-green-200";
+                          } else {
+                            punctualityLabel = "Late";
+                            punctualityClass = "bg-red-100 text-red-800 border-red-200";
+                          }
+                        } else if (mode === "out" && selectedGeofence?.check_out_time) {
+                          const expected = selectedGeofence.check_out_time.slice(0, 5);
+                          if (evHHMM >= expected) {
+                            punctualityLabel = "On time";
+                            punctualityClass = "bg-green-100 text-green-800 border-green-200";
+                          } else {
+                            punctualityLabel = "Early";
+                            punctualityClass = "bg-orange-100 text-orange-800 border-orange-200";
+                          }
+                        }
+
                         return (
                           <div key={ev.id} className="px-4 py-2.5">
                             <div className="flex items-center justify-between">
@@ -912,13 +938,20 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                                 />
                                 <p className="text-sm font-medium">{ev.staff_profiles?.full_name || "Unknown"}</p>
                               </div>
-                              <Badge
-                                variant={isExited ? "secondary" : "default"}
-                                className={badgeClass}
-                              >
-                                <ArrowRightLeft className="h-3 w-3 mr-1" />
-                                {label}
-                              </Badge>
+                              <div className="flex items-center gap-1.5">
+                                {punctualityLabel && (
+                                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${punctualityClass}`}>
+                                    {punctualityLabel}
+                                  </span>
+                                )}
+                                <Badge
+                                  variant={isExited ? "secondary" : "default"}
+                                  className={badgeClass}
+                                >
+                                  <ArrowRightLeft className="h-3 w-3 mr-1" />
+                                  {label}
+                                </Badge>
+                              </div>
                             </div>
                             <p className="text-xs text-muted-foreground mt-0.5">
                               {format(new Date(ev.created_at), "MMM d, yyyy – HH:mm:ss")}
