@@ -1133,8 +1133,8 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                           </Badge>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Switch checked={gf.is_active} onCheckedChange={() => toggleActive(gf)} onClick={(e) => e.stopPropagation()} />
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+                        <Switch checked={gf.is_active} onCheckedChange={() => toggleActive(gf)} />
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5 ml-[22px]">
