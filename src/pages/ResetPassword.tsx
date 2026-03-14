@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
+import SEO from "@/components/SEO";
 
 const ResetPassword = () => {
   const navigate = useNavigate();

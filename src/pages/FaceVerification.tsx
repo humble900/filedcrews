@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Upload, CheckCircle2, XCircle, ImageIcon, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import SEO from "@/components/SEO";
 
 const FaceVerification = () => {
   const [referencePhoto, setReferencePhoto] = useState<string | null>(null);
