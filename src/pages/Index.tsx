@@ -6,6 +6,7 @@ import LiveMap from "@/components/LiveMap";
 import GeofenceManagement from "@/components/GeofenceManagement";
 import TrackerDownload from "@/components/TrackerDownload";
 import DashboardLayout from "@/components/DashboardLayout";
+import SEO from "@/components/SEO";
 import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,7 +45,16 @@ const Index = () => {
   }
 
   if (!user) {
-    return <AuthPage onSignIn={signIn} onSignUp={signUp} />;
+    return (
+      <>
+        <SEO
+          title="Staff Tracker — Real-Time Staff Location Dashboard"
+          description="Track your team's location in real time. Manage staff, set geofences, and monitor movement from one simple dashboard."
+          path="/"
+        />
+        <AuthPage onSignIn={signIn} onSignUp={signUp} />
+      </>
+    );
   }
 
   if (!company) {
@@ -52,6 +62,13 @@ const Index = () => {
   }
 
   return (
+    <>
+    <SEO
+      title="Dashboard"
+      description="Admin dashboard for staff tracking and geofence management."
+      path="/"
+      noIndex
+    />
     <DashboardLayout
       activeTab={activeTab}
       onTabChange={handleTabChange}
@@ -78,6 +95,7 @@ const Index = () => {
         {activeTab === "tracker" && <TrackerDownload />}
       </div>
     </DashboardLayout>
+    </>
   );
 };
 

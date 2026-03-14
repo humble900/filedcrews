@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Upload, CheckCircle2, XCircle, ImageIcon, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import SEO from "@/components/SEO";
 
 const FaceVerification = () => {
   const [referencePhoto, setReferencePhoto] = useState<string | null>(null);
@@ -127,6 +128,8 @@ const FaceVerification = () => {
   };
 
   return (
+    <>
+    <SEO title="Face Verification" description="Staff face verification tool." path="/face-verify" noIndex />
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="mx-auto max-w-4xl space-y-6">
         <div>
@@ -303,6 +306,7 @@ const FaceVerification = () => {
         )}
       </div>
     </div>
+    </>
   );
 };
 

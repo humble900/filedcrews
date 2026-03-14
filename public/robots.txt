@@ -1,14 +1,9 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
+# IMPORTANT: Replace the Sitemap URL with your production domain once connected.
 User-agent: *
 Allow: /
+
+# Private / authenticated routes
+Disallow: /face-verify
+Disallow: /reset-password
+
+Sitemap: https://staff-tracker-buddy.lovable.app/sitemap.xml
