@@ -306,6 +306,7 @@ const FaceVerification = () => {
         )}
       </div>
     </div>
+    </>
   );
 };
 
