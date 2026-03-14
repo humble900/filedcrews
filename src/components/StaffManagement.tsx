@@ -17,7 +17,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { UserPlus, Users, Trash2, Copy, X, CheckCircle, Eye, EyeOff } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { UserPlus, Users, Trash2, Copy, X, CheckCircle, Eye, EyeOff, Bell, BellOff, Send } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import StaffAvatar from "./StaffAvatar";
