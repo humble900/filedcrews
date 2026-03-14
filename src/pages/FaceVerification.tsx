@@ -128,6 +128,8 @@ const FaceVerification = () => {
   };
 
   return (
+    <>
+    <SEO title="Face Verification" description="Staff face verification tool." path="/face-verify" noIndex />
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="mx-auto max-w-4xl space-y-6">
         <div>
