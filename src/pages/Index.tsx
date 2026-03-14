@@ -6,6 +6,7 @@ import LiveMap from "@/components/LiveMap";
 import GeofenceManagement from "@/components/GeofenceManagement";
 import TrackerDownload from "@/components/TrackerDownload";
 import DashboardLayout from "@/components/DashboardLayout";
+import SEO from "@/components/SEO";
 import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
