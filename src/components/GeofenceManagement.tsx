@@ -1512,6 +1512,94 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Crossing detail dialog */}
+      <Dialog open={!!detailEvent} onOpenChange={(open) => !open && setDetailEvent(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base">Crossing Details</DialogTitle>
+          </DialogHeader>
+          {detailEvent && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <StaffAvatar
+                  photoUrl={detailEvent.staff_profiles?.photo_url}
+                  fullName={detailEvent.staff_profiles?.full_name || "Unknown"}
+                  size="sm"
+                />
+                <div>
+                  <p className="text-sm font-medium">{detailEvent.staff_profiles?.full_name || "Unknown"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {format(new Date(detailEvent.created_at), "MMM d, yyyy – HH:mm:ss")}
+                  </p>
+                </div>
+              </div>
+
+              {/* Face verification photos */}
+              {detailEvent.face_check_status && detailEvent.face_check_status !== "not_requested" && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    {detailEvent.face_check_status === "verified" && (
+                      <Badge className="bg-green-600 hover:bg-green-700">Verified</Badge>
+                    )}
+                    {detailEvent.face_check_status === "mismatch" && (
+                      <Badge variant="destructive">Mismatch</Badge>
+                    )}
+                    {detailEvent.face_check_status === "requested" && (
+                      <Badge className="bg-yellow-500 hover:bg-yellow-600">Requested</Badge>
+                    )}
+                    {detailEvent.face_check_status === "skipped" && (
+                      <Badge variant="secondary">Skipped</Badge>
+                    )}
+                    {detailEvent.face_check_confidence && (
+                      <span className="text-xs text-muted-foreground">Confidence: {detailEvent.face_check_confidence}</span>
+                    )}
+                  </div>
+                  {detailEvent.face_check_at && (
+                    <p className="text-xs text-muted-foreground">
+                      Verified at: {format(new Date(detailEvent.face_check_at), "MMM d, yyyy – HH:mm:ss")}
+                    </p>
+                  )}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Reference Photo</p>
+                      {detailEvent.staff_profiles?.photo_url ? (
+                        <img
+                          src={detailEvent.staff_profiles.photo_url}
+                          alt="Reference"
+                          className="w-full aspect-square object-cover rounded-lg border border-border"
+                        />
+                      ) : (
+                        <div className="w-full aspect-square rounded-lg border border-border bg-muted flex items-center justify-center">
+                          <p className="text-xs text-muted-foreground">No reference photo</p>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Submitted Selfie</p>
+                      {detailEvent.face_check_photo_url ? (
+                        <img
+                          src={detailEvent.face_check_photo_url}
+                          alt="Submitted selfie"
+                          className="w-full aspect-square object-cover rounded-lg border border-border"
+                        />
+                      ) : (
+                        <div className="w-full aspect-square rounded-lg border border-border bg-muted flex items-center justify-center">
+                          <p className="text-xs text-muted-foreground text-center px-2">No submitted photo available</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {(!detailEvent.face_check_status || detailEvent.face_check_status === "not_requested") && (
+                <p className="text-xs text-muted-foreground">Face verification was not requested for this event.</p>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
