@@ -38,6 +38,7 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
   const [lastCreatedStaff, setLastCreatedStaff] = useState<CreatedStaff | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [sendingTestPush, setSendingTestPush] = useState<string | null>(null);
 
   const { data: staff, refetch } = useQuery({
     queryKey: ["staff_profiles"],
