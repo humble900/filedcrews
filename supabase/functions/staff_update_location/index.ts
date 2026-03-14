@@ -123,9 +123,13 @@ Deno.serve(async (req) => {
       });
 
     // ── Geofence detection ──
+    let faceVerificationRequested = false;
+    let faceVerificationGeofenceEventId: string | null = null;
+    let faceVerificationGeofenceName: string | null = null;
+
     let geofenceQuery = supabaseAdmin
       .from("geofences")
-      .select("id, latitude, longitude, radius_meters, ask_for_face_id")
+      .select("id, name, latitude, longitude, radius_meters, ask_for_face_id")
       .eq("is_active", true);
     
     if (staff.company_id) {
@@ -195,12 +199,17 @@ Deno.serve(async (req) => {
             .single();
           
 
-          // Send push notification for face verification (fire-and-forget)
+          // Set inline response flag for the mobile app
           if (shouldRequestFace && insertedEvent) {
+            faceVerificationRequested = true;
+            faceVerificationGeofenceEventId = insertedEvent.id;
+            faceVerificationGeofenceName = gf.name;
+
+            // Backup: also send push notification if token is available
             if (!staff.expo_push_token) {
               console.warn(`[PUSH SKIP] No expo_push_token for staff=${staff.id} geofence=${gf.id} event=${insertedEvent.id}`);
             } else {
-              console.log(`[PUSH SEND] Sending face verify push to staff=${staff.id} event=${insertedEvent.id} token=${staff.expo_push_token.substring(0, 20)}...`);
+              console.log(`[PUSH SEND] Sending face verify push to staff=${staff.id} event=${insertedEvent.id}`);
               sendExpoPush(
                 staff.expo_push_token,
                 "Face verification requested",
@@ -218,7 +227,14 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ ok: true }),
+      JSON.stringify({
+        ok: true,
+        faceVerificationRequested,
+        ...(faceVerificationRequested && {
+          geofenceEventId: faceVerificationGeofenceEventId,
+          geofenceName: faceVerificationGeofenceName,
+        }),
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
