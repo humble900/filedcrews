@@ -62,6 +62,13 @@ const Index = () => {
   }
 
   return (
+    <>
+    <SEO
+      title="Dashboard"
+      description="Admin dashboard for staff tracking and geofence management."
+      path="/"
+      noIndex
+    />
     <DashboardLayout
       activeTab={activeTab}
       onTabChange={handleTabChange}
