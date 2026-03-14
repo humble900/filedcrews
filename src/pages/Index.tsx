@@ -45,7 +45,16 @@ const Index = () => {
   }
 
   if (!user) {
-    return <AuthPage onSignIn={signIn} onSignUp={signUp} />;
+    return (
+      <>
+        <SEO
+          title="Staff Tracker — Real-Time Staff Location Dashboard"
+          description="Track your team's location in real time. Manage staff, set geofences, and monitor movement from one simple dashboard."
+          path="/"
+        />
+        <AuthPage onSignIn={signIn} onSignUp={signUp} />
+      </>
+    );
   }
 
   if (!company) {
