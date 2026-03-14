@@ -98,6 +98,24 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
     toast.success("Copied to clipboard");
   };
 
+  const handleSendTestPush = async (staffId: string, staffName: string) => {
+    setSendingTestPush(staffId);
+    try {
+      const { data, error } = await supabase.functions.invoke("send_test_push", {
+        body: { staffId },
+      });
+      if (error) throw error;
+      if (!data?.ok) throw new Error(data?.error || "Failed to send test push");
+      toast.success(`Test push sent to ${staffName}`, {
+        description: `Expo ticket: ${JSON.stringify(data.expoResponse?.data?.[0]?.id || data.expoResponse)}`,
+      });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send test push");
+    } finally {
+      setSendingTestPush(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
