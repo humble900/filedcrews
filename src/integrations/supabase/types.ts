@@ -44,6 +44,7 @@ export type Database = {
           event_type: string
           face_check_at: string | null
           face_check_confidence: string | null
+          face_check_photo_url: string | null
           face_check_status: string | null
           geofence_id: string
           id: string
@@ -54,6 +55,7 @@ export type Database = {
           event_type: string
           face_check_at?: string | null
           face_check_confidence?: string | null
+          face_check_photo_url?: string | null
           face_check_status?: string | null
           geofence_id: string
           id?: string
@@ -64,6 +66,7 @@ export type Database = {
           event_type?: string
           face_check_at?: string | null
           face_check_confidence?: string | null
+          face_check_photo_url?: string | null
           face_check_status?: string | null
           geofence_id?: string
           id?: string
