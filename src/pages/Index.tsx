@@ -95,6 +95,7 @@ const Index = () => {
         {activeTab === "tracker" && <TrackerDownload />}
       </div>
     </DashboardLayout>
+    </>
   );
 };
 
