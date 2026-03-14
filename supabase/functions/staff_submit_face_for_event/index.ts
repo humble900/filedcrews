@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { decode as decodeBase64 } from "https://deno.land/std@0.203.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -82,6 +83,33 @@ Deno.serve(async (req) => {
       return json({ error: "Face check already completed for this event" }, 400);
     }
 
+    // --- Upload comparison photo to storage ---
+    let faceCheckPhotoUrl: string | null = null;
+    try {
+      // Strip data URL prefix to get raw base64
+      const base64Data = comparisonPhoto.replace(/^data:image\/\w+;base64,/, "");
+      const imageBytes = decodeBase64(base64Data);
+      const storagePath = `face-checks/${staff.id}/${geofenceEventId}.jpg`;
+
+      const { error: uploadErr } = await admin.storage
+        .from("face-verifications")
+        .upload(storagePath, imageBytes, {
+          contentType: "image/jpeg",
+          upsert: true,
+        });
+
+      if (uploadErr) {
+        console.error("Failed to upload face photo:", uploadErr);
+      } else {
+        const { data: urlData } = admin.storage
+          .from("face-verifications")
+          .getPublicUrl(storagePath);
+        faceCheckPhotoUrl = urlData.publicUrl;
+      }
+    } catch (uploadError) {
+      console.error("Face photo upload error (non-blocking):", uploadError);
+    }
+
     // --- Download reference photo and base64-encode ---
     const photoRes = await fetch(staff.photo_url);
     if (!photoRes.ok) {
@@ -92,7 +120,7 @@ Deno.serve(async (req) => {
       "data:image/jpeg;base64," +
       btoa(String.fromCharCode(...new Uint8Array(photoBuffer)));
 
-    // --- Call AI face verification (same logic as face-verify function) ---
+    // --- Call AI face verification ---
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
@@ -170,14 +198,19 @@ Deno.serve(async (req) => {
         ? "verified"
         : "mismatch";
 
-    // --- Update geofence event ---
+    // --- Update geofence event (including photo URL if upload succeeded) ---
+    const updatePayload: Record<string, unknown> = {
+      face_check_status: status,
+      face_check_at: new Date().toISOString(),
+      face_check_confidence: result.confidence,
+    };
+    if (faceCheckPhotoUrl) {
+      updatePayload.face_check_photo_url = faceCheckPhotoUrl;
+    }
+
     await admin
       .from("geofence_events")
-      .update({
-        face_check_status: status,
-        face_check_at: new Date().toISOString(),
-        face_check_confidence: result.confidence,
-      })
+      .update(updatePayload)
       .eq("id", geofenceEventId);
 
     return json({ ok: true, status, confidence: result.confidence });

@@ -177,6 +177,7 @@ interface GeofenceEvent {
   face_check_status?: string | null;
   face_check_at?: string | null;
   face_check_confidence?: string | null;
+  face_check_photo_url?: string | null;
   staff_profiles?: { full_name: string; photo_url?: string | null } | null;
 }
 
