@@ -256,8 +256,38 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
                     <span className="text-xs text-muted-foreground hidden sm:inline">
                       Joined {format(new Date(s.created_at), "MMM d, yyyy")}
                     </span>
-                    <div className="flex items-center gap-2">
-                      <Switch
+                     <div className="flex items-center gap-2">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center">
+                              {(s as any).expo_push_token ? (
+                                <Bell className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <BellOff className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {(s as any).expo_push_token
+                              ? `Push token: ${((s as any).expo_push_token as string).substring(0, 30)}...`
+                              : "No push token registered"}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      {(s as any).expo_push_token && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          disabled={sendingTestPush === s.id}
+                          onClick={() => handleSendTestPush(s.id, s.full_name)}
+                          title="Send test face verification push"
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
+                      )}
+                       <Switch
                         checked={s.is_active}
                         onCheckedChange={async (checked) => {
                           const { error } = await supabase
