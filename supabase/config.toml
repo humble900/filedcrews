@@ -18,5 +18,8 @@ verify_jwt = false
 [functions.staff_register_push_token]
 verify_jwt = false
 
+[functions.send_test_push]
+verify_jwt = false
+
 [functions.staff_submit_face_for_event]
 verify_jwt = false

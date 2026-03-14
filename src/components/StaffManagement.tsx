@@ -17,7 +17,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { UserPlus, Users, Trash2, Copy, X, CheckCircle, Eye, EyeOff } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { UserPlus, Users, Trash2, Copy, X, CheckCircle, Eye, EyeOff, Bell, BellOff, Send } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import StaffAvatar from "./StaffAvatar";
@@ -37,6 +38,7 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
   const [lastCreatedStaff, setLastCreatedStaff] = useState<CreatedStaff | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [sendingTestPush, setSendingTestPush] = useState<string | null>(null);
 
   const { data: staff, refetch } = useQuery({
     queryKey: ["staff_profiles"],
@@ -94,6 +96,24 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("Copied to clipboard");
+  };
+
+  const handleSendTestPush = async (staffId: string, staffName: string) => {
+    setSendingTestPush(staffId);
+    try {
+      const { data, error } = await supabase.functions.invoke("send_test_push", {
+        body: { staffId },
+      });
+      if (error) throw error;
+      if (!data?.ok) throw new Error(data?.error || "Failed to send test push");
+      toast.success(`Test push sent to ${staffName}`, {
+        description: `Expo ticket: ${JSON.stringify(data.expoResponse?.data?.[0]?.id || data.expoResponse)}`,
+      });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send test push");
+    } finally {
+      setSendingTestPush(null);
+    }
   };
 
   return (
@@ -236,8 +256,38 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
                     <span className="text-xs text-muted-foreground hidden sm:inline">
                       Joined {format(new Date(s.created_at), "MMM d, yyyy")}
                     </span>
-                    <div className="flex items-center gap-2">
-                      <Switch
+                     <div className="flex items-center gap-2">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center">
+                              {(s as any).expo_push_token ? (
+                                <Bell className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <BellOff className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {(s as any).expo_push_token
+                              ? `Push token: ${((s as any).expo_push_token as string).substring(0, 30)}...`
+                              : "No push token registered"}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      {(s as any).expo_push_token && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          disabled={sendingTestPush === s.id}
+                          onClick={() => handleSendTestPush(s.id, s.full_name)}
+                          title="Send test face verification push"
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
+                      )}
+                       <Switch
                         checked={s.is_active}
                         onCheckedChange={async (checked) => {
                           const { error } = await supabase

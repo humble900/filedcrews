@@ -196,17 +196,22 @@ Deno.serve(async (req) => {
           
 
           // Send push notification for face verification (fire-and-forget)
-          if (shouldRequestFace && staff.expo_push_token && insertedEvent) {
-            sendExpoPush(
-              staff.expo_push_token,
-              "Face verification requested",
-              "Please take a selfie to verify while inside this site.",
-              {
-                type: "FACE_VERIFY_REQUEST",
-                geofenceEventId: insertedEvent.id,
-                staffId: staff.id,
-              }
-            );
+          if (shouldRequestFace && insertedEvent) {
+            if (!staff.expo_push_token) {
+              console.warn(`[PUSH SKIP] No expo_push_token for staff=${staff.id} geofence=${gf.id} event=${insertedEvent.id}`);
+            } else {
+              console.log(`[PUSH SEND] Sending face verify push to staff=${staff.id} event=${insertedEvent.id} token=${staff.expo_push_token.substring(0, 20)}...`);
+              sendExpoPush(
+                staff.expo_push_token,
+                "Face verification requested",
+                "Please take a selfie to verify while inside this site.",
+                {
+                  type: "FACE_VERIFY_REQUEST",
+                  geofenceEventId: insertedEvent.id,
+                  staffId: staff.id,
+                }
+              );
+            }
           }
         }
       }
