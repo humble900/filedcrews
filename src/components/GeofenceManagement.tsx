@@ -1039,7 +1039,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                         }
 
                         return (
-                          <div key={ev.id} className="px-4 py-2.5">
+                          <div key={ev.id} className="px-4 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setDetailEvent(ev)}>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 <StaffAvatar
