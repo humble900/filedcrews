@@ -614,7 +614,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
       .on(
         "postgres_changes",
         {
-          event: "INSERT",
+          event: "*",
           schema: "public",
           table: "geofence_events",
           filter: `geofence_id=eq.${selectedGeofence.id}`,
