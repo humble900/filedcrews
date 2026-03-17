@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import StaffAvatar from "./StaffAvatar";
+import StaffShiftManager from "./StaffShiftManager";
 
 /* ── Address lookup via reverse geocoding ── */
 const addressCache: Record<string, string> = {};
