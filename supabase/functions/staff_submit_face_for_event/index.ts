@@ -110,14 +110,15 @@ Deno.serve(async (req) => {
       console.error("Face photo upload error (non-blocking):", uploadError);
     }
 
-    // --- Download reference photo and base64-encode ---
-    const photoRes = await fetch(staff.photo_url);
+    // --- Download full-quality original reference photo ---
+    const originalUrl = staff.photo_url.replace(/([^/?]+)(\.webp)/, "$1_original$2").replace(/\?v=\d+$/, "");
+    const photoRes = await fetch(originalUrl);
     if (!photoRes.ok) {
       return json({ error: "Failed to download reference photo" }, 500);
     }
     const photoBuffer = await photoRes.arrayBuffer();
     const base64Ref =
-      "data:image/jpeg;base64," +
+      "data:image/webp;base64," +
       btoa(String.fromCharCode(...new Uint8Array(photoBuffer)));
 
     // --- Call AI face verification ---

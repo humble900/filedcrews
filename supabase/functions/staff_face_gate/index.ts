@@ -74,8 +74,9 @@ Deno.serve(async (req) => {
       return json({ ok: false, reason: "no_reference_photo" });
     }
 
-    // ── Convert reference photo to base64 ──
-    const referencePhoto = await urlToDataUrl(staff.photo_url);
+    // Use the full-quality original for face verification
+    const originalUrl = staff.photo_url.replace(/([^/?]+)(\.webp)/, "$1_original$2").replace(/\?v=\d+$/, "");
+    const referencePhoto = await urlToDataUrl(originalUrl);
 
     // ── Call AI verification (same logic as face-verify) ──
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
