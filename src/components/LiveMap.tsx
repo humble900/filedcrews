@@ -746,15 +746,38 @@ const LiveMap = () => {
     setLoadingHistory(false);
   }, []);
 
+  const fetchCrossings = useCallback(async (staffId: string) => {
+    setLoadingCrossings(true);
+    const { data } = await supabase
+      .from("geofence_events")
+      .select("id, event_type, created_at, geofences(name)")
+      .eq("staff_id", staffId)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (data) {
+      setCrossings(
+        (data as any[]).map((e) => ({
+          id: e.id,
+          event_type: e.event_type,
+          created_at: e.created_at,
+          geofence_name: e.geofences?.name ?? "Unknown",
+        }))
+      );
+    }
+    setLoadingCrossings(false);
+  }, []);
+
   const showHistory = (staffId: string, name: string) => {
     setHistoryStaff({ id: staffId, name });
     setSelectedStaffId(staffId);
     fetchHistory(staffId);
+    fetchCrossings(staffId);
   };
 
   const closeHistory = () => {
     setHistoryStaff(null);
     setHistoryPoints([]);
+    setCrossings([]);
     setSelectedPointId(null);
     setSelectedStaffId(null);
   };
