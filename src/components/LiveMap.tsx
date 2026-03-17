@@ -965,7 +965,7 @@ const LiveMap = () => {
 
                 return (
                 <div className="divide-y divide-border">
-                  {crossings.map((c) => {
+                  {dayCrossings.map((c) => {
                     const date = new Date(c.created_at);
                     const isEntry = c.event_type === "entered";
                     const isExit = c.event_type === "exited";
