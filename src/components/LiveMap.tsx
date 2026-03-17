@@ -682,6 +682,31 @@ const LiveMap = () => {
     [locations, hiddenStaffIds]
   );
 
+  // Geofences for "inside" badge
+  const [geofences, setGeofences] = useState<SimpleGeofence[]>([]);
+
+  const fetchGeofences = useCallback(async () => {
+    const { data } = await supabase
+      .from("geofences")
+      .select("id, name, latitude, longitude, radius_meters, is_active");
+    if (data) setGeofences(data as SimpleGeofence[]);
+  }, []);
+
+  const staffGeofenceNames = useMemo(() => {
+    const result: Record<string, string> = {};
+    const activeGeos = geofences.filter(g => g.is_active);
+    for (const loc of locations) {
+      for (const gf of activeGeos) {
+        const dist = haversineMeters(loc.latitude, loc.longitude, gf.latitude, gf.longitude);
+        if (dist <= gf.radius_meters) {
+          result[loc.staff_id] = gf.name;
+          break;
+        }
+      }
+    }
+    return result;
+  }, [locations, geofences]);
+
   // Fetch Google Maps API key
   useEffect(() => {
     (async () => {
