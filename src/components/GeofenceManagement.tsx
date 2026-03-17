@@ -1129,11 +1129,6 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                                 <p className="text-sm font-medium">{ev.staff_profiles?.full_name || "Unknown"}</p>
                               </div>
                               <div className="flex items-center gap-1.5">
-                                {punctualityLabel && (
-                                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${punctualityClass}`}>
-                                    {punctualityLabel}
-                                  </span>
-                                )}
                                 <Badge
                                   variant={isExited ? "secondary" : "default"}
                                   className={badgeClass}
