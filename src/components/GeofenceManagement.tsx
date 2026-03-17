@@ -627,6 +627,14 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
     setLoadingEvents(false);
   }, []);
 
+  const fetchAllShifts = useCallback(async () => {
+    const { data } = await supabase
+      .from("staff_shifts")
+      .select("staff_id, geofence_id, check_in_time, check_out_time")
+      .eq("is_active", true);
+    if (data) setAllShifts(data as any[]);
+  }, []);
+
   const fetchStaffInside = useCallback(async (geofenceId: string) => {
     setLoadingStaffInside(true);
     const dayStart = startOfDay(new Date()).toISOString();
