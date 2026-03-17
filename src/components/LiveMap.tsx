@@ -1028,17 +1028,31 @@ const LiveMap = () => {
                           {isHidden ? <EyeOff className="h-3.5 w-3.5 text-muted-foreground" /> : <Eye className="h-3.5 w-3.5" />}
                         </Button>
                         {!isHidden && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              showHistory(loc.staff_id, loc.staff_profiles?.full_name || "Unknown");
-                            }}
-                          >
-                            <History className="h-3.5 w-3.5" />
-                          </Button>
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShiftStaff({ id: loc.staff_id, name: loc.staff_profiles?.full_name || "Unknown" });
+                              }}
+                              title="Manage shifts"
+                            >
+                              <Clock className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                showHistory(loc.staff_id, loc.staff_profiles?.full_name || "Unknown");
+                              }}
+                            >
+                              <History className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>
