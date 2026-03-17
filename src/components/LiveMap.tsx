@@ -753,7 +753,7 @@ const LiveMap = () => {
     setLoadingCrossings(true);
     const { data } = await supabase
       .from("geofence_events")
-      .select("id, event_type, created_at, geofences(name)")
+      .select("id, event_type, created_at, geofence_id, geofences(name)")
       .eq("staff_id", staffId)
       .order("created_at", { ascending: false })
       .limit(200);
@@ -763,11 +763,22 @@ const LiveMap = () => {
           id: e.id,
           event_type: e.event_type,
           created_at: e.created_at,
+          geofence_id: e.geofence_id,
           geofence_name: e.geofences?.name ?? "Unknown",
         }))
       );
     }
     setLoadingCrossings(false);
+  }, []);
+
+  const fetchStaffShifts = useCallback(async (staffId: string) => {
+    const { data } = await supabase
+      .from("staff_shifts")
+      .select("geofence_id, check_in_time, check_out_time")
+      .eq("staff_id", staffId)
+      .eq("is_active", true);
+    if (data) setStaffShifts(data as any[]);
+    else setStaffShifts([]);
   }, []);
 
   const showHistory = (staffId: string, name: string) => {
