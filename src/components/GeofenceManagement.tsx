@@ -995,14 +995,6 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                       <Pencil className="h-3 w-3 mr-1" />
                       Edit
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => {
-                      setClockInTime(selectedGeofence.check_in_time?.slice(0, 5) || "");
-                      setClockOutTime(selectedGeofence.check_out_time?.slice(0, 5) || "");
-                      setClockDialogOpen(true);
-                    }}>
-                      <Clock className="h-3 w-3 mr-1" />
-                      Set Clock-In/Out
-                    </Button>
                     <Button size="sm" variant="ghost" onClick={() => toggleActive(selectedGeofence)}>
                       {selectedGeofence.is_active ? "Disable" : "Enable"}
                     </Button>
@@ -1011,14 +1003,6 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                       Delete
                     </Button>
                   </div>
-                   {(selectedGeofence.check_in_time || selectedGeofence.check_out_time) && (
-                    <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      {selectedGeofence.check_in_time && <span>In: {selectedGeofence.check_in_time.slice(0, 5)}</span>}
-                      {selectedGeofence.check_in_time && selectedGeofence.check_out_time && <span>·</span>}
-                      {selectedGeofence.check_out_time && <span>Out: {selectedGeofence.check_out_time.slice(0, 5)}</span>}
-                    </div>
-                  )}
 
                   {/* Staff Inside section */}
                   <div className="mt-3">
