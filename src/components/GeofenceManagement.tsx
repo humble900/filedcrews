@@ -670,7 +670,8 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
 
   useEffect(() => {
     fetchGeofences();
-  }, [fetchGeofences]);
+    fetchAllShifts();
+  }, [fetchGeofences, fetchAllShifts]);
 
   // Realtime for events
   useEffect(() => {
