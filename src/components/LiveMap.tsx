@@ -841,48 +841,94 @@ const LiveMap = () => {
       </div>
       <div className="overflow-auto flex-1">
         {historyStaff ? (
-          loadingHistory ? (
-            <p className="px-4 pb-4 text-xs text-muted-foreground">Loading history…</p>
-          ) : !historyPoints.length ? (
-            <p className="px-4 pb-4 text-xs text-muted-foreground">No history recorded.</p>
-          ) : (
-            <div className="divide-y divide-border">
-              {groupHistoryPoints(historyPoints).reverse().map((group, i) => {
-                const isSelected = group.pointIds.includes(selectedPointId ?? "");
-                return (
-                  <div
-                    key={group.id}
-                    className={`px-4 py-2.5 cursor-pointer transition-colors border-l-2 ${
-                      isSelected
-                        ? "bg-primary/10 border-l-primary"
-                        : "hover:bg-muted/50 border-l-transparent"
-                    }`}
-                    onClick={() => {
-                      setSelectedPointId(group.id);
-                      flyTo(group.latitude, group.longitude);
-                      if (isMobile) setSidebarOpen(false);
-                    }}
-                  >
-                    <p className={`text-xs font-medium flex items-center gap-1.5 ${isSelected ? "text-primary" : ""}`}>
-                      <CircleDot className={`h-3 w-3 ${isSelected ? "text-destructive" : i === 0 ? "text-green-500" : "text-primary"}`} />
-                      {formatGroupTime(group)}
-                    </p>
-                    {group.pointCount > 1 && (
-                      <p className="text-[10px] text-muted-foreground ml-[18px]">
-                        {group.pointCount} pings
-                      </p>
-                    )}
-                    <div className="flex items-center mt-0.5 ml-[18px]">
-                      <p className="text-xs text-muted-foreground font-mono">
-                        {group.latitude.toFixed(5)}, {group.longitude.toFixed(5)}
-                      </p>
-                      <AddressLookup lat={group.latitude} lng={group.longitude} />
-                    </div>
-                  </div>
-                );
-              })}
+          <Tabs defaultValue="location" className="w-full flex flex-col flex-1 overflow-hidden">
+            <div className="px-4">
+              <TabsList className="w-full h-8">
+                <TabsTrigger value="location" className="text-xs flex-1">
+                  <MapPin className="h-3 w-3 mr-1" />
+                  Location
+                </TabsTrigger>
+                <TabsTrigger value="crossings" className="text-xs flex-1">
+                  <ArrowRightLeft className="h-3 w-3 mr-1" />
+                  Crossings
+                </TabsTrigger>
+              </TabsList>
             </div>
-          )
+            <TabsContent value="location" className="flex-1 overflow-auto mt-0">
+              {loadingHistory ? (
+                <p className="px-4 pb-4 text-xs text-muted-foreground">Loading history…</p>
+              ) : !historyPoints.length ? (
+                <p className="px-4 pb-4 text-xs text-muted-foreground">No history recorded.</p>
+              ) : (
+                <div className="divide-y divide-border">
+                  {groupHistoryPoints(historyPoints).reverse().map((group, i) => {
+                    const isSelected = group.pointIds.includes(selectedPointId ?? "");
+                    return (
+                      <div
+                        key={group.id}
+                        className={`px-4 py-2.5 cursor-pointer transition-colors border-l-2 ${
+                          isSelected
+                            ? "bg-primary/10 border-l-primary"
+                            : "hover:bg-muted/50 border-l-transparent"
+                        }`}
+                        onClick={() => {
+                          setSelectedPointId(group.id);
+                          flyTo(group.latitude, group.longitude);
+                          if (isMobile) setSidebarOpen(false);
+                        }}
+                      >
+                        <p className={`text-xs font-medium flex items-center gap-1.5 ${isSelected ? "text-primary" : ""}`}>
+                          <CircleDot className={`h-3 w-3 ${isSelected ? "text-destructive" : i === 0 ? "text-green-500" : "text-primary"}`} />
+                          {formatGroupTime(group)}
+                        </p>
+                        {group.pointCount > 1 && (
+                          <p className="text-[10px] text-muted-foreground ml-[18px]">
+                            {group.pointCount} pings
+                          </p>
+                        )}
+                        <div className="flex items-center mt-0.5 ml-[18px]">
+                          <p className="text-xs text-muted-foreground font-mono">
+                            {group.latitude.toFixed(5)}, {group.longitude.toFixed(5)}
+                          </p>
+                          <AddressLookup lat={group.latitude} lng={group.longitude} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </TabsContent>
+            <TabsContent value="crossings" className="flex-1 overflow-auto mt-0">
+              {loadingCrossings ? (
+                <p className="px-4 pb-4 text-xs text-muted-foreground">Loading crossings…</p>
+              ) : !crossings.length ? (
+                <p className="px-4 pb-4 text-xs text-muted-foreground">No geofence crossings recorded.</p>
+              ) : (
+                <div className="divide-y divide-border">
+                  {crossings.map((c) => {
+                    const date = new Date(c.created_at);
+                    const isEntry = c.event_type === "entered";
+                    return (
+                      <div key={c.id} className="px-4 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant={isEntry ? "default" : "secondary"}
+                            className="text-[10px] px-1.5 py-0"
+                          >
+                            {isEntry ? "IN" : "OUT"}
+                          </Badge>
+                          <span className="text-xs font-medium truncate">{c.geofence_name}</span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-0.5 ml-[42px]">
+                          {format(date, "MMM d, yyyy · HH:mm:ss")}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         ) : !locations.length ? (
           <p className="px-4 pb-4 text-xs text-muted-foreground">No locations yet.</p>
         ) : (
