@@ -930,7 +930,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
             {selectedGeofence ? (
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm flex items-center gap-2">
-                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setSelectedGeofence(null); setEvents([]); }}>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setSelectedGeofence(null); setEvents([]); setStaffInsideOpen(false); setStaffInside([]); }}>
                     <ArrowLeft className="h-3 w-3" />
                   </Button>
                   {selectedGeofence.name}
