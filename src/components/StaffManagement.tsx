@@ -259,8 +259,15 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
                       Joined {format(new Date(s.created_at), "MMM d, yyyy")}
                     </span>
                      <div className="flex items-center gap-2">
-                      <TooltipProvider>
-                        <Tooltip>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => setShiftStaff({ id: s.id, name: s.full_name })}
+                        title="Manage shifts"
+                      >
+                        <Clock className="h-4 w-4" />
+                      </Button>
                           <TooltipTrigger asChild>
                             <div className="flex items-center">
                               {(s as any).expo_push_token ? (
