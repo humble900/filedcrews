@@ -39,6 +39,7 @@ import {
   Check,
   List,
   Calendar as CalendarIcon,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
