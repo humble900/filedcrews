@@ -506,7 +506,9 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [detailEvent, setDetailEvent] = useState<GeofenceEvent | null>(null);
-
+  const [staffInside, setStaffInside] = useState<{ id: string; full_name: string; photo_url: string | null; entered_at: string }[]>([]);
+  const [staffInsideOpen, setStaffInsideOpen] = useState(false);
+  const [loadingStaffInside, setLoadingStaffInside] = useState(false);
   // Map style (synced with LiveMap via same localStorage key)
   const [mapStyle, setMapStyle] = useState<"normal" | "clean">(() => {
     try {
