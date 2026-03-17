@@ -923,11 +923,47 @@ const LiveMap = () => {
               )}
             </TabsContent>
             <TabsContent value="crossings" className="flex-1 overflow-auto mt-0">
-              {loadingCrossings ? (
-                <p className="px-4 pb-4 text-xs text-muted-foreground">Loading crossings…</p>
-              ) : !crossings.length ? (
-                <p className="px-4 pb-4 text-xs text-muted-foreground">No geofence crossings recorded.</p>
-              ) : (
+              {/* Date picker */}
+              <div className="px-4 py-2 flex items-center gap-1.5 border-b border-border">
+                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setCrossingsDate(d => subDays(d, 1))}>
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </Button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5 flex-1 justify-center">
+                      <CalendarIcon className="h-3 w-3" />
+                      {isToday(crossingsDate) ? "Today" : format(crossingsDate, "MMM d, yyyy")}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="center">
+                    <Calendar
+                      mode="single"
+                      selected={crossingsDate}
+                      onSelect={(d) => d && setCrossingsDate(d)}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setCrossingsDate(d => addDays(d, 1))} disabled={isToday(crossingsDate)}>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Button>
+                {!isToday(crossingsDate) && (
+                  <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 shrink-0" onClick={() => setCrossingsDate(new Date())}>
+                    Today
+                  </Button>
+                )}
+              </div>
+
+              {(() => {
+                const dayStart = startOfDay(crossingsDate).toISOString();
+                const dayEnd = endOfDay(crossingsDate).toISOString();
+                const dayCrossings = crossings.filter(c => c.created_at >= dayStart && c.created_at <= dayEnd);
+
+                if (loadingCrossings) return <p className="px-4 py-4 text-xs text-muted-foreground">Loading crossings…</p>;
+                if (!dayCrossings.length) return <p className="px-4 py-4 text-xs text-muted-foreground">No crossings on this day.</p>;
+
+                return (
                 <div className="divide-y divide-border">
                   {crossings.map((c) => {
                     const date = new Date(c.created_at);
