@@ -1271,6 +1271,29 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                   </TabsContent>
                 </Tabs>
               </div>
+            ) : showNoGeofence ? (
+              <div>
+                <div className="px-4 pb-3 border-b border-border">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant="secondary">
+                      {staffOutsideGeofences.length} staff
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Staff not currently inside any active geofence.</p>
+                </div>
+                <div className="divide-y divide-border">
+                  {staffOutsideGeofences.length === 0 ? (
+                    <p className="px-4 py-6 text-xs text-muted-foreground text-center">All staff are inside a geofence.</p>
+                  ) : (
+                    staffOutsideGeofences.map((loc) => (
+                      <div key={loc.staff_id} className="flex items-center gap-2 px-4 py-2.5">
+                        <StaffAvatar photoUrl={loc.staff_profiles?.photo_url ?? null} fullName={loc.staff_profiles?.full_name ?? "?"} size="sm" />
+                        <span className="text-sm font-medium truncate">{loc.staff_profiles?.full_name ?? "Unknown"}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             ) : geofences.length === 0 ? (
               <p className="px-4 pb-4 text-xs text-muted-foreground">No geofences yet. Click "Add" to create one.</p>
             ) : (
@@ -1296,6 +1319,22 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                     </p>
                   </div>
                 ))}
+                {/* No Geofence option */}
+                <div
+                  className="px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => setShowNoGeofence(true)}
+                >
+                  <div className="flex items-center gap-2">
+                    <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                    <p className="font-medium text-sm text-muted-foreground">Outside Geofences</p>
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                      {staffOutsideGeofences.length}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5 ml-[22px]">
+                    Staff not inside any geofence
+                  </p>
+                </div>
               </div>
             )}
           </CardContent>
