@@ -142,19 +142,24 @@ export default function StaffPhotoUpload({
     if (!imgRef.current || !crop) return;
     setUploading(true);
     try {
-      const blob = await getCroppedBlob(imgRef.current, crop);
-      const filePath = `${staffId}.webp`;
+      const [thumbBlob, originalBlob] = await Promise.all([
+        getThumbnailBlob(imgRef.current, crop),
+        getOriginalBlob(imgRef.current, crop),
+      ]);
 
-      const { error: uploadError } = await supabase.storage
-        .from("staff-photos")
-        .upload(filePath, blob, { upsert: true, contentType: "image/webp" });
+      const thumbPath = `${staffId}.webp`;
+      const originalPath = `${staffId}_original.webp`;
 
-      if (uploadError) throw uploadError;
+      // Upload both in parallel
+      const [thumbUpload, originalUpload] = await Promise.all([
+        supabase.storage.from("staff-photos").upload(thumbPath, thumbBlob, { upsert: true, contentType: "image/webp" }),
+        supabase.storage.from("staff-photos").upload(originalPath, originalBlob, { upsert: true, contentType: "image/webp" }),
+      ]);
 
-      const { data: urlData } = supabase.storage
-        .from("staff-photos")
-        .getPublicUrl(filePath);
+      if (thumbUpload.error) throw thumbUpload.error;
+      if (originalUpload.error) throw originalUpload.error;
 
+      const { data: urlData } = supabase.storage.from("staff-photos").getPublicUrl(thumbPath);
       const photoUrl = `${urlData.publicUrl}?v=${Date.now()}`;
 
       const { error: updateError } = await supabase
@@ -169,6 +174,11 @@ export default function StaffPhotoUpload({
       setCropOpen(false);
       setImgSrc("");
     } catch (err: any) {
+      toast.error(err.message || "Failed to upload photo");
+    } finally {
+      setUploading(false);
+    }
+  };
       toast.error(err.message || "Failed to upload photo");
     } finally {
       setUploading(false);
