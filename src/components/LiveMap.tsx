@@ -844,9 +844,14 @@ const LiveMap = () => {
               <History className="h-4 w-4" />
               {historyStaff.name}
             </h3>
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={closeHistory}>
-              <X className="h-3 w-3" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShiftStaff(historyStaff)} title="Manage shifts">
+                <Clock className="h-3 w-3" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={closeHistory}>
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
         ) : (
           <h3 className="text-sm font-semibold flex items-center gap-2">
