@@ -634,6 +634,8 @@ const LiveMap = () => {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
+  const [crossings, setCrossings] = useState<{ id: string; event_type: string; created_at: string; geofence_name: string }[]>([]);
+  const [loadingCrossings, setLoadingCrossings] = useState(false);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
 
   // Map style selector (normal = full detail, clean = simplified)
