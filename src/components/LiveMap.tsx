@@ -1012,7 +1012,8 @@ const LiveMap = () => {
                     );
                   })}
                 </div>
-              )}
+                );
+              })()}
             </TabsContent>
           </Tabs>
         ) : !locations.length ? (
