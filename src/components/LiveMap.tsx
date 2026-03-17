@@ -1034,6 +1034,7 @@ const LiveMap = () => {
               <StaffMarkers
                 locations={visibleLocations}
                 selectedStaffId={selectedStaffId}
+                staffGeofenceNames={staffGeofenceNames}
                 onSelect={(staffId, lat, lng) => {
                   setSelectedStaffId(staffId);
                   flyTo(lat, lng);
