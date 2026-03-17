@@ -997,6 +997,14 @@ const LiveMap = () => {
                     </div>
                     {!isHidden && (
                       <>
+                        {staffGeofenceNames[loc.staff_id] && (
+                          <div className="mt-1 ml-[18px]">
+                            <Badge variant="default" className="text-[10px] px-1.5 py-0 gap-1">
+                              <MapPin className="h-2.5 w-2.5" />
+                              {staffGeofenceNames[loc.staff_id]}
+                            </Badge>
+                          </div>
+                        )}
                         <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 ml-[18px]">
                           <Clock className="h-3 w-3" />
                           {formatDistanceToNow(new Date(loc.updated_at), { addSuffix: true })}
