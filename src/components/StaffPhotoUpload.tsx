@@ -29,27 +29,63 @@ function centerAspectCrop(mediaWidth: number, mediaHeight: number) {
   );
 }
 
-async function getCroppedBlob(
-  image: HTMLImageElement,
-  crop: Crop
-): Promise<Blob> {
-  const canvas = document.createElement("canvas");
-  const outputSize = 256;
-  canvas.width = outputSize;
-  canvas.height = outputSize;
-  const ctx = canvas.getContext("2d")!;
-  ctx.imageSmoothingQuality = "high";
-
+function getCropCoords(image: HTMLImageElement, crop: Crop) {
   const isPct = crop.unit === "%";
   const cropX = isPct ? (crop.x / 100) * image.naturalWidth : crop.x * (image.naturalWidth / image.width);
   const cropY = isPct ? (crop.y / 100) * image.naturalHeight : crop.y * (image.naturalHeight / image.height);
   const cropW = isPct ? (crop.width / 100) * image.naturalWidth : crop.width * (image.naturalWidth / image.width);
   const cropH = isPct ? (crop.height / 100) * image.naturalHeight : crop.height * (image.naturalHeight / image.height);
+  return { cropX, cropY, cropW, cropH };
+}
 
-  ctx.drawImage(image, cropX, cropY, cropW, cropH, 0, 0, outputSize, outputSize);
-
+/** Full-quality original crop (no size limit) */
+async function getOriginalBlob(
+  image: HTMLImageElement,
+  crop: Crop
+): Promise<Blob> {
+  const { cropX, cropY, cropW, cropH } = getCropCoords(image, crop);
+  const canvas = document.createElement("canvas");
+  canvas.width = cropW;
+  canvas.height = cropH;
+  const ctx = canvas.getContext("2d")!;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(image, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
   return new Promise((resolve) => {
-    canvas.toBlob((blob) => resolve(blob!), "image/webp", 0.85);
+    canvas.toBlob((blob) => resolve(blob!), "image/webp", 0.92);
+  });
+}
+
+const THUMB_MAX_WIDTH = 500;
+const THUMB_MAX_SIZE_BYTES = 300 * 1024; // 300 KB
+
+/** Thumbnail: max 500px wide, max 300 KB */
+async function getThumbnailBlob(
+  image: HTMLImageElement,
+  crop: Crop
+): Promise<Blob> {
+  const { cropX, cropY, cropW, cropH } = getCropCoords(image, crop);
+  const scale = Math.min(1, THUMB_MAX_WIDTH / cropW);
+  const outW = Math.round(cropW * scale);
+  const outH = Math.round(cropH * scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = outW;
+  canvas.height = outH;
+  const ctx = canvas.getContext("2d")!;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(image, cropX, cropY, cropW, cropH, 0, 0, outW, outH);
+
+  // Try decreasing quality until under 300 KB
+  for (let q = 0.85; q >= 0.3; q -= 0.1) {
+    const blob: Blob = await new Promise((resolve) => {
+      canvas.toBlob((b) => resolve(b!), "image/webp", q);
+    });
+    if (blob.size <= THUMB_MAX_SIZE_BYTES || q <= 0.3) return blob;
+  }
+
+  // Fallback (shouldn't reach)
+  return new Promise((resolve) => {
+    canvas.toBlob((b) => resolve(b!), "image/webp", 0.3);
   });
 }
 
