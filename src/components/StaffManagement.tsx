@@ -268,6 +268,8 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
                       >
                         <Clock className="h-4 w-4" />
                       </Button>
+                      <TooltipProvider>
+                        <Tooltip>
                           <TooltipTrigger asChild>
                             <div className="flex items-center">
                               {(s as any).expo_push_token ? (
