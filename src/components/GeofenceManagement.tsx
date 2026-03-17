@@ -634,10 +634,6 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
           inside.push({ id, full_name: info.full_name, photo_url: info.photo_url, entered_at: info.created_at });
         }
       }
-        if (info.event_type === "entered") {
-          inside.push({ id, full_name: info.full_name, photo_url: info.photo_url, entered_at: info.created_at });
-        }
-      }
       setStaffInside(inside);
     }
     setLoadingStaffInside(false);
