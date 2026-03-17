@@ -179,11 +179,6 @@ export default function StaffPhotoUpload({
       setUploading(false);
     }
   };
-      toast.error(err.message || "Failed to upload photo");
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const handleRemove = async () => {
     setRemoving(true);
