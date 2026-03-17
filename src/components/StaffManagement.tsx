@@ -354,6 +354,15 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
           )}
         </CardContent>
       </Card>
+
+      {shiftStaff && (
+        <StaffShiftManager
+          staffId={shiftStaff.id}
+          staffName={shiftStaff.name}
+          open={!!shiftStaff}
+          onOpenChange={(open) => { if (!open) setShiftStaff(null); }}
+        />
+      )}
     </div>
   );
 };
