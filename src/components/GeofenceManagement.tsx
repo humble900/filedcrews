@@ -155,6 +155,16 @@ function GeoPlaceSearch() {
   );
 }
 
+/* ── Haversine distance in meters ── */
+function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 /* ── Types ── */
 interface Geofence {
   id: string;
@@ -556,26 +566,42 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   // Show staff on map
   const [showStaff, setShowStaff] = useState(false);
   const [staffLocations, setStaffLocations] = useState<{ staff_id: string; latitude: number; longitude: number; staff_profiles: { full_name: string; photo_url: string | null } | null }[]>([]);
+  const [showNoGeofence, setShowNoGeofence] = useState(false);
+
+  // All staff locations (always fetched for "no geofence" feature)
+  const [allStaffLocations, setAllStaffLocations] = useState<{ staff_id: string; latitude: number; longitude: number; staff_profiles: { full_name: string; photo_url: string | null } | null }[]>([]);
 
   // Clock-in/out dialog
   const [clockDialogOpen, setClockDialogOpen] = useState(false);
   const [clockInTime, setClockInTime] = useState("");
   const [clockOutTime, setClockOutTime] = useState("");
 
-  // Fetch staff locations when toggle is on
+  // Fetch all staff locations (for no-geofence list + optional map overlay)
   useEffect(() => {
-    if (!showStaff) { setStaffLocations([]); return; }
-    const fetchStaff = async () => {
+    const fetchAllStaff = async () => {
       const { data } = await supabase
         .from("staff_locations")
         .select("staff_id, latitude, longitude, staff_profiles!inner(full_name, photo_url, is_active)")
         .eq("staff_profiles.is_active", true);
-      if (data) setStaffLocations(data as any);
+      if (data) {
+        setAllStaffLocations(data as any);
+        if (showStaff) setStaffLocations(data as any);
+      }
     };
-    fetchStaff();
-    const interval = setInterval(fetchStaff, 8000);
+    fetchAllStaff();
+    const interval = setInterval(fetchAllStaff, 8000);
     return () => clearInterval(interval);
   }, [showStaff]);
+
+  // Staff outside all geofences
+  const staffOutsideGeofences = useMemo(() => {
+    const activeGeos = geofences.filter(g => g.is_active);
+    return allStaffLocations.filter((loc) => {
+      return !activeGeos.some(gf =>
+        haversineMeters(loc.latitude, loc.longitude, gf.latitude, gf.longitude) <= gf.radius_meters
+      );
+    });
+  }, [allStaffLocations, geofences]);
 
   // Notify parent about edit mode changes
   useEffect(() => {
@@ -936,6 +962,15 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                   {selectedGeofence.name}
                 </CardTitle>
               </div>
+            ) : showNoGeofence ? (
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowNoGeofence(false)}>
+                    <ArrowLeft className="h-3 w-3" />
+                  </Button>
+                  Outside Geofences
+                </CardTitle>
+              </div>
             ) : (
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm flex items-center gap-2">
@@ -1245,6 +1280,29 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                   </TabsContent>
                 </Tabs>
               </div>
+            ) : showNoGeofence ? (
+              <div>
+                <div className="px-4 pb-3 border-b border-border">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant="secondary">
+                      {staffOutsideGeofences.length} staff
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Staff not currently inside any active geofence.</p>
+                </div>
+                <div className="divide-y divide-border">
+                  {staffOutsideGeofences.length === 0 ? (
+                    <p className="px-4 py-6 text-xs text-muted-foreground text-center">All staff are inside a geofence.</p>
+                  ) : (
+                    staffOutsideGeofences.map((loc) => (
+                      <div key={loc.staff_id} className="flex items-center gap-2 px-4 py-2.5">
+                        <StaffAvatar photoUrl={loc.staff_profiles?.photo_url ?? null} fullName={loc.staff_profiles?.full_name ?? "?"} size="sm" />
+                        <span className="text-sm font-medium truncate">{loc.staff_profiles?.full_name ?? "Unknown"}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             ) : geofences.length === 0 ? (
               <p className="px-4 pb-4 text-xs text-muted-foreground">No geofences yet. Click "Add" to create one.</p>
             ) : (
@@ -1270,6 +1328,22 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                     </p>
                   </div>
                 ))}
+                {/* No Geofence option */}
+                <div
+                  className="px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => setShowNoGeofence(true)}
+                >
+                  <div className="flex items-center gap-2">
+                    <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                    <p className="font-medium text-sm text-muted-foreground">Outside Geofences</p>
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                      {staffOutsideGeofences.length}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5 ml-[22px]">
+                    Staff not inside any geofence
+                  </p>
+                </div>
               </div>
             )}
           </CardContent>
