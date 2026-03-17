@@ -188,7 +188,8 @@ export default function StaffPhotoUpload({
   const handleRemove = async () => {
     setRemoving(true);
     try {
-      await supabase.storage.from("staff-photos").remove([`${staffId}.webp`]);
+      // Remove both thumbnail and original
+      await supabase.storage.from("staff-photos").remove([`${staffId}.webp`, `${staffId}_original.webp`]);
       const { error } = await supabase
         .from("staff_profiles")
         .update({ photo_url: null } as any)
