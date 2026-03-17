@@ -566,26 +566,42 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   // Show staff on map
   const [showStaff, setShowStaff] = useState(false);
   const [staffLocations, setStaffLocations] = useState<{ staff_id: string; latitude: number; longitude: number; staff_profiles: { full_name: string; photo_url: string | null } | null }[]>([]);
+  const [showNoGeofence, setShowNoGeofence] = useState(false);
+
+  // All staff locations (always fetched for "no geofence" feature)
+  const [allStaffLocations, setAllStaffLocations] = useState<{ staff_id: string; latitude: number; longitude: number; staff_profiles: { full_name: string; photo_url: string | null } | null }[]>([]);
 
   // Clock-in/out dialog
   const [clockDialogOpen, setClockDialogOpen] = useState(false);
   const [clockInTime, setClockInTime] = useState("");
   const [clockOutTime, setClockOutTime] = useState("");
 
-  // Fetch staff locations when toggle is on
+  // Fetch all staff locations (for no-geofence list + optional map overlay)
   useEffect(() => {
-    if (!showStaff) { setStaffLocations([]); return; }
-    const fetchStaff = async () => {
+    const fetchAllStaff = async () => {
       const { data } = await supabase
         .from("staff_locations")
         .select("staff_id, latitude, longitude, staff_profiles!inner(full_name, photo_url, is_active)")
         .eq("staff_profiles.is_active", true);
-      if (data) setStaffLocations(data as any);
+      if (data) {
+        setAllStaffLocations(data as any);
+        if (showStaff) setStaffLocations(data as any);
+      }
     };
-    fetchStaff();
-    const interval = setInterval(fetchStaff, 8000);
+    fetchAllStaff();
+    const interval = setInterval(fetchAllStaff, 8000);
     return () => clearInterval(interval);
   }, [showStaff]);
+
+  // Staff outside all geofences
+  const staffOutsideGeofences = useMemo(() => {
+    const activeGeos = geofences.filter(g => g.is_active);
+    return allStaffLocations.filter((loc) => {
+      return !activeGeos.some(gf =>
+        haversineMeters(loc.latitude, loc.longitude, gf.latitude, gf.longitude) <= gf.radius_meters
+      );
+    });
+  }, [allStaffLocations, geofences]);
 
   // Notify parent about edit mode changes
   useEffect(() => {
