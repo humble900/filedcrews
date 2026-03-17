@@ -2,8 +2,10 @@ import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Clock, History, X, CircleDot, Loader2, MapPinHouse, EyeOff, Eye, Users, ArrowRightLeft } from "lucide-react";
-import { formatDistanceToNow, format, startOfDay, endOfDay } from "date-fns";
+import { MapPin, Clock, History, X, CircleDot, Loader2, MapPinHouse, EyeOff, Eye, Users, ArrowRightLeft, CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { formatDistanceToNow, format, startOfDay, endOfDay, addDays, subDays, isToday } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -639,6 +641,7 @@ const LiveMap = () => {
   const [loadingCrossings, setLoadingCrossings] = useState(false);
   const [staffShifts, setStaffShifts] = useState<{ geofence_id: string; check_in_time: string; check_out_time: string | null }[]>([]);
   const [shiftStaff, setShiftStaff] = useState<{ id: string; name: string } | null>(null);
+  const [crossingsDate, setCrossingsDate] = useState<Date>(new Date());
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
 
   // Map style selector (normal = full detail, clean = simplified)
@@ -920,13 +923,49 @@ const LiveMap = () => {
               )}
             </TabsContent>
             <TabsContent value="crossings" className="flex-1 overflow-auto mt-0">
-              {loadingCrossings ? (
-                <p className="px-4 pb-4 text-xs text-muted-foreground">Loading crossings…</p>
-              ) : !crossings.length ? (
-                <p className="px-4 pb-4 text-xs text-muted-foreground">No geofence crossings recorded.</p>
-              ) : (
+              {/* Date picker */}
+              <div className="px-4 py-2 flex items-center gap-1.5 border-b border-border">
+                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setCrossingsDate(d => subDays(d, 1))}>
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </Button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5 flex-1 justify-center">
+                      <CalendarIcon className="h-3 w-3" />
+                      {isToday(crossingsDate) ? "Today" : format(crossingsDate, "MMM d, yyyy")}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="center">
+                    <Calendar
+                      mode="single"
+                      selected={crossingsDate}
+                      onSelect={(d) => d && setCrossingsDate(d)}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setCrossingsDate(d => addDays(d, 1))} disabled={isToday(crossingsDate)}>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Button>
+                {!isToday(crossingsDate) && (
+                  <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 shrink-0" onClick={() => setCrossingsDate(new Date())}>
+                    Today
+                  </Button>
+                )}
+              </div>
+
+              {(() => {
+                const dayStart = startOfDay(crossingsDate).toISOString();
+                const dayEnd = endOfDay(crossingsDate).toISOString();
+                const dayCrossings = crossings.filter(c => c.created_at >= dayStart && c.created_at <= dayEnd);
+
+                if (loadingCrossings) return <p className="px-4 py-4 text-xs text-muted-foreground">Loading crossings…</p>;
+                if (!dayCrossings.length) return <p className="px-4 py-4 text-xs text-muted-foreground">No crossings on this day.</p>;
+
+                return (
                 <div className="divide-y divide-border">
-                  {crossings.map((c) => {
+                  {dayCrossings.map((c) => {
                     const date = new Date(c.created_at);
                     const isEntry = c.event_type === "entered";
                     const isExit = c.event_type === "exited";
@@ -973,7 +1012,8 @@ const LiveMap = () => {
                     );
                   })}
                 </div>
-              )}
+                );
+              })()}
             </TabsContent>
           </Tabs>
         ) : !locations.length ? (
