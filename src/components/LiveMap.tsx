@@ -757,6 +757,7 @@ const LiveMap = () => {
 
   useEffect(() => {
     fetchLocations();
+    fetchGeofences();
     const interval = setInterval(fetchLocations, 8000);
     const channel = supabase
       .channel("staff_locations_changes")
