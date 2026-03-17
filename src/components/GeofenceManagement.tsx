@@ -545,6 +545,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   const [editCenter, setEditCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [editRadius, setEditRadius] = useState(170);
   const [editAskForFaceId, setEditAskForFaceId] = useState(false);
+  const [editName, setEditName] = useState("");
 
   // Preserved zoom for edit mode after placement
   const [editZoom, setEditZoom] = useState<number | null>(null);
@@ -694,6 +695,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
     setEditCenter({ lat: gf.latitude, lng: gf.longitude });
     setEditRadius(gf.radius_meters);
     setEditAskForFaceId(gf.ask_for_face_id);
+    setEditName(gf.name);
     setEditZoom(currentZoom);
     setEditMode(true);
     setSelectedGeofence(null);
@@ -703,9 +705,16 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   const handleDone = async () => {
     if (!editingId || !editCenter) return;
 
+    const trimmedName = editName.trim();
+    if (!trimmedName) {
+      toast.error("Name cannot be empty");
+      return;
+    }
+
     const { error } = await supabase
       .from("geofences")
       .update({
+        name: trimmedName,
         latitude: editCenter.lat,
         longitude: editCenter.lng,
         radius_meters: editRadius,
@@ -768,13 +777,24 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
     <>
       {editMode ? (
         <>
-          <CardHeader className="pb-3">
+           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
               <Move className="h-4 w-4" />
-              Editing: {editingGeofenceName}
+              Editing
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Name
+              </label>
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="mt-1"
+                placeholder="Geofence name"
+              />
+            </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Radius
