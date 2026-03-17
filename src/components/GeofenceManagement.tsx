@@ -705,9 +705,16 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   const handleDone = async () => {
     if (!editingId || !editCenter) return;
 
+    const trimmedName = editName.trim();
+    if (!trimmedName) {
+      toast.error("Name cannot be empty");
+      return;
+    }
+
     const { error } = await supabase
       .from("geofences")
       .update({
+        name: trimmedName,
         latitude: editCenter.lat,
         longitude: editCenter.lng,
         radius_meters: editRadius,
