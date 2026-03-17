@@ -980,7 +980,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                       Delete
                     </Button>
                   </div>
-                  {(selectedGeofence.check_in_time || selectedGeofence.check_out_time) && (
+                   {(selectedGeofence.check_in_time || selectedGeofence.check_out_time) && (
                     <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                       <Clock className="h-3 w-3" />
                       {selectedGeofence.check_in_time && <span>In: {selectedGeofence.check_in_time.slice(0, 5)}</span>}
@@ -988,6 +988,45 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                       {selectedGeofence.check_out_time && <span>Out: {selectedGeofence.check_out_time.slice(0, 5)}</span>}
                     </div>
                   )}
+
+                  {/* Staff Inside section */}
+                  <div className="mt-3">
+                    <Button
+                      size="sm"
+                      variant={staffInsideOpen ? "secondary" : "outline"}
+                      className="w-full justify-start"
+                      onClick={() => {
+                        if (!staffInsideOpen) {
+                          fetchStaffInside(selectedGeofence.id);
+                        }
+                        setStaffInsideOpen(!staffInsideOpen);
+                      }}
+                    >
+                      <Users className="h-3 w-3 mr-1" />
+                      Staff Inside Now
+                      {staffInsideOpen && !loadingStaffInside && (
+                        <Badge variant="secondary" className="ml-auto text-xs">{staffInside.length}</Badge>
+                      )}
+                      {loadingStaffInside && <Loader2 className="h-3 w-3 ml-auto animate-spin" />}
+                    </Button>
+                    {staffInsideOpen && !loadingStaffInside && (
+                      <div className="mt-2 space-y-1">
+                        {staffInside.length === 0 ? (
+                          <p className="text-xs text-muted-foreground px-2 py-1">No staff currently inside</p>
+                        ) : (
+                          staffInside.map((s) => (
+                            <div key={s.id} className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-muted/50">
+                              <StaffAvatar photoUrl={s.photo_url} fullName={s.full_name} size="xs" />
+                              <span className="text-xs font-medium truncate flex-1">{s.full_name}</span>
+                              <span className="text-[10px] text-muted-foreground">
+                                since {format(new Date(s.entered_at), "HH:mm")}
+                              </span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <Tabs defaultValue="crossings" className="w-full">
                   <div className="px-4 py-2 border-b border-border space-y-2">
