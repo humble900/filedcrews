@@ -1212,6 +1212,20 @@ const LiveMap = () => {
           {sidebarContent}
         </Card>
       )}
+      {shiftStaff && (
+        <StaffShiftManager
+          staffId={shiftStaff.id}
+          staffName={shiftStaff.name}
+          open={!!shiftStaff}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShiftStaff(null);
+              // Re-fetch shifts if viewing crossings
+              if (historyStaff) fetchStaffShifts(historyStaff.id);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };
