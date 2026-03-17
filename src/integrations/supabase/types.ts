@@ -253,6 +253,51 @@ export type Database = {
           },
         ]
       }
+      staff_shifts: {
+        Row: {
+          check_in_time: string
+          check_out_time: string | null
+          created_at: string
+          geofence_id: string
+          id: string
+          is_active: boolean
+          staff_id: string
+        }
+        Insert: {
+          check_in_time: string
+          check_out_time?: string | null
+          created_at?: string
+          geofence_id: string
+          id?: string
+          is_active?: boolean
+          staff_id: string
+        }
+        Update: {
+          check_in_time?: string
+          check_out_time?: string | null
+          created_at?: string
+          geofence_id?: string
+          id?: string
+          is_active?: boolean
+          staff_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_shifts_geofence_id_fkey"
+            columns: ["geofence_id"]
+            isOneToOne: false
+            referencedRelation: "geofences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_shifts_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
