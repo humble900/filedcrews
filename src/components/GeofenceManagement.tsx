@@ -606,6 +606,39 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
     setLoadingEvents(false);
   }, []);
 
+  const fetchStaffInside = useCallback(async (geofenceId: string) => {
+    setLoadingStaffInside(true);
+    const dayStart = startOfDay(new Date()).toISOString();
+    const { data } = await supabase
+      .from("geofence_events")
+      .select("staff_id, event_type, created_at, staff_profiles(full_name, photo_url)")
+      .eq("geofence_id", geofenceId)
+      .gte("created_at", dayStart)
+      .order("created_at", { ascending: true })
+      .limit(1000);
+
+    if (data) {
+      const latestByStaff = new Map<string, { event_type: string; created_at: string; full_name: string; photo_url: string | null }>();
+      for (const row of data as any[]) {
+        const profile = row.staff_profiles;
+        latestByStaff.set(row.staff_id, {
+          event_type: row.event_type,
+          created_at: row.created_at,
+          full_name: profile?.full_name ?? "Unknown",
+          photo_url: profile?.photo_url ?? null,
+        });
+      }
+      const inside: { id: string; full_name: string; photo_url: string | null; entered_at: string }[] = [];
+      for (const [id, info] of latestByStaff) {
+        if (info.event_type === "entered") {
+          inside.push({ id, full_name: info.full_name, photo_url: info.photo_url, entered_at: info.created_at });
+        }
+      }
+      setStaffInside(inside);
+    }
+    setLoadingStaffInside(false);
+  }, []);
+
   useEffect(() => {
     fetchGeofences();
   }, [fetchGeofences]);
