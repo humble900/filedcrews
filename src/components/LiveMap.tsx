@@ -2,8 +2,10 @@ import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Clock, History, X, CircleDot, Loader2, MapPinHouse, EyeOff, Eye, Users } from "lucide-react";
-import { formatDistanceToNow, format } from "date-fns";
+import { MapPin, Clock, History, X, CircleDot, Loader2, MapPinHouse, EyeOff, Eye, Users, ArrowRightLeft } from "lucide-react";
+import { formatDistanceToNow, format, startOfDay, endOfDay } from "date-fns";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import StaffAvatar from "./StaffAvatar";
@@ -632,6 +634,8 @@ const LiveMap = () => {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
+  const [crossings, setCrossings] = useState<{ id: string; event_type: string; created_at: string; geofence_name: string }[]>([]);
+  const [loadingCrossings, setLoadingCrossings] = useState(false);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
 
   // Map style selector (normal = full detail, clean = simplified)
@@ -742,15 +746,38 @@ const LiveMap = () => {
     setLoadingHistory(false);
   }, []);
 
+  const fetchCrossings = useCallback(async (staffId: string) => {
+    setLoadingCrossings(true);
+    const { data } = await supabase
+      .from("geofence_events")
+      .select("id, event_type, created_at, geofences(name)")
+      .eq("staff_id", staffId)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (data) {
+      setCrossings(
+        (data as any[]).map((e) => ({
+          id: e.id,
+          event_type: e.event_type,
+          created_at: e.created_at,
+          geofence_name: e.geofences?.name ?? "Unknown",
+        }))
+      );
+    }
+    setLoadingCrossings(false);
+  }, []);
+
   const showHistory = (staffId: string, name: string) => {
     setHistoryStaff({ id: staffId, name });
     setSelectedStaffId(staffId);
     fetchHistory(staffId);
+    fetchCrossings(staffId);
   };
 
   const closeHistory = () => {
     setHistoryStaff(null);
     setHistoryPoints([]);
+    setCrossings([]);
     setSelectedPointId(null);
     setSelectedStaffId(null);
   };
@@ -814,48 +841,94 @@ const LiveMap = () => {
       </div>
       <div className="overflow-auto flex-1">
         {historyStaff ? (
-          loadingHistory ? (
-            <p className="px-4 pb-4 text-xs text-muted-foreground">Loading history…</p>
-          ) : !historyPoints.length ? (
-            <p className="px-4 pb-4 text-xs text-muted-foreground">No history recorded.</p>
-          ) : (
-            <div className="divide-y divide-border">
-              {groupHistoryPoints(historyPoints).reverse().map((group, i) => {
-                const isSelected = group.pointIds.includes(selectedPointId ?? "");
-                return (
-                  <div
-                    key={group.id}
-                    className={`px-4 py-2.5 cursor-pointer transition-colors border-l-2 ${
-                      isSelected
-                        ? "bg-primary/10 border-l-primary"
-                        : "hover:bg-muted/50 border-l-transparent"
-                    }`}
-                    onClick={() => {
-                      setSelectedPointId(group.id);
-                      flyTo(group.latitude, group.longitude);
-                      if (isMobile) setSidebarOpen(false);
-                    }}
-                  >
-                    <p className={`text-xs font-medium flex items-center gap-1.5 ${isSelected ? "text-primary" : ""}`}>
-                      <CircleDot className={`h-3 w-3 ${isSelected ? "text-destructive" : i === 0 ? "text-green-500" : "text-primary"}`} />
-                      {formatGroupTime(group)}
-                    </p>
-                    {group.pointCount > 1 && (
-                      <p className="text-[10px] text-muted-foreground ml-[18px]">
-                        {group.pointCount} pings
-                      </p>
-                    )}
-                    <div className="flex items-center mt-0.5 ml-[18px]">
-                      <p className="text-xs text-muted-foreground font-mono">
-                        {group.latitude.toFixed(5)}, {group.longitude.toFixed(5)}
-                      </p>
-                      <AddressLookup lat={group.latitude} lng={group.longitude} />
-                    </div>
-                  </div>
-                );
-              })}
+          <Tabs defaultValue="location" className="w-full flex flex-col flex-1 overflow-hidden">
+            <div className="px-4">
+              <TabsList className="w-full h-8">
+                <TabsTrigger value="location" className="text-xs flex-1">
+                  <MapPin className="h-3 w-3 mr-1" />
+                  Location
+                </TabsTrigger>
+                <TabsTrigger value="crossings" className="text-xs flex-1">
+                  <ArrowRightLeft className="h-3 w-3 mr-1" />
+                  Crossings
+                </TabsTrigger>
+              </TabsList>
             </div>
-          )
+            <TabsContent value="location" className="flex-1 overflow-auto mt-0">
+              {loadingHistory ? (
+                <p className="px-4 pb-4 text-xs text-muted-foreground">Loading history…</p>
+              ) : !historyPoints.length ? (
+                <p className="px-4 pb-4 text-xs text-muted-foreground">No history recorded.</p>
+              ) : (
+                <div className="divide-y divide-border">
+                  {groupHistoryPoints(historyPoints).reverse().map((group, i) => {
+                    const isSelected = group.pointIds.includes(selectedPointId ?? "");
+                    return (
+                      <div
+                        key={group.id}
+                        className={`px-4 py-2.5 cursor-pointer transition-colors border-l-2 ${
+                          isSelected
+                            ? "bg-primary/10 border-l-primary"
+                            : "hover:bg-muted/50 border-l-transparent"
+                        }`}
+                        onClick={() => {
+                          setSelectedPointId(group.id);
+                          flyTo(group.latitude, group.longitude);
+                          if (isMobile) setSidebarOpen(false);
+                        }}
+                      >
+                        <p className={`text-xs font-medium flex items-center gap-1.5 ${isSelected ? "text-primary" : ""}`}>
+                          <CircleDot className={`h-3 w-3 ${isSelected ? "text-destructive" : i === 0 ? "text-green-500" : "text-primary"}`} />
+                          {formatGroupTime(group)}
+                        </p>
+                        {group.pointCount > 1 && (
+                          <p className="text-[10px] text-muted-foreground ml-[18px]">
+                            {group.pointCount} pings
+                          </p>
+                        )}
+                        <div className="flex items-center mt-0.5 ml-[18px]">
+                          <p className="text-xs text-muted-foreground font-mono">
+                            {group.latitude.toFixed(5)}, {group.longitude.toFixed(5)}
+                          </p>
+                          <AddressLookup lat={group.latitude} lng={group.longitude} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </TabsContent>
+            <TabsContent value="crossings" className="flex-1 overflow-auto mt-0">
+              {loadingCrossings ? (
+                <p className="px-4 pb-4 text-xs text-muted-foreground">Loading crossings…</p>
+              ) : !crossings.length ? (
+                <p className="px-4 pb-4 text-xs text-muted-foreground">No geofence crossings recorded.</p>
+              ) : (
+                <div className="divide-y divide-border">
+                  {crossings.map((c) => {
+                    const date = new Date(c.created_at);
+                    const isEntry = c.event_type === "entered";
+                    return (
+                      <div key={c.id} className="px-4 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant={isEntry ? "default" : "secondary"}
+                            className="text-[10px] px-1.5 py-0"
+                          >
+                            {isEntry ? "IN" : "OUT"}
+                          </Badge>
+                          <span className="text-xs font-medium truncate">{c.geofence_name}</span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-0.5 ml-[42px]">
+                          {format(date, "MMM d, yyyy · HH:mm:ss")}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         ) : !locations.length ? (
           <p className="px-4 pb-4 text-xs text-muted-foreground">No locations yet.</p>
         ) : (
