@@ -478,15 +478,36 @@ const STAFF_COLORS = [
   { bg: "hsl(0, 70%, 50%)",   ring: "hsl(0, 70%, 50%)" },     // red
 ];
 
+/* ── Haversine distance in meters ── */
+function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+interface SimpleGeofence {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  radius_meters: number;
+  is_active: boolean;
+}
+
 /* ── Staff markers (zoom-aware) ── */
 function StaffMarkers({
   locations,
   selectedStaffId,
   onSelect,
+  staffGeofenceNames,
 }: {
   locations: StaffLocation[];
   selectedStaffId: string | null;
   onSelect: (staffId: string, lat: number, lng: number) => void;
+  staffGeofenceNames: Record<string, string>;
 }) {
   const zoom = useZoomLevel();
 
@@ -561,6 +582,29 @@ function StaffMarkers({
                     transition: "width 0.15s, height 0.15s",
                   }}
                 />
+              )}
+              {/* Geofence badge */}
+              {staffGeofenceNames[loc.staff_id] && (
+                <div
+                  style={{
+                    marginTop: "2px",
+                    background: "hsl(142, 60%, 40%)",
+                    color: "white",
+                    padding: "1px 6px",
+                    borderRadius: "4px",
+                    fontSize: `${Math.max(8, labelSize - 2)}px`,
+                    fontWeight: 600,
+                    fontFamily: "'Space Grotesk', sans-serif",
+                    whiteSpace: "nowrap",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "3px",
+                  }}
+                >
+                  <MapPin style={{ width: `${Math.max(8, labelSize - 2)}px`, height: `${Math.max(8, labelSize - 2)}px` }} />
+                  {staffGeofenceNames[loc.staff_id]}
+                </div>
               )}
             </div>
           </AdvancedMarker>
@@ -638,6 +682,31 @@ const LiveMap = () => {
     [locations, hiddenStaffIds]
   );
 
+  // Geofences for "inside" badge
+  const [geofences, setGeofences] = useState<SimpleGeofence[]>([]);
+
+  const fetchGeofences = useCallback(async () => {
+    const { data } = await supabase
+      .from("geofences")
+      .select("id, name, latitude, longitude, radius_meters, is_active");
+    if (data) setGeofences(data as SimpleGeofence[]);
+  }, []);
+
+  const staffGeofenceNames = useMemo(() => {
+    const result: Record<string, string> = {};
+    const activeGeos = geofences.filter(g => g.is_active);
+    for (const loc of locations) {
+      for (const gf of activeGeos) {
+        const dist = haversineMeters(loc.latitude, loc.longitude, gf.latitude, gf.longitude);
+        if (dist <= gf.radius_meters) {
+          result[loc.staff_id] = gf.name;
+          break;
+        }
+      }
+    }
+    return result;
+  }, [locations, geofences]);
+
   // Fetch Google Maps API key
   useEffect(() => {
     (async () => {
@@ -688,6 +757,7 @@ const LiveMap = () => {
 
   useEffect(() => {
     fetchLocations();
+    fetchGeofences();
     const interval = setInterval(fetchLocations, 8000);
     const channel = supabase
       .channel("staff_locations_changes")
@@ -964,6 +1034,7 @@ const LiveMap = () => {
               <StaffMarkers
                 locations={visibleLocations}
                 selectedStaffId={selectedStaffId}
+                staffGeofenceNames={staffGeofenceNames}
                 onSelect={(staffId, lat, lng) => {
                   setSelectedStaffId(staffId);
                   flyTo(lat, lng);
