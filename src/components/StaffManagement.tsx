@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import StaffShiftManager from "./StaffShiftManager";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { UserPlus, Users, Trash2, Copy, X, CheckCircle, Eye, EyeOff, Bell, BellOff, Send } from "lucide-react";
+import { UserPlus, Users, Trash2, Copy, X, CheckCircle, Eye, EyeOff, Bell, BellOff, Send, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import StaffAvatar from "./StaffAvatar";
@@ -39,6 +40,7 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [sendingTestPush, setSendingTestPush] = useState<string | null>(null);
+  const [shiftStaff, setShiftStaff] = useState<{ id: string; name: string } | null>(null);
 
   const { data: staff, refetch } = useQuery({
     queryKey: ["staff_profiles"],
@@ -257,6 +259,15 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
                       Joined {format(new Date(s.created_at), "MMM d, yyyy")}
                     </span>
                      <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => setShiftStaff({ id: s.id, name: s.full_name })}
+                        title="Manage shifts"
+                      >
+                        <Clock className="h-4 w-4" />
+                      </Button>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -343,6 +354,15 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
           )}
         </CardContent>
       </Card>
+
+      {shiftStaff && (
+        <StaffShiftManager
+          staffId={shiftStaff.id}
+          staffName={shiftStaff.name}
+          open={!!shiftStaff}
+          onOpenChange={(open) => { if (!open) setShiftStaff(null); }}
+        />
+      )}
     </div>
   );
 };

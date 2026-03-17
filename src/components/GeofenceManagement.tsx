@@ -517,6 +517,7 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   const [staffInside, setStaffInside] = useState<{ id: string; full_name: string; photo_url: string | null; entered_at: string }[]>([]);
   const [staffInsideOpen, setStaffInsideOpen] = useState(false);
   const [loadingStaffInside, setLoadingStaffInside] = useState(false);
+  const [allShifts, setAllShifts] = useState<{ staff_id: string; geofence_id: string; check_in_time: string; check_out_time: string | null }[]>([]);
   // Map style (synced with LiveMap via same localStorage key)
   const [mapStyle, setMapStyle] = useState<"normal" | "clean">(() => {
     try {
@@ -626,6 +627,14 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
     setLoadingEvents(false);
   }, []);
 
+  const fetchAllShifts = useCallback(async () => {
+    const { data } = await supabase
+      .from("staff_shifts")
+      .select("staff_id, geofence_id, check_in_time, check_out_time")
+      .eq("is_active", true);
+    if (data) setAllShifts(data as any[]);
+  }, []);
+
   const fetchStaffInside = useCallback(async (geofenceId: string) => {
     setLoadingStaffInside(true);
     const dayStart = startOfDay(new Date()).toISOString();
@@ -661,7 +670,8 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
 
   useEffect(() => {
     fetchGeofences();
-  }, [fetchGeofences]);
+    fetchAllShifts();
+  }, [fetchGeofences, fetchAllShifts]);
 
   // Realtime for events
   useEffect(() => {
@@ -1114,6 +1124,27 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                           label = "Exited";
                         }
 
+                        // Punctuality logic based on staff shifts
+                        let punctualityLabel: string | null = null;
+                        let punctualityClass = "";
+                        if (selectedGeofence) {
+                          const shift = allShifts.find(s => s.staff_id === ev.staff_id && s.geofence_id === selectedGeofence.id);
+                          if (shift) {
+                            const evTime = new Date(ev.created_at);
+                            const evHHMM = `${String(evTime.getHours()).padStart(2, "0")}:${String(evTime.getMinutes()).padStart(2, "0")}`;
+                            if (mode === "in") {
+                              const expected = shift.check_in_time.slice(0, 5);
+                              if (evHHMM < expected) { punctualityLabel = "Early"; punctualityClass = "bg-green-100 text-green-800 border-green-200"; }
+                              else if (evHHMM > expected) { punctualityLabel = "Late"; punctualityClass = "bg-red-100 text-red-800 border-red-200"; }
+                              else { punctualityLabel = "On time"; punctualityClass = "bg-green-100 text-green-800 border-green-200"; }
+                            } else if (mode === "out" && shift.check_out_time) {
+                              const expected = shift.check_out_time.slice(0, 5);
+                              if (evHHMM < expected) { punctualityLabel = "Early"; punctualityClass = "bg-orange-100 text-orange-800 border-orange-200"; }
+                              else if (evHHMM > expected) { punctualityLabel = "Late"; punctualityClass = "bg-red-100 text-red-800 border-red-200"; }
+                              else { punctualityLabel = "On time"; punctualityClass = "bg-green-100 text-green-800 border-green-200"; }
+                            }
+                          }
+                        }
 
                         return (
                           <div key={ev.id} className="px-4 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setDetailEvent(ev)}>
@@ -1127,6 +1158,11 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                                 <p className="text-sm font-medium">{ev.staff_profiles?.full_name || "Unknown"}</p>
                               </div>
                               <div className="flex items-center gap-1.5">
+                                {punctualityLabel && (
+                                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${punctualityClass}`}>
+                                    {punctualityLabel}
+                                  </span>
+                                )}
                                 <Badge
                                   variant={isExited ? "secondary" : "default"}
                                   className={badgeClass}

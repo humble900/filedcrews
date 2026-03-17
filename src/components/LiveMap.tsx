@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import StaffAvatar from "./StaffAvatar";
+import StaffShiftManager from "./StaffShiftManager";
 
 /* ── Address lookup via reverse geocoding ── */
 const addressCache: Record<string, string> = {};
@@ -634,8 +635,10 @@ const LiveMap = () => {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
-  const [crossings, setCrossings] = useState<{ id: string; event_type: string; created_at: string; geofence_name: string }[]>([]);
+  const [crossings, setCrossings] = useState<{ id: string; event_type: string; created_at: string; geofence_name: string; geofence_id: string }[]>([]);
   const [loadingCrossings, setLoadingCrossings] = useState(false);
+  const [staffShifts, setStaffShifts] = useState<{ geofence_id: string; check_in_time: string; check_out_time: string | null }[]>([]);
+  const [shiftStaff, setShiftStaff] = useState<{ id: string; name: string } | null>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
 
   // Map style selector (normal = full detail, clean = simplified)
@@ -750,7 +753,7 @@ const LiveMap = () => {
     setLoadingCrossings(true);
     const { data } = await supabase
       .from("geofence_events")
-      .select("id, event_type, created_at, geofences(name)")
+      .select("id, event_type, created_at, geofence_id, geofences(name)")
       .eq("staff_id", staffId)
       .order("created_at", { ascending: false })
       .limit(200);
@@ -760,6 +763,7 @@ const LiveMap = () => {
           id: e.id,
           event_type: e.event_type,
           created_at: e.created_at,
+          geofence_id: e.geofence_id,
           geofence_name: e.geofences?.name ?? "Unknown",
         }))
       );
@@ -767,17 +771,29 @@ const LiveMap = () => {
     setLoadingCrossings(false);
   }, []);
 
+  const fetchStaffShifts = useCallback(async (staffId: string) => {
+    const { data } = await supabase
+      .from("staff_shifts")
+      .select("geofence_id, check_in_time, check_out_time")
+      .eq("staff_id", staffId)
+      .eq("is_active", true);
+    if (data) setStaffShifts(data as any[]);
+    else setStaffShifts([]);
+  }, []);
+
   const showHistory = (staffId: string, name: string) => {
     setHistoryStaff({ id: staffId, name });
     setSelectedStaffId(staffId);
     fetchHistory(staffId);
     fetchCrossings(staffId);
+    fetchStaffShifts(staffId);
   };
 
   const closeHistory = () => {
     setHistoryStaff(null);
     setHistoryPoints([]);
     setCrossings([]);
+    setStaffShifts([]);
     setSelectedPointId(null);
     setSelectedStaffId(null);
   };
@@ -828,9 +844,14 @@ const LiveMap = () => {
               <History className="h-4 w-4" />
               {historyStaff.name}
             </h3>
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={closeHistory}>
-              <X className="h-3 w-3" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShiftStaff(historyStaff)} title="Manage shifts">
+                <Clock className="h-3 w-3" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={closeHistory}>
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
         ) : (
           <h3 className="text-sm font-semibold flex items-center gap-2">
@@ -908,6 +929,27 @@ const LiveMap = () => {
                   {crossings.map((c) => {
                     const date = new Date(c.created_at);
                     const isEntry = c.event_type === "entered";
+                    const isExit = c.event_type === "exited";
+
+                    // Punctuality logic
+                    let punctualityLabel: string | null = null;
+                    let punctualityClass = "";
+                    const shift = staffShifts.find((s) => s.geofence_id === c.geofence_id);
+                    if (shift) {
+                      const evHHMM = `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+                      if (isEntry) {
+                        const expected = shift.check_in_time.slice(0, 5);
+                        if (evHHMM < expected) { punctualityLabel = "Early"; punctualityClass = "bg-green-100 text-green-800 border-green-200"; }
+                        else if (evHHMM > expected) { punctualityLabel = "Late"; punctualityClass = "bg-red-100 text-red-800 border-red-200"; }
+                        else { punctualityLabel = "On time"; punctualityClass = "bg-green-100 text-green-800 border-green-200"; }
+                      } else if (isExit && shift.check_out_time) {
+                        const expected = shift.check_out_time.slice(0, 5);
+                        if (evHHMM < expected) { punctualityLabel = "Early"; punctualityClass = "bg-orange-100 text-orange-800 border-orange-200"; }
+                        else if (evHHMM > expected) { punctualityLabel = "Late"; punctualityClass = "bg-red-100 text-red-800 border-red-200"; }
+                        else { punctualityLabel = "On time"; punctualityClass = "bg-green-100 text-green-800 border-green-200"; }
+                      }
+                    }
+
                     return (
                       <div key={c.id} className="px-4 py-2.5">
                         <div className="flex items-center gap-2">
@@ -917,7 +959,12 @@ const LiveMap = () => {
                           >
                             {isEntry ? "IN" : "OUT"}
                           </Badge>
-                          <span className="text-xs font-medium truncate">{c.geofence_name}</span>
+                          <span className="text-xs font-medium truncate flex-1">{c.geofence_name}</span>
+                          {punctualityLabel && (
+                            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${punctualityClass}`}>
+                              {punctualityLabel}
+                            </span>
+                          )}
                         </div>
                         <p className="text-[10px] text-muted-foreground mt-0.5 ml-[42px]">
                           {format(date, "MMM d, yyyy · HH:mm:ss")}
@@ -981,17 +1028,31 @@ const LiveMap = () => {
                           {isHidden ? <EyeOff className="h-3.5 w-3.5 text-muted-foreground" /> : <Eye className="h-3.5 w-3.5" />}
                         </Button>
                         {!isHidden && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              showHistory(loc.staff_id, loc.staff_profiles?.full_name || "Unknown");
-                            }}
-                          >
-                            <History className="h-3.5 w-3.5" />
-                          </Button>
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShiftStaff({ id: loc.staff_id, name: loc.staff_profiles?.full_name || "Unknown" });
+                              }}
+                              title="Manage shifts"
+                            >
+                              <Clock className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                showHistory(loc.staff_id, loc.staff_profiles?.full_name || "Unknown");
+                              }}
+                            >
+                              <History className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -1150,6 +1211,20 @@ const LiveMap = () => {
         <Card className="w-72 shrink-0 overflow-auto flex flex-col">
           {sidebarContent}
         </Card>
+      )}
+      {shiftStaff && (
+        <StaffShiftManager
+          staffId={shiftStaff.id}
+          staffName={shiftStaff.name}
+          open={!!shiftStaff}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShiftStaff(null);
+              // Re-fetch shifts if viewing crossings
+              if (historyStaff) fetchStaffShifts(historyStaff.id);
+            }
+          }}
+        />
       )}
     </div>
   );
