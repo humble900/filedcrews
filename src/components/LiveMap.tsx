@@ -929,6 +929,27 @@ const LiveMap = () => {
                   {crossings.map((c) => {
                     const date = new Date(c.created_at);
                     const isEntry = c.event_type === "entered";
+                    const isExit = c.event_type === "exited";
+
+                    // Punctuality logic
+                    let punctualityLabel: string | null = null;
+                    let punctualityClass = "";
+                    const shift = staffShifts.find((s) => s.geofence_id === c.geofence_id);
+                    if (shift) {
+                      const evHHMM = `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+                      if (isEntry) {
+                        const expected = shift.check_in_time.slice(0, 5);
+                        if (evHHMM < expected) { punctualityLabel = "Early"; punctualityClass = "bg-green-100 text-green-800 border-green-200"; }
+                        else if (evHHMM > expected) { punctualityLabel = "Late"; punctualityClass = "bg-red-100 text-red-800 border-red-200"; }
+                        else { punctualityLabel = "On time"; punctualityClass = "bg-green-100 text-green-800 border-green-200"; }
+                      } else if (isExit && shift.check_out_time) {
+                        const expected = shift.check_out_time.slice(0, 5);
+                        if (evHHMM < expected) { punctualityLabel = "Early"; punctualityClass = "bg-orange-100 text-orange-800 border-orange-200"; }
+                        else if (evHHMM > expected) { punctualityLabel = "Late"; punctualityClass = "bg-red-100 text-red-800 border-red-200"; }
+                        else { punctualityLabel = "On time"; punctualityClass = "bg-green-100 text-green-800 border-green-200"; }
+                      }
+                    }
+
                     return (
                       <div key={c.id} className="px-4 py-2.5">
                         <div className="flex items-center gap-2">
@@ -938,7 +959,12 @@ const LiveMap = () => {
                           >
                             {isEntry ? "IN" : "OUT"}
                           </Badge>
-                          <span className="text-xs font-medium truncate">{c.geofence_name}</span>
+                          <span className="text-xs font-medium truncate flex-1">{c.geofence_name}</span>
+                          {punctualityLabel && (
+                            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${punctualityClass}`}>
+                              {punctualityLabel}
+                            </span>
+                          )}
                         </div>
                         <p className="text-[10px] text-muted-foreground mt-0.5 ml-[42px]">
                           {format(date, "MMM d, yyyy · HH:mm:ss")}
