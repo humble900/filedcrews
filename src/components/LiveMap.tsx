@@ -478,15 +478,36 @@ const STAFF_COLORS = [
   { bg: "hsl(0, 70%, 50%)",   ring: "hsl(0, 70%, 50%)" },     // red
 ];
 
+/* ── Haversine distance in meters ── */
+function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+interface SimpleGeofence {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  radius_meters: number;
+  is_active: boolean;
+}
+
 /* ── Staff markers (zoom-aware) ── */
 function StaffMarkers({
   locations,
   selectedStaffId,
   onSelect,
+  staffGeofenceNames,
 }: {
   locations: StaffLocation[];
   selectedStaffId: string | null;
   onSelect: (staffId: string, lat: number, lng: number) => void;
+  staffGeofenceNames: Record<string, string>;
 }) {
   const zoom = useZoomLevel();
 
