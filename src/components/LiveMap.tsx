@@ -583,6 +583,29 @@ function StaffMarkers({
                   }}
                 />
               )}
+              {/* Geofence badge */}
+              {staffGeofenceNames[loc.staff_id] && (
+                <div
+                  style={{
+                    marginTop: "2px",
+                    background: "hsl(142, 60%, 40%)",
+                    color: "white",
+                    padding: "1px 6px",
+                    borderRadius: "4px",
+                    fontSize: `${Math.max(8, labelSize - 2)}px`,
+                    fontWeight: 600,
+                    fontFamily: "'Space Grotesk', sans-serif",
+                    whiteSpace: "nowrap",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "3px",
+                  }}
+                >
+                  <MapPin style={{ width: `${Math.max(8, labelSize - 2)}px`, height: `${Math.max(8, labelSize - 2)}px` }} />
+                  {staffGeofenceNames[loc.staff_id]}
+                </div>
+              )}
             </div>
           </AdvancedMarker>
         );
