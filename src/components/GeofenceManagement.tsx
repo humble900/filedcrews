@@ -571,10 +571,6 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
   // All staff locations (always fetched for "no geofence" feature)
   const [allStaffLocations, setAllStaffLocations] = useState<{ staff_id: string; latitude: number; longitude: number; staff_profiles: { full_name: string; photo_url: string | null } | null }[]>([]);
 
-  // Clock-in/out dialog
-  const [clockDialogOpen, setClockDialogOpen] = useState(false);
-  const [clockInTime, setClockInTime] = useState("");
-  const [clockOutTime, setClockOutTime] = useState("");
 
   // Fetch all staff locations (for no-geofence list + optional map overlay)
   useEffect(() => {
