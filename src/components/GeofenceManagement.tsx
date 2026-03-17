@@ -962,6 +962,15 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                   {selectedGeofence.name}
                 </CardTitle>
               </div>
+            ) : showNoGeofence ? (
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowNoGeofence(false)}>
+                    <ArrowLeft className="h-3 w-3" />
+                  </Button>
+                  Outside Geofences
+                </CardTitle>
+              </div>
             ) : (
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm flex items-center gap-2">
