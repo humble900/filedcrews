@@ -1116,37 +1116,6 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
                           label = "Exited";
                         }
 
-                        // Late/Early logic
-                        let punctualityLabel: string | null = null;
-                        let punctualityClass = "";
-                        const evTime = new Date(ev.created_at);
-                        const evHHMM = `${String(evTime.getHours()).padStart(2, "0")}:${String(evTime.getMinutes()).padStart(2, "0")}`;
-
-                        if (mode === "in" && selectedGeofence?.check_in_time) {
-                          const expected = selectedGeofence.check_in_time.slice(0, 5);
-                          if (evHHMM < expected) {
-                            punctualityLabel = "Early";
-                            punctualityClass = "bg-green-100 text-green-800 border-green-200";
-                          } else if (evHHMM > expected) {
-                            punctualityLabel = "Late";
-                            punctualityClass = "bg-red-100 text-red-800 border-red-200";
-                          } else {
-                            punctualityLabel = "On time";
-                            punctualityClass = "bg-green-100 text-green-800 border-green-200";
-                          }
-                        } else if (mode === "out" && selectedGeofence?.check_out_time) {
-                          const expected = selectedGeofence.check_out_time.slice(0, 5);
-                          if (evHHMM < expected) {
-                            punctualityLabel = "Early";
-                            punctualityClass = "bg-orange-100 text-orange-800 border-orange-200";
-                          } else if (evHHMM > expected) {
-                            punctualityLabel = "Late";
-                            punctualityClass = "bg-red-100 text-red-800 border-red-200";
-                          } else {
-                            punctualityLabel = "On time";
-                            punctualityClass = "bg-green-100 text-green-800 border-green-200";
-                          }
-                        }
 
                         return (
                           <div key={ev.id} className="px-4 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setDetailEvent(ev)}>
