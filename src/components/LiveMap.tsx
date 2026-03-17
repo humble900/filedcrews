@@ -786,12 +786,14 @@ const LiveMap = () => {
     setSelectedStaffId(staffId);
     fetchHistory(staffId);
     fetchCrossings(staffId);
+    fetchStaffShifts(staffId);
   };
 
   const closeHistory = () => {
     setHistoryStaff(null);
     setHistoryPoints([]);
     setCrossings([]);
+    setStaffShifts([]);
     setSelectedPointId(null);
     setSelectedStaffId(null);
   };
