@@ -618,18 +618,22 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
       .limit(1000);
 
     if (data) {
-      const latestByStaff = new Map<string, { event_type: string; created_at: string; full_name: string; photo_url: string | null }>();
+      const latestByStaff: Record<string, { event_type: string; created_at: string; full_name: string; photo_url: string | null }> = {};
       for (const row of data as any[]) {
         const profile = row.staff_profiles;
-        latestByStaff.set(row.staff_id, {
+        latestByStaff[row.staff_id] = {
           event_type: row.event_type,
           created_at: row.created_at,
           full_name: profile?.full_name ?? "Unknown",
           photo_url: profile?.photo_url ?? null,
-        });
+        };
       }
       const inside: { id: string; full_name: string; photo_url: string | null; entered_at: string }[] = [];
-      for (const [id, info] of latestByStaff) {
+      for (const [id, info] of Object.entries(latestByStaff)) {
+        if (info.event_type === "entered") {
+          inside.push({ id, full_name: info.full_name, photo_url: info.photo_url, entered_at: info.created_at });
+        }
+      }
         if (info.event_type === "entered") {
           inside.push({ id, full_name: info.full_name, photo_url: info.photo_url, entered_at: info.created_at });
         }
