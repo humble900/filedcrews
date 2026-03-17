@@ -777,13 +777,24 @@ const GeofenceManagement = ({ apiKey, onEditModeChange, companyId }: Props) => {
     <>
       {editMode ? (
         <>
-          <CardHeader className="pb-3">
+           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
               <Move className="h-4 w-4" />
-              Editing: {editingGeofenceName}
+              Editing
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Name
+              </label>
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="mt-1"
+                placeholder="Geofence name"
+              />
+            </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Radius
