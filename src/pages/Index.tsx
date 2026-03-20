@@ -4,7 +4,7 @@ import CompanySetup from "@/pages/CompanySetup";
 import StaffManagement from "@/components/StaffManagement";
 import LiveMap from "@/components/LiveMap";
 import GeofenceManagement from "@/components/GeofenceManagement";
-import TrackerDownload from "@/components/TrackerDownload";
+
 import DashboardLayout from "@/components/DashboardLayout";
 import SEO from "@/components/SEO";
 import { Loader2 } from "lucide-react";
