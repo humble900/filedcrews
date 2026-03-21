@@ -1,13 +1,16 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Eye, EyeOff } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { MapPin, Eye, EyeOff, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import SEO from "@/components/SEO";
+
+const RECOVERY_TIMEOUT_MS = 15000;
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -15,14 +18,32 @@ const ResetPassword = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isRecovery, setIsRecovery] = useState(false);
+  const [isExpired, setIsExpired] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
+        if (timerRef.current) clearTimeout(timerRef.current);
         setIsRecovery(true);
+        setIsExpired(false);
       }
     });
-    return () => subscription.unsubscribe();
+
+    // Start timeout — if recovery event never fires, show error
+    timerRef.current = setTimeout(() => {
+      setIsExpired((prev) => {
+        // Only expire if recovery hasn't already succeeded
+        if (!isRecovery) return true;
+        return prev;
+      });
+    }, RECOVERY_TIMEOUT_MS);
+
+    return () => {
+      subscription.unsubscribe();
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleReset = async (e: React.FormEvent) => {
@@ -42,6 +63,44 @@ const ResetPassword = () => {
     setIsLoading(false);
   };
 
+  // Expired / invalid link state
+  if (!isRecovery && isExpired) {
+    return (
+      <>
+        <SEO title="Reset Password" description="Reset your Staff Tracker password." path="/reset-password" noIndex />
+        <div className="min-h-screen flex items-center justify-center p-8">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <div className="flex items-center gap-2 mb-4">
+                <MapPin className="h-8 w-8 text-primary" />
+                <h1 className="text-2xl font-bold text-primary">Staff Tracker</h1>
+              </div>
+              <CardTitle>Link Invalid or Expired</CardTitle>
+              <CardDescription>We couldn't verify your password reset link.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  This password reset link is invalid or has expired. Please request a new one.
+                </AlertDescription>
+              </Alert>
+              <div className="flex flex-col gap-2">
+                <Button asChild className="w-full">
+                  <Link to="/auth">Request a New Reset Email</Link>
+                </Button>
+                <Button asChild variant="outline" className="w-full">
+                  <Link to="/auth">Back to Login</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </>
+    );
+  }
+
+  // Verifying state (waiting for recovery event)
   if (!isRecovery) {
     return (
       <>
