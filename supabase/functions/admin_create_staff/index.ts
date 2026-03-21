@@ -27,6 +27,28 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // Fetch the company to validate the prefix
+    const { data: company, error: companyError } = await supabaseAdmin
+      .from("companies")
+      .select("prefix")
+      .eq("id", company_id)
+      .single();
+
+    if (companyError || !company) {
+      return new Response(
+        JSON.stringify({ error: "Company not found" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Enforce username starts with the company's prefix
+    if (!username.startsWith(company.prefix)) {
+      return new Response(
+        JSON.stringify({ error: `Username must start with your company prefix: ${company.prefix}` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const email = `${username}@internal.local`;
 
     // Create auth user
