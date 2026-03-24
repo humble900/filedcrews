@@ -42,7 +42,19 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex flex-col">
+      {/* Top bar */}
+      <header className="w-full flex items-center justify-between px-6 py-3 border-b border-border/40 bg-background/80 backdrop-blur-sm z-10">
+        <Link to="/" className="flex items-center gap-2 text-primary hover:opacity-80 transition-opacity">
+          <MapPin className="h-5 w-5" />
+          <span className="font-bold text-lg">Staff Tracker</span>
+        </Link>
+        <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+          ← Back to Home
+        </Link>
+      </header>
+
+      <div className="flex-1 flex">
       {/* Left side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-primary flex-col justify-center items-center p-12 text-primary-foreground">
         <div className="max-w-md space-y-8">
@@ -173,6 +185,7 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
           <Link to="/account-deletion" className="hover:text-foreground transition-colors">Account Deletion</Link>
         </nav>
       </footer>
+      </div>
     </div>
   );
 };
