@@ -45,6 +45,7 @@ const Index = () => {
   }
 
   if (!user) {
+    // Redirect to auth page — landing page handles unauthenticated homepage
     return (
       <>
         <SEO
