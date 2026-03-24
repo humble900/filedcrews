@@ -185,6 +185,7 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
           <Link to="/account-deletion" className="hover:text-foreground transition-colors">Account Deletion</Link>
         </nav>
       </footer>
+      </div>
     </div>
   );
 };
