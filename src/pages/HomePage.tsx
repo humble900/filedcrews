@@ -11,7 +11,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const HomePage = () => {
-  const { user, company, loading, signOut } = useAuth();
+  const { user, company, loading, signOut, createCompany } = useAuth();
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [geofenceEditing, setGeofenceEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("map");
@@ -50,7 +50,7 @@ const HomePage = () => {
   }
 
   if (!company) {
-    return <CompanySetup onCreate={async () => ({ error: null, data: null })} onSignOut={signOut} />;
+    return <CompanySetup onCreate={createCompany} onSignOut={signOut} />;
   }
 
   return (
