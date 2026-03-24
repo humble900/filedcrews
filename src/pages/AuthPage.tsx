@@ -172,16 +172,12 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
       </div>
 
       {/* Legal/help footer */}
-      <footer className="absolute bottom-0 left-0 right-0 py-4 px-6 text-center text-xs text-muted-foreground border-t border-border/40 bg-background/80 backdrop-blur-sm">
-        <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-          <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-          <span className="hidden sm:inline text-border">·</span>
-          <Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
-          <span className="hidden sm:inline text-border">·</span>
+      <footer className="py-4 px-6 text-center text-sm text-muted-foreground border-t border-border/40">
+        <nav className="flex items-center justify-center gap-x-6">
+          <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+          <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
           <Link to="/support" className="hover:text-foreground transition-colors">Support</Link>
-          <span className="hidden sm:inline text-border">·</span>
           <Link to="/about" className="hover:text-foreground transition-colors">About</Link>
-          <span className="hidden sm:inline text-border">·</span>
           <Link to="/account-deletion" className="hover:text-foreground transition-colors">Account Deletion</Link>
         </nav>
       </footer>
