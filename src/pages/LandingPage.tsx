@@ -92,9 +92,10 @@ export default function LandingPage() {
   return (
     <>
       <SEO
-        title="Staff Tracker — Real-Time Staff Location Tracking"
-        description="Track your field team in real time. Manage staff, set geofences, verify identity with face recognition, and monitor attendance from one simple dashboard."
+        title="Staff Tracker — Real-Time Staff Location & Attendance Dashboard"
+        description="Track your team in real time with GPS, geofences, and face verification. Manage staff attendance, monitor movement, and get instant alerts from one powerful dashboard."
         path="/"
+        ogImageAlt="Staff Tracker dashboard showing a live map with staff locations, geofence zones, and a mobile app companion view."
       />
 
       <div className="min-h-screen bg-background text-foreground">
