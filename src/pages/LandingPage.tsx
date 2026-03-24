@@ -105,7 +105,7 @@ export default function LandingPage() {
               <MapPin className="h-7 w-7 text-primary" />
               <span className="text-xl font-bold text-foreground">Staff Tracker</span>
             </Link>
-            <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
+            <nav className="hidden md:flex items-center gap-8 text-base font-medium text-muted-foreground">
               <a href="#features" className="hover:text-foreground transition-colors">Features</a>
               <a href="#how-it-works" className="hover:text-foreground transition-colors">How It Works</a>
               <a href="#mobile" className="hover:text-foreground transition-colors">Mobile App</a>
@@ -132,14 +132,14 @@ export default function LandingPage() {
                 className="space-y-8"
               >
                 <motion.div variants={fadeUp} custom={0} className="space-y-4">
-                  <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-base font-medium text-primary">
                     <Smartphone className="h-4 w-4" /> Admin Dashboard + Mobile App
                   </span>
                   <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-foreground">
                     Know where your<br />
                     <span className="text-primary">team is. Always.</span>
                   </h1>
-                  <p className="text-lg md:text-xl text-muted-foreground max-w-lg">
+                  <p className="text-xl md:text-2xl text-muted-foreground max-w-lg">
                     Real-time staff location tracking with geofencing, face verification, and instant alerts — all from one powerful dashboard.
                   </p>
                 </motion.div>
@@ -155,7 +155,7 @@ export default function LandingPage() {
                     </Button>
                   </a>
                 </motion.div>
-                <motion.div variants={fadeUp} custom={3} className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
+                <motion.div variants={fadeUp} custom={3} className="flex flex-wrap gap-x-6 gap-y-2 text-base text-muted-foreground">
                   {["Real-time GPS", "Face verification", "Geofence alerts", "Works offline"].map((t) => (
                     <span key={t} className="flex items-center gap-1.5">
                       <CheckCircle2 className="h-4 w-4 text-success" /> {t}
@@ -211,7 +211,7 @@ export default function LandingPage() {
             ].map((s) => (
               <div key={s.label}>
                 <p className="text-2xl font-bold text-primary">{s.val}</p>
-                <p className="text-sm text-muted-foreground">{s.label}</p>
+                <p className="text-base text-muted-foreground">{s.label}</p>
               </div>
             ))}
           </div>
@@ -226,13 +226,13 @@ export default function LandingPage() {
               viewport={{ once: true, margin: "-80px" }}
               className="text-center mb-16 space-y-4"
             >
-              <motion.span variants={fadeUp} custom={0} className="inline-block rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-accent-foreground">
+              <motion.span variants={fadeUp} custom={0} className="inline-block rounded-full bg-accent px-4 py-1.5 text-base font-medium text-accent-foreground">
                 Features
               </motion.span>
-              <motion.h2 variants={fadeUp} custom={1} className="text-3xl md:text-4xl font-bold text-foreground">
+              <motion.h2 variants={fadeUp} custom={1} className="text-3xl md:text-5xl font-bold text-foreground">
                 Everything you need to<br />manage a mobile workforce
               </motion.h2>
-              <motion.p variants={fadeUp} custom={2} className="text-muted-foreground max-w-2xl mx-auto text-lg">
+              <motion.p variants={fadeUp} custom={2} className="text-muted-foreground max-w-2xl mx-auto text-xl">
                 From live tracking to automated attendance, Staff Tracker gives you complete visibility over your field operations.
               </motion.p>
             </motion.div>
@@ -252,8 +252,8 @@ export default function LandingPage() {
                       <div className="inline-flex items-center justify-center h-12 w-12 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                         <f.icon className="h-6 w-6" />
                       </div>
-                      <h3 className="text-lg font-semibold text-foreground">{f.title}</h3>
-                      <p className="text-muted-foreground leading-relaxed">{f.desc}</p>
+                      <h3 className="text-xl font-semibold text-foreground">{f.title}</h3>
+                      <p className="text-base text-muted-foreground leading-relaxed">{f.desc}</p>
                     </CardContent>
                   </Card>
                 </motion.div>
@@ -273,18 +273,18 @@ export default function LandingPage() {
                 viewport={{ once: true }}
                 className="space-y-6"
               >
-                <motion.span variants={fadeUp} custom={0} className="inline-flex items-center gap-2 text-sm font-medium text-primary">
-                  <Users className="h-4 w-4" /> Staff Management
+                <motion.span variants={fadeUp} custom={0} className="inline-flex items-center gap-2 text-base font-medium text-primary">
+                  <Users className="h-5 w-5" /> Staff Management
                 </motion.span>
-                <motion.h3 variants={fadeUp} custom={1} className="text-3xl font-bold text-foreground">
+                <motion.h3 variants={fadeUp} custom={1} className="text-3xl md:text-4xl font-bold text-foreground">
                   Your entire team at a glance
                 </motion.h3>
-                <motion.p variants={fadeUp} custom={2} className="text-muted-foreground text-lg leading-relaxed">
+                <motion.p variants={fadeUp} custom={2} className="text-muted-foreground text-xl leading-relaxed">
                   Add staff with their photos, assign them to zones, and see their status instantly. Know who's active, who's offline, and where they were last seen — all from a single dashboard.
                 </motion.p>
                 <motion.ul variants={fadeUp} custom={3} className="space-y-3">
                   {["Photo-based staff profiles", "Active/offline status tracking", "Location history per staff member"].map((t) => (
-                    <li key={t} className="flex items-center gap-3 text-foreground">
+                    <li key={t} className="flex items-center gap-3 text-lg text-foreground">
                       <CheckCircle2 className="h-5 w-5 text-success shrink-0" /> {t}
                     </li>
                   ))}
@@ -318,18 +318,18 @@ export default function LandingPage() {
                 viewport={{ once: true }}
                 className="space-y-6 order-1 lg:order-2"
               >
-                <motion.span variants={fadeUp} custom={0} className="inline-flex items-center gap-2 text-sm font-medium text-primary">
-                  <Target className="h-4 w-4" /> Geofence Zones
+                <motion.span variants={fadeUp} custom={0} className="inline-flex items-center gap-2 text-base font-medium text-primary">
+                  <Target className="h-5 w-5" /> Geofence Zones
                 </motion.span>
-                <motion.h3 variants={fadeUp} custom={1} className="text-3xl font-bold text-foreground">
+                <motion.h3 variants={fadeUp} custom={1} className="text-3xl md:text-4xl font-bold text-foreground">
                   Smart boundaries, smarter alerts
                 </motion.h3>
-                <motion.p variants={fadeUp} custom={2} className="text-muted-foreground text-lg leading-relaxed">
+                <motion.p variants={fadeUp} custom={2} className="text-muted-foreground text-xl leading-relaxed">
                   Draw circles on the map to define work zones. When staff enter or leave these zones, you know immediately. Set check-in/check-out times and enable face verification for extra security.
                 </motion.p>
                 <motion.ul variants={fadeUp} custom={3} className="space-y-3">
                   {["Visual geofence editor on map", "Customizable radius and schedules", "Optional face ID on check-in"].map((t) => (
-                    <li key={t} className="flex items-center gap-3 text-foreground">
+                    <li key={t} className="flex items-center gap-3 text-lg text-foreground">
                       <CheckCircle2 className="h-5 w-5 text-success shrink-0" /> {t}
                     </li>
                   ))}
@@ -348,13 +348,13 @@ export default function LandingPage() {
               viewport={{ once: true, margin: "-80px" }}
               className="text-center mb-16 space-y-4"
             >
-              <motion.span variants={fadeUp} custom={0} className="inline-block rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-accent-foreground">
+              <motion.span variants={fadeUp} custom={0} className="inline-block rounded-full bg-accent px-4 py-1.5 text-base font-medium text-accent-foreground">
                 How It Works
               </motion.span>
-              <motion.h2 variants={fadeUp} custom={1} className="text-3xl md:text-4xl font-bold text-foreground">
+              <motion.h2 variants={fadeUp} custom={1} className="text-3xl md:text-5xl font-bold text-foreground">
                 Up and running in minutes
               </motion.h2>
-              <motion.p variants={fadeUp} custom={2} className="text-muted-foreground max-w-xl mx-auto text-lg">
+              <motion.p variants={fadeUp} custom={2} className="text-muted-foreground max-w-xl mx-auto text-xl">
                 No complex setup. No technical expertise required. Four simple steps to full visibility.
               </motion.p>
             </motion.div>
@@ -374,8 +374,8 @@ export default function LandingPage() {
                     <div className="inline-flex items-center justify-center h-14 w-14 rounded-full bg-primary text-primary-foreground text-xl font-bold">
                       {s.num}
                     </div>
-                    <h3 className="text-lg font-semibold text-foreground">{s.title}</h3>
-                    <p className="text-muted-foreground leading-relaxed">{s.desc}</p>
+                    <h3 className="text-xl font-semibold text-foreground">{s.title}</h3>
+                    <p className="text-base text-muted-foreground leading-relaxed">{s.desc}</p>
                   </div>
                   {i < steps.length - 1 && (
                     <div className="hidden lg:block absolute top-7 left-[4.5rem] w-[calc(100%-3.5rem)] border-t-2 border-dashed border-border" />
@@ -396,10 +396,10 @@ export default function LandingPage() {
                 viewport={{ once: true }}
                 className="space-y-8"
               >
-                <motion.h2 variants={fadeUp} custom={0} className="text-3xl md:text-4xl font-bold">
+                <motion.h2 variants={fadeUp} custom={0} className="text-3xl md:text-5xl font-bold">
                   A mobile app your<br />staff will actually use
                 </motion.h2>
-                <motion.p variants={fadeUp} custom={1} className="text-lg opacity-90 max-w-lg">
+                <motion.p variants={fadeUp} custom={1} className="text-xl opacity-90 max-w-lg">
                   Your team simply installs the Staff Tracker app, logs in with their credentials, and they're ready. Background location updates, automatic check-ins, and face verification — all handled seamlessly.
                 </motion.p>
                 <motion.div variants={fadeUp} custom={2} className="space-y-4">
@@ -411,7 +411,7 @@ export default function LandingPage() {
                   ].map((t) => (
                     <div key={t} className="flex items-center gap-3">
                       <CheckCircle2 className="h-5 w-5 text-success shrink-0" />
-                      <span className="opacity-90">{t}</span>
+                      <span className="text-lg opacity-90">{t}</span>
                     </div>
                   ))}
                 </motion.div>
@@ -453,10 +453,10 @@ export default function LandingPage() {
               whileInView="visible"
               viewport={{ once: true }}
             >
-              <motion.h2 variants={fadeUp} custom={0} className="text-3xl md:text-4xl font-bold text-foreground">
+              <motion.h2 variants={fadeUp} custom={0} className="text-3xl md:text-5xl font-bold text-foreground">
                 Ready to know where your team is?
               </motion.h2>
-              <motion.p variants={fadeUp} custom={1} className="text-lg text-muted-foreground mt-4 max-w-xl mx-auto">
+              <motion.p variants={fadeUp} custom={1} className="text-xl text-muted-foreground mt-4 max-w-xl mx-auto">
                 Set up your account in under 2 minutes. Add your staff, draw your zones, and start tracking — no credit card required.
               </motion.p>
               <motion.div variants={fadeUp} custom={2} className="flex flex-wrap justify-center gap-4 mt-8">
@@ -483,7 +483,7 @@ export default function LandingPage() {
                 <MapPin className="h-5 w-5 text-primary" />
                 <span className="font-semibold text-foreground">Staff Tracker</span>
               </div>
-              <nav className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+              <nav className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-base text-muted-foreground">
                 <Link to="/about" className="hover:text-foreground transition-colors">About</Link>
                 <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
                 <Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
@@ -491,7 +491,7 @@ export default function LandingPage() {
                 <Link to="/account-deletion" className="hover:text-foreground transition-colors">Account Deletion</Link>
               </nav>
             </div>
-            <p className="text-center text-xs text-muted-foreground mt-6">
+            <p className="text-center text-sm text-muted-foreground mt-6">
               © {new Date().getFullYear()} Staff Tracker. All rights reserved.
             </p>
           </div>
