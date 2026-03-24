@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Users, Circle, Eye, EyeOff } from "lucide-react";
+import { MapPin, Users, Circle, Eye, EyeOff, Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -14,10 +14,15 @@ interface AuthPageProps {
   onSignUp: (email: string, password: string) => Promise<{ error: any }>;
 }
 
+type ViewState = "auth" | "forgot" | "email-sent";
+
 const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showSignInPassword, setShowSignInPassword] = useState(false);
   const [showSignUpPassword, setShowSignUpPassword] = useState(false);
+  const [view, setView] = useState<ViewState>("auth");
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -40,6 +45,193 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
     if (error) toast.error(error.message || "Sign up failed");
     setIsLoading(false);
   };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail) {
+      toast.error("Please enter your email address");
+      return;
+    }
+    setResetLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setResetLoading(false);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      setView("email-sent");
+    }
+  };
+
+  const renderForgotPassword = () => (
+    <Card className="card-shadow-lg border-border/50">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl font-bold">Reset Password</CardTitle>
+        <CardDescription>
+          Enter your email and we'll send you a link to reset your password
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleForgotPassword} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="forgot-email">Email</Label>
+            <Input
+              id="forgot-email"
+              type="email"
+              placeholder="you@company.com"
+              value={forgotEmail}
+              onChange={(e) => setForgotEmail(e.target.value)}
+              required
+            />
+          </div>
+          <Button type="submit" className="w-full" disabled={resetLoading}>
+            {resetLoading ? (
+              <>
+                <Mail className="mr-2 h-4 w-4 animate-pulse" />
+                Sending...
+              </>
+            ) : (
+              <>
+                <Mail className="mr-2 h-4 w-4" />
+                Send Reset Link
+              </>
+            )}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full text-sm text-muted-foreground"
+            onClick={() => setView("auth")}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Sign In
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+
+  const renderEmailSent = () => (
+    <Card className="card-shadow-lg border-border/50">
+      <CardHeader className="space-y-3 text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+          <CheckCircle2 className="h-7 w-7 text-primary" />
+        </div>
+        <CardTitle className="text-2xl font-bold">Check Your Email</CardTitle>
+        <CardDescription className="text-base">
+          We've sent a password reset link to <span className="font-medium text-foreground">{forgotEmail}</span>
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground space-y-2">
+          <p>Click the link in the email to set a new password.</p>
+          <p>If you don't see it, check your spam folder.</p>
+          <p>The link expires in 1 hour.</p>
+        </div>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => {
+            setView("auth");
+            setForgotEmail("");
+          }}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Sign In
+        </Button>
+        <Button
+          variant="ghost"
+          className="w-full text-sm text-muted-foreground"
+          onClick={async () => {
+            setResetLoading(true);
+            const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+              redirectTo: `${window.location.origin}/reset-password`,
+            });
+            setResetLoading(false);
+            if (error) toast.error(error.message);
+            else toast.success("Reset email sent again. Check your inbox.");
+          }}
+          disabled={resetLoading}
+        >
+          {resetLoading ? "Sending..." : "Didn't receive it? Send again"}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+
+  const renderAuthCard = () => (
+    <Card className="card-shadow-lg border-border/50">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl font-bold">Get Started</CardTitle>
+        <CardDescription>
+          Sign in to your account or create a new one
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="signin" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="signin">Sign In</TabsTrigger>
+            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="signin">
+            <form onSubmit={handleSignIn} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="signin-email">Email</Label>
+                <Input id="signin-email" name="email" type="email" placeholder="you@company.com" required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="signin-password">Password</Label>
+                <div className="relative">
+                  <Input id="signin-password" name="password" type={showSignInPassword ? "text" : "password"} placeholder="••••••••" required />
+                  <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowSignInPassword(!showSignInPassword)}>
+                    {showSignInPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                  </Button>
+                </div>
+              </div>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Signing in..." : "Sign In"}
+              </Button>
+              <Button
+                type="button"
+                variant="link"
+                className="w-full text-sm text-muted-foreground"
+                onClick={() => {
+                  const form = document.getElementById("signin-email") as HTMLInputElement;
+                  setForgotEmail(form?.value || "");
+                  setView("forgot");
+                }}
+              >
+                Forgot password?
+              </Button>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="signup">
+            <form onSubmit={handleSignUp} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="signup-email">Email</Label>
+                <Input id="signup-email" name="email" type="email" placeholder="you@company.com" required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="signup-password">Password</Label>
+                <div className="relative">
+                  <Input id="signup-password" name="password" type={showSignUpPassword ? "text" : "password"} placeholder="••••••••" minLength={6} required />
+                  <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowSignUpPassword(!showSignUpPassword)}>
+                    {showSignUpPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                  </Button>
+                </div>
+              </div>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Creating account..." : "Create Account"}
+              </Button>
+            </form>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -90,84 +282,9 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
             <h1 className="text-2xl font-bold text-primary">Staff Tracker</h1>
           </div>
 
-          <Card className="card-shadow-lg border-border/50">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold">Get Started</CardTitle>
-              <CardDescription>
-                Sign in to your account or create a new one
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="signin" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="signin">Sign In</TabsTrigger>
-                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="signin">
-                  <form onSubmit={handleSignIn} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signin-email">Email</Label>
-                      <Input id="signin-email" name="email" type="email" placeholder="you@company.com" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signin-password">Password</Label>
-                      <div className="relative">
-                        <Input id="signin-password" name="password" type={showSignInPassword ? "text" : "password"} placeholder="••••••••" required />
-                        <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowSignInPassword(!showSignInPassword)}>
-                          {showSignInPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
-                        </Button>
-                      </div>
-                    </div>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? "Signing in..." : "Sign In"}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="link"
-                      className="w-full text-sm text-muted-foreground"
-                      onClick={async () => {
-                        const form = document.getElementById("signin-email") as HTMLInputElement;
-                        const email = form?.value;
-                        if (!email) {
-                          toast.error("Enter your email first");
-                          return;
-                        }
-                        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                          redirectTo: `${window.location.origin}/reset-password`,
-                        });
-                        if (error) toast.error(error.message);
-                        else toast.success("Password reset email sent! Check your inbox.");
-                      }}
-                    >
-                      Forgot password?
-                    </Button>
-                  </form>
-                </TabsContent>
-
-                <TabsContent value="signup">
-                  <form onSubmit={handleSignUp} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email">Email</Label>
-                      <Input id="signup-email" name="email" type="email" placeholder="you@company.com" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-password">Password</Label>
-                      <div className="relative">
-                        <Input id="signup-password" name="password" type={showSignUpPassword ? "text" : "password"} placeholder="••••••••" minLength={6} required />
-                        <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowSignUpPassword(!showSignUpPassword)}>
-                          {showSignUpPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
-                        </Button>
-                      </div>
-                    </div>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? "Creating account..." : "Create Account"}
-                    </Button>
-                  </form>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
+          {view === "auth" && renderAuthCard()}
+          {view === "forgot" && renderForgotPassword()}
+          {view === "email-sent" && renderEmailSent()}
         </div>
       </div>
 
