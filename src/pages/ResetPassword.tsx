@@ -56,11 +56,12 @@ const ResetPassword = () => {
     const { error } = await supabase.auth.updateUser({ password });
     if (error) {
       toast.error(error.message || "Failed to reset password");
+      setIsLoading(false);
     } else {
       toast.success("Password updated successfully!");
-      navigate("/");
+      // Small delay so the user sees the success toast
+      setTimeout(() => navigate("/auth"), 1500);
     }
-    setIsLoading(false);
   };
 
   // Expired / invalid link state
