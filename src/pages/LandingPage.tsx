@@ -46,7 +46,7 @@ const features = [
   {
     icon: ScanFace,
     title: "Face Verification",
-    desc: "Optional AI-powered face check ensures the right person checks in — not just the right phone.",
+    desc: "Optional AI-powered face check ensures the right person checks in. Not just the right phone.",
   },
   {
     icon: Bell,
@@ -140,7 +140,7 @@ export default function LandingPage() {
                     <span className="text-primary">team is. Always.</span>
                   </h1>
                   <p className="text-xl md:text-2xl text-muted-foreground max-w-lg">
-                    Real-time staff location tracking with geofencing, face verification, and instant alerts — all from one powerful dashboard.
+                    Real-time staff location tracking with geofencing, face verification, and instant alerts. All from one powerful dashboard.
                   </p>
                 </motion.div>
                 <motion.div variants={fadeUp} custom={2} className="flex flex-wrap gap-4">
@@ -280,7 +280,7 @@ export default function LandingPage() {
                   Your entire team at a glance
                 </motion.h3>
                 <motion.p variants={fadeUp} custom={2} className="text-muted-foreground text-xl leading-relaxed">
-                  Add staff with their photos, assign them to zones, and see their status instantly. Know who's active, who's offline, and where they were last seen — all from a single dashboard.
+                  Add staff with their photos, assign them to zones, and see their status instantly. Know who's active, who's offline, and where they were last seen. All from a single dashboard.
                 </motion.p>
                 <motion.ul variants={fadeUp} custom={3} className="space-y-3">
                   {["Photo-based staff profiles", "Active/offline status tracking", "Location history per staff member"].map((t) => (
@@ -400,14 +400,14 @@ export default function LandingPage() {
                   A mobile app your<br />staff will actually use
                 </motion.h2>
                 <motion.p variants={fadeUp} custom={1} className="text-xl opacity-90 max-w-lg">
-                  Your team simply installs the Staff Tracker app, logs in with their credentials, and they're ready. Background location updates, automatic check-ins, and face verification — all handled seamlessly.
+                  Your team simply installs the Staff Tracker app, logs in with their credentials, and they're ready. Background location updates, automatic check-ins, and face verification. All handled seamlessly.
                 </motion.p>
                 <motion.div variants={fadeUp} custom={2} className="space-y-4">
                   {[
                     "Automatic GPS tracking in background",
                     "Face verification when entering geofence zones",
                     "Push notifications for shift reminders",
-                    "Simple login — no company code needed",
+                    "Simple login. No company code needed",
                   ].map((t) => (
                     <div key={t} className="flex items-center gap-3">
                       <CheckCircle2 className="h-5 w-5 text-success shrink-0" />
@@ -457,7 +457,7 @@ export default function LandingPage() {
                 Ready to know where your team is?
               </motion.h2>
               <motion.p variants={fadeUp} custom={1} className="text-xl text-muted-foreground mt-4 max-w-xl mx-auto">
-                Set up your account in under 2 minutes. Add your staff, draw your zones, and start tracking — no credit card required.
+                Set up your account in under 2 minutes. Add your staff, draw your zones, and start tracking. No credit card required.
               </motion.p>
               <motion.div variants={fadeUp} custom={2} className="flex flex-wrap justify-center gap-4 mt-8">
                 <Link to="/auth?tab=signup">
