@@ -236,69 +236,70 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Top bar */}
-      <header className="w-full flex items-center justify-between px-6 py-3 border-b border-border/40 bg-background/80 backdrop-blur-sm z-10">
+      <header className="w-full flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background/80 backdrop-blur-sm z-10">
         <Link to="/" className="flex items-center gap-2 text-primary hover:opacity-80 transition-opacity">
           <MapPin className="h-5 w-5" />
           <span className="font-bold text-lg">Staff Tracker</span>
         </Link>
         <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-          ← Back to Home
+          ← Home
         </Link>
       </header>
 
-      <div className="flex-1 flex">
-      {/* Left side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-primary flex-col justify-center items-center p-12 text-primary-foreground">
-        <div className="max-w-md space-y-8">
-          <div className="flex items-center gap-3">
-            <MapPin className="h-12 w-12" />
-            <h1 className="text-3xl font-bold">Staff Tracker</h1>
-          </div>
-          <p className="text-xl opacity-90">Real-time location tracking for your field staff</p>
-          <div className="space-y-4 pt-8">
-            <div className="flex items-center gap-4">
-              <Users className="h-8 w-8 opacity-80" />
-              <div>
-                <h3 className="font-semibold">Manage Your Team</h3>
-                <p className="text-sm opacity-80">Add and organise your staff members</p>
-              </div>
+      {/* Main content */}
+      <div className="flex-1 flex flex-col lg:flex-row">
+        {/* Left side - Branding (desktop only) */}
+        <div className="hidden lg:flex lg:w-1/2 bg-primary flex-col justify-center items-center p-12 text-primary-foreground">
+          <div className="max-w-md space-y-8">
+            <div className="flex items-center gap-3">
+              <MapPin className="h-12 w-12" />
+              <h1 className="text-3xl font-bold">Staff Tracker</h1>
             </div>
-            <div className="flex items-center gap-4">
-              <Circle className="h-8 w-8 opacity-80" />
-              <div>
-                <h3 className="font-semibold">Geofence Zones</h3>
-                <p className="text-sm opacity-80">Set up location boundaries and get alerts</p>
+            <p className="text-xl opacity-90">Real-time location tracking for your field staff</p>
+            <div className="space-y-4 pt-8">
+              <div className="flex items-center gap-4">
+                <Users className="h-8 w-8 opacity-80" />
+                <div>
+                  <h3 className="font-semibold">Manage Your Team</h3>
+                  <p className="text-sm opacity-80">Add and organise your staff members</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <Circle className="h-8 w-8 opacity-80" />
+                <div>
+                  <h3 className="font-semibold">Geofence Zones</h3>
+                  <p className="text-sm opacity-80">Set up location boundaries and get alerts</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Right side - Auth forms */}
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center gap-2 mb-8 justify-center">
-            <MapPin className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-bold text-primary">Staff Tracker</h1>
+        {/* Right side - Auth forms */}
+        <div className="flex-1 flex items-center justify-center px-4 py-6 sm:p-8">
+          <div className="w-full max-w-md">
+            <div className="lg:hidden flex items-center gap-2 mb-6 justify-center">
+              <MapPin className="h-7 w-7 text-primary" />
+              <h1 className="text-xl font-bold text-primary">Staff Tracker</h1>
+            </div>
+
+            {view === "auth" && renderAuthCard()}
+            {view === "forgot" && renderForgotPassword()}
+            {view === "email-sent" && renderEmailSent()}
           </div>
-
-          {view === "auth" && renderAuthCard()}
-          {view === "forgot" && renderForgotPassword()}
-          {view === "email-sent" && renderEmailSent()}
         </div>
       </div>
 
       {/* Legal/help footer */}
-      <footer className="py-4 px-6 text-center text-sm text-muted-foreground border-t border-border/40">
-        <nav className="flex items-center justify-center gap-x-6">
+      <footer className="py-3 px-4 text-center text-xs sm:text-sm text-muted-foreground border-t border-border/40">
+        <nav className="flex items-center justify-center flex-wrap gap-x-4 gap-y-1 sm:gap-x-6">
           <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
           <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
           <Link to="/support" className="hover:text-foreground transition-colors">Support</Link>
           <Link to="/about" className="hover:text-foreground transition-colors">About</Link>
-          <Link to="/account-deletion" className="hover:text-foreground transition-colors">Account Deletion</Link>
+          <Link to="/account-deletion" className="hover:text-foreground transition-colors">Delete Account</Link>
         </nav>
       </footer>
-      </div>
     </div>
   );
 };
