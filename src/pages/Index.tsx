@@ -1,40 +1,11 @@
 import { useAuth } from "@/hooks/useAuth";
+import { Navigate } from "react-router-dom";
 import AuthPage from "@/pages/AuthPage";
-import CompanySetup from "@/pages/CompanySetup";
-import StaffManagement from "@/components/StaffManagement";
-import LiveMap from "@/components/LiveMap";
-import GeofenceManagement from "@/components/GeofenceManagement";
-
-import DashboardLayout from "@/components/DashboardLayout";
 import SEO from "@/components/SEO";
 import { Loader2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
-  const { user, company, loading, signIn, signUp, signOut, createCompany } = useAuth();
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  const [geofenceEditing, setGeofenceEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState("map");
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data } = await supabase.functions.invoke("get-maps-key");
-        if (data?.key) setApiKey(data.key);
-      } catch (e) {
-        console.error("Error fetching maps key", e);
-      }
-    })();
-  }, []);
-
-  const handleTabChange = useCallback(
-    (value: string) => {
-      if (geofenceEditing) return;
-      setActiveTab(value);
-    },
-    [geofenceEditing]
-  );
+  const { user, loading, signIn, signUp } = useAuth();
 
   if (loading) {
     return (
@@ -44,64 +15,19 @@ const Index = () => {
     );
   }
 
-  if (!user) {
-    // Redirect to auth page — landing page handles unauthenticated homepage
-    return (
-      <>
-        <SEO
-          title="Staff Tracker — Real-Time Staff Location Dashboard"
-          description="Track your team's location in real time. Manage staff, set geofences, and monitor movement from one simple dashboard."
-          path="/"
-        />
-        <AuthPage onSignIn={signIn} onSignUp={signUp} />
-      </>
-    );
-  }
-
-  if (!company) {
-    return <CompanySetup onCreate={createCompany} onSignOut={signOut} />;
+  // Authenticated users should not stay on /auth — redirect to homepage
+  if (user) {
+    return <Navigate to="/" replace />;
   }
 
   return (
     <>
-    <SEO
-      title="Dashboard"
-      description="Admin dashboard for staff tracking and geofence management."
-      path="/"
-      noIndex
-    />
-    <DashboardLayout
-      activeTab={activeTab}
-      onTabChange={handleTabChange}
-      companyName={company.name}
-      companyPrefix={company.prefix}
-      geofenceEditing={geofenceEditing}
-    >
-      <div className="p-4 md:p-8">
-        {activeTab === "map" && <LiveMap />}
-        {activeTab === "geofences" && (
-          apiKey ? (
-            <GeofenceManagement
-              apiKey={apiKey}
-              onEditModeChange={setGeofenceEditing}
-              companyId={company.id}
-            />
-          ) : (
-            <p className="text-muted-foreground">Loading map…</p>
-          )
-        )}
-        {activeTab === "staff" && (
-          <StaffManagement companyId={company.id} prefix={company.prefix} />
-        )}
-        {activeTab === "tracker" && (
-          <div className="text-center py-12 text-muted-foreground space-y-2">
-            <p className="text-lg font-medium text-foreground">Staff Tracker Mobile App</p>
-            <p>The mobile app is available to authorized staff through the official distribution channel.</p>
-            <p className="text-sm">Contact your administrator for access.</p>
-          </div>
-        )}
-      </div>
-    </DashboardLayout>
+      <SEO
+        title="Staff Tracker — Sign In or Create Account"
+        description="Sign in to your Staff Tracker dashboard or create a new account."
+        path="/auth"
+      />
+      <AuthPage onSignIn={signIn} onSignUp={signUp} />
     </>
   );
 };
