@@ -200,6 +200,37 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
     </Card>
   );
 
+  const renderSignupSuccess = () => (
+    <Card className="card-shadow-lg border-border/50">
+      <CardHeader className="space-y-3 text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+          <CheckCircle2 className="h-7 w-7 text-primary" />
+        </div>
+        <CardTitle className="text-2xl font-bold">Check Your Email</CardTitle>
+        <CardDescription className="text-base">
+          We've sent a confirmation link to <span className="font-medium text-foreground">{signupEmail}</span>
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground space-y-2">
+          <p>Click the link in the email to activate your account.</p>
+          <p>If you don't see it, check your spam folder.</p>
+        </div>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => {
+            setView("auth");
+            setSignupEmail("");
+          }}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Sign In
+        </Button>
+      </CardContent>
+    </Card>
+  );
+
   const renderAuthCard = () => (
     <Card className="card-shadow-lg border-border/50">
       <CardHeader className="space-y-1">
