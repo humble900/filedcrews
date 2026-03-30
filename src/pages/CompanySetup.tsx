@@ -42,7 +42,7 @@ const CompanySetup = ({ onCreate, onSignOut }: CompanySetupProps) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-8 bg-background">
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:p-8 bg-background">
       <div className="w-full max-w-md">
         <div className="flex items-center gap-2 mb-8 justify-center">
           <MapPin className="h-8 w-8 text-primary" />
