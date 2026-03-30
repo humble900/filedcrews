@@ -203,7 +203,7 @@ export default function LandingPage() {
 
         {/* ──── SOCIAL PROOF BAR ──── */}
         <section className="border-y border-border/50 bg-muted/30">
-          <div className="mx-auto max-w-7xl px-6 py-8 flex flex-wrap items-center justify-center gap-8 md:gap-16 text-center">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 flex flex-wrap items-center justify-center gap-8 md:gap-16 text-center">
             {[
               { val: "Real-Time", label: "GPS Tracking" },
               { val: "AI-Powered", label: "Face Verification" },
@@ -220,7 +220,7 @@ export default function LandingPage() {
 
         {/* ──── FEATURES ──── */}
         <section id="features" className="py-20 md:py-28">
-          <div className="mx-auto max-w-7xl px-6">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <motion.div
               initial="hidden"
               whileInView="visible"
@@ -265,7 +265,7 @@ export default function LandingPage() {
 
         {/* ──── SCREENSHOTS SHOWCASE ──── */}
         <section className="py-20 bg-muted/20">
-          <div className="mx-auto max-w-7xl px-6 space-y-20">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 space-y-20">
             {/* Staff management */}
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <motion.div
@@ -342,7 +342,7 @@ export default function LandingPage() {
 
         {/* ──── HOW IT WORKS ──── */}
         <section id="how-it-works" className="py-20 md:py-28">
-          <div className="mx-auto max-w-7xl px-6">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <motion.div
               initial="hidden"
               whileInView="visible"
@@ -389,7 +389,7 @@ export default function LandingPage() {
 
         {/* ──── MOBILE APP ──── */}
         <section id="mobile" className="py-20 bg-primary text-primary-foreground">
-          <div className="mx-auto max-w-7xl px-6">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <motion.div
                 initial="hidden"
@@ -448,7 +448,7 @@ export default function LandingPage() {
 
         {/* ──── CTA ──── */}
         <section className="py-20 md:py-28">
-          <div className="mx-auto max-w-3xl px-6 text-center space-y-8">
+          <div className="mx-auto max-w-3xl px-4 sm:px-6 text-center space-y-8">
             <motion.div
               initial="hidden"
               whileInView="visible"
@@ -478,7 +478,7 @@ export default function LandingPage() {
 
         {/* ──── FOOTER ──── */}
         <footer className="border-t border-border bg-card">
-          <div className="mx-auto max-w-7xl px-6 py-10">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-10">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-primary" />
