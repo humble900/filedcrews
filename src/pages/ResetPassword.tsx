@@ -60,7 +60,7 @@ const ResetPassword = () => {
     } else {
       toast.success("Password updated successfully!");
       // Small delay so the user sees the success toast
-      setTimeout(() => navigate("/auth"), 1500);
+      setTimeout(() => navigate("/"), 1500);
     }
   };
 
