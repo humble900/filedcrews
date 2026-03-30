@@ -47,26 +47,6 @@ export function useAuth() {
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        supabase
-          .from('companies')
-          .select('id, name, prefix')
-          .eq('auth_user_id', session.user.id)
-          .maybeSingle()
-          .then(({ data: company }) => {
-            setState({
-              user: session.user,
-              session,
-              company: company ?? null,
-              loading: false,
-            });
-          });
-      } else {
-        setState({ user: null, session: null, company: null, loading: false });
-      }
-    });
-
     return () => subscription.unsubscribe();
   }, []);
 
@@ -81,7 +61,7 @@ export function useAuth() {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
   };
 
   const createCompany = async (name: string, prefix: string) => {
