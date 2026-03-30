@@ -69,7 +69,7 @@ const ResetPassword = () => {
     return (
       <>
         <SEO title="Reset Password" description="Reset your Staff Tracker password." path="/reset-password" noIndex />
-        <div className="min-h-screen flex items-center justify-center p-8">
+        <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:p-8">
           <Card className="w-full max-w-md">
             <CardHeader>
               <div className="flex items-center gap-2 mb-4">
@@ -106,7 +106,7 @@ const ResetPassword = () => {
     return (
       <>
         <SEO title="Reset Password" description="Reset your Staff Tracker password." path="/reset-password" noIndex />
-        <div className="min-h-screen flex items-center justify-center p-8">
+        <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:p-8">
           <Card className="w-full max-w-md">
             <CardHeader>
               <div className="flex items-center gap-2 mb-4">
@@ -125,7 +125,7 @@ const ResetPassword = () => {
   return (
     <>
       <SEO title="Reset Password" description="Reset your Staff Tracker password." path="/reset-password" noIndex />
-      <div className="min-h-screen flex items-center justify-center p-8">
+      <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:p-8">
         <Card className="w-full max-w-md card-shadow-lg border-border/50">
           <CardHeader>
             <div className="flex items-center gap-2 mb-4">
