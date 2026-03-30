@@ -49,6 +49,15 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
     setIsLoading(false);
   };
 
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    const { error } = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    if (error) toast.error(error.message || "Google sign-in failed");
+    setIsLoading(false);
+  };
+
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!forgotEmail) {
