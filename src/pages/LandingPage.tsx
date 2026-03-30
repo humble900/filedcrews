@@ -484,7 +484,7 @@ export default function LandingPage() {
                 <MapPin className="h-5 w-5 text-primary" />
                 <span className="font-semibold text-foreground">Staff Tracker</span>
               </div>
-              <nav className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-base text-muted-foreground">
+              <nav className="flex flex-wrap justify-center gap-x-4 sm:gap-x-6 gap-y-2 text-sm sm:text-base text-muted-foreground">
                 <Link to="/about" className="hover:text-foreground transition-colors">About</Link>
                 <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
                 <Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
