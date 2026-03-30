@@ -16,7 +16,7 @@ interface AuthPageProps {
   onSignUp: (email: string, password: string) => Promise<{ error: any }>;
 }
 
-type ViewState = "auth" | "forgot" | "email-sent";
+type ViewState = "auth" | "forgot" | "email-sent" | "signup-success";
 
 const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
   const [searchParams] = useSearchParams();
@@ -25,7 +25,9 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
   const [showSignUpPassword, setShowSignUpPassword] = useState(false);
   const [view, setView] = useState<ViewState>("auth");
   const [forgotEmail, setForgotEmail] = useState("");
+  const [signupEmail, setSignupEmail] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -45,8 +47,26 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
     const { error } = await onSignUp(email, password);
-    if (error) toast.error(error.message || "Sign up failed");
+    if (error) {
+      toast.error(error.message || "Sign up failed");
+    } else {
+      setSignupEmail(email);
+      setView("signup-success");
+    }
     setIsLoading(false);
+  };
+
+  const startResendCooldown = () => {
+    setResendCooldown(30);
+    const interval = setInterval(() => {
+      setResendCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
   };
 
   const handleGoogleSignIn = async () => {
@@ -161,12 +181,20 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
               redirectTo: `${window.location.origin}/reset-password`,
             });
             setResetLoading(false);
-            if (error) toast.error(error.message);
-            else toast.success("Reset email sent again. Check your inbox.");
+            if (error) {
+              toast.error(error.message);
+            } else {
+              toast.success("Reset email sent again. Check your inbox.");
+              startResendCooldown();
+            }
           }}
-          disabled={resetLoading}
+          disabled={resetLoading || resendCooldown > 0}
         >
-          {resetLoading ? "Sending..." : "Didn't receive it? Send again"}
+          {resetLoading
+            ? "Sending..."
+            : resendCooldown > 0
+            ? `Resend available in ${resendCooldown}s`
+            : "Didn't receive it? Send again"}
         </Button>
       </CardContent>
     </Card>
@@ -328,6 +356,7 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
             {view === "auth" && renderAuthCard()}
             {view === "forgot" && renderForgotPassword()}
             {view === "email-sent" && renderEmailSent()}
+            {view === "signup-success" && renderSignupSuccess()}
           </div>
         </div>
       </div>
