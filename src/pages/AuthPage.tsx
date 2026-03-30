@@ -17,6 +17,7 @@ interface AuthPageProps {
 type ViewState = "auth" | "forgot" | "email-sent";
 
 const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
+  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [showSignInPassword, setShowSignInPassword] = useState(false);
   const [showSignUpPassword, setShowSignUpPassword] = useState(false);
