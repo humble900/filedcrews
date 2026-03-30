@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -17,6 +17,7 @@ interface AuthPageProps {
 type ViewState = "auth" | "forgot" | "email-sent";
 
 const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
+  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [showSignInPassword, setShowSignInPassword] = useState(false);
   const [showSignUpPassword, setShowSignUpPassword] = useState(false);
@@ -169,7 +170,7 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="signin" className="w-full">
+        <Tabs defaultValue={searchParams.get("tab") === "signup" ? "signup" : "signin"} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="signin">Sign In</TabsTrigger>
             <TabsTrigger value="signup">Sign Up</TabsTrigger>
