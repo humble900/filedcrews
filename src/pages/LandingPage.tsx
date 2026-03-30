@@ -101,22 +101,22 @@ export default function LandingPage() {
       <div className="min-h-screen bg-background text-foreground">
         {/* ──── NAVBAR ──── */}
         <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-md">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
-            <Link to="/" className="flex items-center gap-2">
-              <MapPin className="h-7 w-7 text-primary" />
-              <span className="text-xl font-bold text-foreground">Staff Tracker</span>
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-3">
+            <Link to="/" className="flex items-center gap-2 shrink-0">
+              <MapPin className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
+              <span className="text-lg sm:text-xl font-bold text-foreground">Staff Tracker</span>
             </Link>
             <nav className="hidden md:flex items-center gap-8 text-base font-medium text-muted-foreground">
               <a href="#features" className="hover:text-foreground transition-colors">Features</a>
               <a href="#how-it-works" className="hover:text-foreground transition-colors">How It Works</a>
               <a href="#mobile" className="hover:text-foreground transition-colors">Mobile App</a>
             </nav>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <Link to="/auth">
-                <Button variant="ghost" size="sm">Log In</Button>
+                <Button variant="ghost" size="sm" className="text-xs sm:text-sm px-2 sm:px-3">Log In</Button>
               </Link>
               <Link to="/auth?tab=signup">
-                <Button size="sm">Get Started <ChevronRight className="ml-1 h-4 w-4" /></Button>
+                <Button size="sm" className="text-xs sm:text-sm px-3 sm:px-4">Get Started <ChevronRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4" /></Button>
               </Link>
             </div>
           </div>
@@ -125,7 +125,7 @@ export default function LandingPage() {
         {/* ──── HERO ──── */}
         <section className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/30 pointer-events-none" />
-          <div className="mx-auto max-w-7xl px-6 py-20 md:py-28 lg:py-32">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-16 md:py-28 lg:py-32">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <motion.div
                 initial="hidden"
@@ -185,7 +185,7 @@ export default function LandingPage() {
                   initial={{ opacity: 0, y: 40 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.6 }}
-                  className="absolute -bottom-8 -left-8 w-36 md:w-48 rounded-2xl overflow-hidden shadow-2xl border-4 border-background"
+                  className="absolute -bottom-4 left-0 sm:-bottom-8 sm:-left-8 w-28 sm:w-36 md:w-48 rounded-2xl overflow-hidden shadow-2xl border-4 border-background"
                 >
                   <img
                     src={heroMobile}
