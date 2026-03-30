@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   MapPin,
   Users,
@@ -13,6 +14,8 @@ import {
   ArrowRight,
   Clock,
   Target,
+  Menu,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -89,6 +92,8 @@ const steps = [
 ];
 
 export default function LandingPage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <>
       <SEO
@@ -112,14 +117,68 @@ export default function LandingPage() {
               <a href="#mobile" className="hover:text-foreground transition-colors">Mobile App</a>
             </nav>
             <div className="flex items-center gap-2 sm:gap-3">
-              <Link to="/auth">
+              <Link to="/auth" className="hidden md:inline-flex">
                 <Button variant="ghost" size="sm" className="text-xs sm:text-sm px-2 sm:px-3">Log In</Button>
               </Link>
-              <Link to="/auth?tab=signup">
+              <Link to="/auth?tab=signup" className="hidden md:inline-flex">
                 <Button size="sm" className="text-xs sm:text-sm px-3 sm:px-4">Get Started <ChevronRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4" /></Button>
               </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                aria-label="Toggle menu"
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
             </div>
           </div>
+
+          {/* Mobile menu */}
+          <AnimatePresence>
+            {mobileMenuOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="md:hidden overflow-hidden border-t border-border/40"
+              >
+                <nav className="flex flex-col px-4 py-3 gap-1">
+                  <a
+                    href="#features"
+                    className="py-2.5 px-3 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Features
+                  </a>
+                  <a
+                    href="#how-it-works"
+                    className="py-2.5 px-3 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    How It Works
+                  </a>
+                  <a
+                    href="#mobile"
+                    className="py-2.5 px-3 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Mobile App
+                  </a>
+                  <div className="flex gap-2 pt-2 pb-1">
+                    <Link to="/auth" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="outline" size="sm" className="w-full text-sm">Log In</Button>
+                    </Link>
+                    <Link to="/auth?tab=signup" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+                      <Button size="sm" className="w-full text-sm">Get Started</Button>
+                    </Link>
+                  </div>
+                </nav>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </header>
 
         {/* ──── HERO ──── */}

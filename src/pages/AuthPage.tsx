@@ -16,7 +16,7 @@ interface AuthPageProps {
   onSignUp: (email: string, password: string) => Promise<{ error: any }>;
 }
 
-type ViewState = "auth" | "forgot" | "email-sent";
+type ViewState = "auth" | "forgot" | "email-sent" | "signup-success";
 
 const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
   const [searchParams] = useSearchParams();
@@ -25,7 +25,9 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
   const [showSignUpPassword, setShowSignUpPassword] = useState(false);
   const [view, setView] = useState<ViewState>("auth");
   const [forgotEmail, setForgotEmail] = useState("");
+  const [signupEmail, setSignupEmail] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -45,8 +47,26 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
     const { error } = await onSignUp(email, password);
-    if (error) toast.error(error.message || "Sign up failed");
+    if (error) {
+      toast.error(error.message || "Sign up failed");
+    } else {
+      setSignupEmail(email);
+      setView("signup-success");
+    }
     setIsLoading(false);
+  };
+
+  const startResendCooldown = () => {
+    setResendCooldown(30);
+    const interval = setInterval(() => {
+      setResendCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
   };
 
   const handleGoogleSignIn = async () => {
@@ -161,12 +181,51 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
               redirectTo: `${window.location.origin}/reset-password`,
             });
             setResetLoading(false);
-            if (error) toast.error(error.message);
-            else toast.success("Reset email sent again. Check your inbox.");
+            if (error) {
+              toast.error(error.message);
+            } else {
+              toast.success("Reset email sent again. Check your inbox.");
+              startResendCooldown();
+            }
           }}
-          disabled={resetLoading}
+          disabled={resetLoading || resendCooldown > 0}
         >
-          {resetLoading ? "Sending..." : "Didn't receive it? Send again"}
+          {resetLoading
+            ? "Sending..."
+            : resendCooldown > 0
+            ? `Resend available in ${resendCooldown}s`
+            : "Didn't receive it? Send again"}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+
+  const renderSignupSuccess = () => (
+    <Card className="card-shadow-lg border-border/50">
+      <CardHeader className="space-y-3 text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+          <CheckCircle2 className="h-7 w-7 text-primary" />
+        </div>
+        <CardTitle className="text-2xl font-bold">Check Your Email</CardTitle>
+        <CardDescription className="text-base">
+          We've sent a confirmation link to <span className="font-medium text-foreground">{signupEmail}</span>
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground space-y-2">
+          <p>Click the link in the email to activate your account.</p>
+          <p>If you don't see it, check your spam folder.</p>
+        </div>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => {
+            setView("auth");
+            setSignupEmail("");
+          }}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Sign In
         </Button>
       </CardContent>
     </Card>
@@ -328,6 +387,7 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
             {view === "auth" && renderAuthCard()}
             {view === "forgot" && renderForgotPassword()}
             {view === "email-sent" && renderEmailSent()}
+            {view === "signup-success" && renderSignupSuccess()}
           </div>
         </div>
       </div>
