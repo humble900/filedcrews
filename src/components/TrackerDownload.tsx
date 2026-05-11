@@ -13,10 +13,25 @@ const TrackerDownload = () => {
         <CardHeader className="px-4 sm:px-6">
           <CardTitle className="text-xl sm:text-2xl">Get the Live Staff Tracker App</CardTitle>
           <CardDescription className="text-sm sm:text-base">
-            Now available on the Google Play Store.
+            Now available on the Google <strong className="text-foreground font-bold">Play Store</strong>.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-5 px-4 sm:px-6">
+          {/* Google Play badge */}
+          <a
+            href={PLAY_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block transition-transform hover:scale-105"
+            aria-label="Get it on Google Play"
+          >
+            <img
+              alt="Get it on Google Play"
+              src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
+              className="h-16 sm:h-20 w-auto"
+            />
+          </a>
+
           {/* Search instructions */}
           <div className="w-full rounded-lg border border-border bg-muted/50 p-4 sm:p-5 text-left space-y-3">
             <div className="flex items-center gap-2 text-foreground font-semibold text-sm sm:text-base">
@@ -24,7 +39,7 @@ const TrackerDownload = () => {
               <span>How to find it</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Open the Play Store and search for{" "}
+              Open the <strong className="text-foreground font-bold">Play Store</strong> and search for{" "}
               <strong className="text-foreground">"Live Staff Tracking"</strong>.
               Make sure the app looks like this:
             </p>
