@@ -5,6 +5,7 @@ import StaffManagement from "@/components/StaffManagement";
 import LiveMap from "@/components/LiveMap";
 import GeofenceManagement from "@/components/GeofenceManagement";
 import DashboardLayout from "@/components/DashboardLayout";
+import TrackerDownload from "@/components/TrackerDownload";
 import SEO from "@/components/SEO";
 import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
