@@ -508,7 +508,7 @@ export default function LandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6 }}
-                className="relative flex justify-center lg:justify-end"
+                className="relative flex justify-center pt-4 pb-10"
               >
                 {/* Decorative gradient blob */}
                 <div className="absolute inset-0 -z-0 flex items-center justify-center pointer-events-none">
