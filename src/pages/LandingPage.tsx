@@ -458,18 +458,22 @@ export default function LandingPage() {
                 viewport={{ once: true }}
                 className="space-y-8"
               >
-                <motion.h2 variants={fadeUp} custom={0} className="text-3xl md:text-5xl font-bold">
+                <motion.div variants={fadeUp} custom={0} className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-sm font-medium">
+                  <Smartphone className="h-4 w-4" />
+                  Available on Google Play
+                </motion.div>
+                <motion.h2 variants={fadeUp} custom={1} className="text-3xl md:text-5xl font-bold">
                   A mobile app your<br />staff will actually use
                 </motion.h2>
-                <motion.p variants={fadeUp} custom={1} className="text-xl opacity-90 max-w-lg">
-                  Your team simply installs the Staff Tracker app, logs in with their credentials, and they're ready. Background location updates, automatic check-ins, and face verification. All handled seamlessly.
+                <motion.p variants={fadeUp} custom={2} className="text-xl opacity-90 max-w-lg">
+                  Live Staff Tracker is officially listed on the Google <span className="font-extrabold">Play Store</span>. Easy to find, quick to install, and works on any modern Android device. Background location updates, automatic check-ins, and face verification. All handled seamlessly.
                 </motion.p>
-                <motion.div variants={fadeUp} custom={2} className="space-y-4">
+                <motion.div variants={fadeUp} custom={3} className="space-y-4">
                   {[
-                    "Automatic GPS tracking in background",
-                    "Face verification when entering geofence zones",
-                    "Push notifications for shift reminders",
-                    "Simple login. No company code needed",
+                    'Search "Live Staff Tracking" on Google Play',
+                    "Works on any Android phone or tablet",
+                    "Free, secure install. Auto-updates via Play Store",
+                    "Background GPS, face verification & push notifications",
                   ].map((t) => (
                     <div key={t} className="flex items-center gap-3">
                       <CheckCircle2 className="h-5 w-5 text-success shrink-0" />
@@ -477,10 +481,23 @@ export default function LandingPage() {
                     </div>
                   ))}
                 </motion.div>
-                <motion.div variants={fadeUp} custom={3}>
+                <motion.div variants={fadeUp} custom={4} className="flex flex-wrap items-center gap-4 pt-2">
+                  <a
+                    href="https://play.google.com/store/apps/details?id=com.livestafftracker.stafftracker"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block transition-transform hover:scale-105"
+                    aria-label="Get it on Google Play"
+                  >
+                    <img
+                      alt="Get it on Google Play"
+                      src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
+                      className="h-16 sm:h-20 w-auto"
+                    />
+                  </a>
                   <Link to="/auth?tab=signup">
                     <Button size="lg" variant="secondary" className="text-base">
-                      Get Started Now <ArrowRight className="ml-2 h-5 w-5" />
+                      Get Started <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </Link>
                 </motion.div>
@@ -504,83 +521,6 @@ export default function LandingPage() {
                 </div>
               </motion.div>
             </div>
-          </div>
-        </section>
-
-        {/* ──── Play Store Card ──── */}
-        <section id="download" className="py-20 md:py-28 bg-muted/30">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-            >
-              <Card className="overflow-hidden border-2 shadow-xl">
-                <CardContent className="p-6 sm:p-10 md:p-12">
-                  <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
-                    <div className="space-y-6 text-center md:text-left">
-                      <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
-                        <Smartphone className="h-4 w-4" />
-                        Available now
-                      </div>
-                      <h2 className="text-3xl md:text-4xl font-bold text-foreground leading-tight">
-                        Get the app on the<br className="hidden sm:block" /> Google <span className="font-extrabold">Play Store</span>
-                      </h2>
-                      <p className="text-lg text-muted-foreground">
-                        Live Staff Tracker is officially listed on Google Play. Easy to find, quick to install, and works on any modern Android device.
-                      </p>
-
-                      <ul className="space-y-3 text-left max-w-md mx-auto md:mx-0">
-                        {[
-                          { icon: Search, text: 'Search "Live Staff Tracking" on Google Play' },
-                          { icon: Smartphone, text: "Works on any Android phone or tablet" },
-                          { icon: Download, text: "Free, secure install. No sideloading needed" },
-                          { icon: CheckCircle2, text: "Auto-updates through the Play Store" },
-                        ].map(({ icon: Icon, text }) => (
-                          <li key={text} className="flex items-start gap-3">
-                            <Icon className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                            <span className="text-base text-foreground">{text}</span>
-                          </li>
-                        ))}
-                      </ul>
-
-                      <div className="pt-2 flex justify-center md:justify-start">
-                        <a
-                          href="https://play.google.com/store/apps/details?id=com.livestafftracker.stafftracker"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block transition-transform hover:scale-105"
-                          aria-label="Get it on Google Play"
-                        >
-                          <img
-                            alt="Get it on Google Play"
-                            src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
-                            className="h-16 sm:h-20 w-auto"
-                          />
-                        </a>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-center">
-                      <div className="relative">
-                        <div className="absolute -inset-6 bg-gradient-to-tr from-primary/20 to-transparent rounded-[3rem] blur-2xl" aria-hidden="true" />
-                        <div className="relative w-56 sm:w-64 md:w-72 rounded-3xl overflow-hidden shadow-2xl border-4 border-border bg-card">
-                          <img
-                            src={heroMobile}
-                            alt="Live Staff Tracker app on a phone"
-                            width={800}
-                            height={1200}
-                            className="w-full h-auto"
-                            loading="lazy"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
           </div>
         </section>
 
