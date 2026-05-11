@@ -84,13 +84,7 @@ const HomePage = () => {
           {activeTab === "staff" && (
             <StaffManagement companyId={company.id} prefix={company.prefix} />
           )}
-          {activeTab === "tracker" && (
-            <div className="text-center py-12 text-muted-foreground space-y-2">
-              <p className="text-lg font-medium text-foreground">Staff Tracker Mobile App</p>
-              <p>The mobile app is available to authorized staff through the official distribution channel.</p>
-              <p className="text-sm">Contact your administrator for access.</p>
-            </div>
-          )}
+          {activeTab === "tracker" && <TrackerDownload />}
         </div>
       </DashboardLayout>
     </>
