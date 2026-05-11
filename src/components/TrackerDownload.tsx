@@ -37,6 +37,13 @@ const TrackerDownload = () => {
             </div>
           </div>
 
+          {/* "or" divider */}
+          <div className="flex items-center gap-3 w-full">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">or</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
           {/* Direct link button */}
           <Button asChild className="w-full" size="lg">
             <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer">
