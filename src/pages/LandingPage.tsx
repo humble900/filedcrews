@@ -508,82 +508,102 @@ export default function LandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6 }}
-                className="relative flex justify-center pt-4 pb-10"
+                className="relative flex justify-center pt-4 pb-12"
               >
-                {/* Decorative gradient blob */}
+                {/* Decorative glow */}
                 <div className="absolute inset-0 -z-0 flex items-center justify-center pointer-events-none">
-                  <div className="h-[420px] w-[420px] rounded-full bg-white/5 blur-3xl" />
+                  <div className="h-[460px] w-[460px] rounded-full bg-white/5 blur-3xl" />
                 </div>
 
-                {/* Main: Play Store listing screenshot, framed like a phone */}
-                <div className="relative z-10">
-                  <div className="relative w-[300px] sm:w-[340px] md:w-[380px] rounded-[2.5rem] bg-neutral-900 p-3 shadow-2xl ring-1 ring-white/10">
-                    <div className="rounded-[1.75rem] overflow-hidden bg-white">
+                <div className="relative z-10 w-full max-w-md">
+                  {/* Stylized Play Store search card */}
+                  <div className="rounded-3xl bg-white text-foreground p-5 shadow-2xl ring-1 ring-black/5">
+                    {/* Fake search bar */}
+                    <div className="flex items-center gap-3 rounded-full bg-muted/70 px-4 py-3 mb-4">
+                      <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <div className="text-sm font-medium text-foreground truncate">
+                        Live Staff Tracking
+                      </div>
+                      <span className="ml-auto inline-block h-4 w-px bg-border" />
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-[10px] font-bold">
+                        G
+                      </div>
+                    </div>
+
+                    {/* Section label */}
+                    <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                      Top result on Google Play
+                    </div>
+
+                    {/* The listing screenshot (its natural strip aspect) */}
+                    <div className="rounded-xl overflow-hidden border border-border bg-background">
                       <img
                         src={playStoreListing}
-                        alt="Live Staff Tracking on the Google Play Store"
+                        alt="Live Staff Tracking app on the Google Play Store"
                         className="w-full h-auto block"
                         loading="lazy"
                       />
                     </div>
-                    {/* Notch */}
-                    <div className="absolute top-3 left-1/2 -translate-x-1/2 h-5 w-24 rounded-b-2xl bg-neutral-900" />
+
+                    {/* Meta row */}
+                    <div className="mt-4 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1 font-semibold">
+                          <span>4.8</span>
+                          <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 text-amber-500" aria-hidden>
+                            <path d="M10 1.5l2.6 5.3 5.9.9-4.3 4.2 1 5.9L10 15l-5.3 2.8 1-5.9L1.5 7.7l5.9-.9z" />
+                          </svg>
+                        </div>
+                        <div className="text-muted-foreground">Free</div>
+                        <div className="text-muted-foreground">Android</div>
+                      </div>
+                      <a
+                        href="https://play.google.com/store/apps/details?id=com.livestafftracker.stafftracker"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground px-4 py-1.5 font-semibold hover:opacity-90 transition-opacity"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        Install
+                      </a>
+                    </div>
                   </div>
 
-                  {/* Floating: rating card */}
+                  {/* Floating: rating chip */}
                   <motion.div
                     initial={{ opacity: 0, x: -20, y: 10 }}
                     whileInView={{ opacity: 1, x: 0, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.3, duration: 0.5 }}
-                    className="hidden sm:flex absolute -left-6 top-16 z-20 flex-col items-start gap-1 rounded-2xl bg-white text-foreground px-4 py-3 shadow-xl ring-1 ring-black/5"
+                    className="hidden sm:flex absolute -left-6 -top-6 z-20 items-center gap-2 rounded-2xl bg-white text-foreground px-4 py-3 shadow-xl ring-1 ring-black/5"
                   >
-                    <div className="flex items-center gap-1 text-amber-500" aria-hidden>
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <svg key={i} viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                          <path d="M10 1.5l2.6 5.3 5.9.9-4.3 4.2 1 5.9L10 15l-5.3 2.8 1-5.9L1.5 7.7l5.9-.9z" />
-                        </svg>
-                      ))}
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100">
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-amber-500" aria-hidden>
+                        <path d="M10 1.5l2.6 5.3 5.9.9-4.3 4.2 1 5.9L10 15l-5.3 2.8 1-5.9L1.5 7.7l5.9-.9z" />
+                      </svg>
                     </div>
-                    <div className="text-xs font-semibold">On Google Play</div>
-                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Live Staff Tracking</div>
+                    <div>
+                      <div className="text-sm font-bold leading-tight">Trusted</div>
+                      <div className="text-[11px] text-muted-foreground">Verified publisher</div>
+                    </div>
                   </motion.div>
 
-                  {/* Floating: free + Android card */}
+                  {/* Floating: Android compatible */}
                   <motion.div
                     initial={{ opacity: 0, x: 20, y: 10 }}
                     whileInView={{ opacity: 1, x: 0, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.45, duration: 0.5 }}
-                    className="hidden sm:flex absolute -right-4 bottom-24 z-20 items-center gap-3 rounded-2xl bg-white text-foreground px-4 py-3 shadow-xl ring-1 ring-black/5"
+                    className="hidden sm:flex absolute -right-4 -bottom-4 z-20 items-center gap-3 rounded-2xl bg-white text-foreground px-4 py-3 shadow-xl ring-1 ring-black/5"
                   >
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-success/10">
-                      <Download className="h-5 w-5 text-success" />
+                      <Smartphone className="h-5 w-5 text-success" />
                     </div>
                     <div>
-                      <div className="text-sm font-bold leading-tight">Free install</div>
-                      <div className="text-[11px] text-muted-foreground">Any Android device</div>
+                      <div className="text-sm font-bold leading-tight">Any Android</div>
+                      <div className="text-[11px] text-muted-foreground">Phone or tablet</div>
                     </div>
                   </motion.div>
-
-                  {/* Floating: Google Play badge */}
-                  <motion.a
-                    href="https://play.google.com/store/apps/details?id=com.livestafftracker.stafftracker"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.6, duration: 0.5 }}
-                    className="absolute -bottom-6 left-1/2 -translate-x-1/2 z-20 transition-transform hover:scale-105"
-                    aria-label="Get it on Google Play"
-                  >
-                    <img
-                      alt="Get it on Google Play"
-                      src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
-                      className="h-14 sm:h-16 w-auto drop-shadow-2xl"
-                    />
-                  </motion.a>
                 </div>
               </motion.div>
             </div>
