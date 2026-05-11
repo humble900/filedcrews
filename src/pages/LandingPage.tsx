@@ -594,7 +594,7 @@ export default function LandingPage() {
                     whileInView={{ opacity: 1, x: 0, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.45, duration: 0.5 }}
-                    className="hidden sm:flex absolute -right-4 -bottom-4 z-20 items-center gap-3 rounded-2xl bg-white text-foreground px-4 py-3 shadow-xl ring-1 ring-black/5"
+                    className="hidden sm:flex absolute -right-6 -bottom-10 z-20 items-center gap-3 rounded-2xl bg-white text-foreground px-4 py-3 shadow-xl ring-1 ring-black/5"
                   >
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-success/10">
                       <Smartphone className="h-5 w-5 text-success" />
