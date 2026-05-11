@@ -27,6 +27,7 @@ import heroDashboard from "@/assets/hero-dashboard.jpg";
 import heroMobile from "@/assets/hero-mobile.jpg";
 import featureStaffList from "@/assets/feature-staff-list.jpg";
 import featureGeofence from "@/assets/feature-geofence.jpg";
+import playStoreListing from "@/assets/play-store-app-listing.jpeg";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
