@@ -508,17 +508,82 @@ export default function LandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6 }}
-                className="flex justify-center lg:justify-end"
+                className="relative flex justify-center lg:justify-end"
               >
-                <div className="w-72 sm:w-80 md:w-96 lg:w-[420px] xl:w-[480px] rounded-3xl overflow-hidden shadow-2xl border-4 border-white/10">
-                  <img
-                    src={heroMobile}
-                    alt="Staff Tracker mobile app"
-                    width={800}
-                    height={1200}
-                    className="w-full h-auto"
-                    loading="lazy"
-                  />
+                {/* Decorative gradient blob */}
+                <div className="absolute inset-0 -z-0 flex items-center justify-center pointer-events-none">
+                  <div className="h-[420px] w-[420px] rounded-full bg-white/5 blur-3xl" />
+                </div>
+
+                {/* Main: Play Store listing screenshot, framed like a phone */}
+                <div className="relative z-10">
+                  <div className="relative w-[300px] sm:w-[340px] md:w-[380px] rounded-[2.5rem] bg-neutral-900 p-3 shadow-2xl ring-1 ring-white/10">
+                    <div className="rounded-[1.75rem] overflow-hidden bg-white">
+                      <img
+                        src={playStoreListing}
+                        alt="Live Staff Tracking on the Google Play Store"
+                        className="w-full h-auto block"
+                        loading="lazy"
+                      />
+                    </div>
+                    {/* Notch */}
+                    <div className="absolute top-3 left-1/2 -translate-x-1/2 h-5 w-24 rounded-b-2xl bg-neutral-900" />
+                  </div>
+
+                  {/* Floating: rating card */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -20, y: 10 }}
+                    whileInView={{ opacity: 1, x: 0, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.3, duration: 0.5 }}
+                    className="hidden sm:flex absolute -left-6 top-16 z-20 flex-col items-start gap-1 rounded-2xl bg-white text-foreground px-4 py-3 shadow-xl ring-1 ring-black/5"
+                  >
+                    <div className="flex items-center gap-1 text-amber-500" aria-hidden>
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <svg key={i} viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                          <path d="M10 1.5l2.6 5.3 5.9.9-4.3 4.2 1 5.9L10 15l-5.3 2.8 1-5.9L1.5 7.7l5.9-.9z" />
+                        </svg>
+                      ))}
+                    </div>
+                    <div className="text-xs font-semibold">On Google Play</div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Live Staff Tracking</div>
+                  </motion.div>
+
+                  {/* Floating: free + Android card */}
+                  <motion.div
+                    initial={{ opacity: 0, x: 20, y: 10 }}
+                    whileInView={{ opacity: 1, x: 0, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.45, duration: 0.5 }}
+                    className="hidden sm:flex absolute -right-4 bottom-24 z-20 items-center gap-3 rounded-2xl bg-white text-foreground px-4 py-3 shadow-xl ring-1 ring-black/5"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-success/10">
+                      <Download className="h-5 w-5 text-success" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold leading-tight">Free install</div>
+                      <div className="text-[11px] text-muted-foreground">Any Android device</div>
+                    </div>
+                  </motion.div>
+
+                  {/* Floating: Google Play badge */}
+                  <motion.a
+                    href="https://play.google.com/store/apps/details?id=com.livestafftracker.stafftracker"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.6, duration: 0.5 }}
+                    className="absolute -bottom-6 left-1/2 -translate-x-1/2 z-20 transition-transform hover:scale-105"
+                    aria-label="Get it on Google Play"
+                  >
+                    <img
+                      alt="Get it on Google Play"
+                      src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
+                      className="h-14 sm:h-16 w-auto drop-shadow-2xl"
+                    />
+                  </motion.a>
                 </div>
               </motion.div>
             </div>
