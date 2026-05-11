@@ -507,9 +507,9 @@ export default function LandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6 }}
-                className="flex justify-center"
+                className="flex justify-center lg:justify-end"
               >
-                <div className="w-64 md:w-72 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/10">
+                <div className="w-72 sm:w-80 md:w-96 lg:w-[420px] xl:w-[480px] rounded-3xl overflow-hidden shadow-2xl border-4 border-white/10">
                   <img
                     src={heroMobile}
                     alt="Staff Tracker mobile app"
