@@ -5,6 +5,7 @@ import StaffManagement from "@/components/StaffManagement";
 import LiveMap from "@/components/LiveMap";
 import GeofenceManagement from "@/components/GeofenceManagement";
 import DashboardLayout from "@/components/DashboardLayout";
+import TrackerDownload from "@/components/TrackerDownload";
 import SEO from "@/components/SEO";
 import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -84,13 +85,7 @@ const HomePage = () => {
           {activeTab === "staff" && (
             <StaffManagement companyId={company.id} prefix={company.prefix} />
           )}
-          {activeTab === "tracker" && (
-            <div className="text-center py-12 text-muted-foreground space-y-2">
-              <p className="text-lg font-medium text-foreground">Staff Tracker Mobile App</p>
-              <p>The mobile app is available to authorized staff through the official distribution channel.</p>
-              <p className="text-sm">Contact your administrator for access.</p>
-            </div>
-          )}
+          {activeTab === "tracker" && <TrackerDownload />}
         </div>
       </DashboardLayout>
     </>
