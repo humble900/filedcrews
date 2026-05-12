@@ -575,16 +575,16 @@ export default function LandingPage() {
                     whileInView={{ opacity: 1, x: 0, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.3, duration: 0.5 }}
-                    className="hidden sm:flex absolute -left-6 -top-6 z-20 items-center gap-2 rounded-2xl bg-white text-foreground px-4 py-3 shadow-xl ring-1 ring-black/5"
+                    className="hidden sm:flex absolute -left-8 -top-8 z-20 items-center gap-3 rounded-2xl bg-white text-foreground px-5 py-4 shadow-xl ring-1 ring-black/5"
                   >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100">
-                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-amber-500" aria-hidden>
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-amber-100">
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-6 w-6 text-amber-500" aria-hidden>
                         <path d="M10 1.5l2.6 5.3 5.9.9-4.3 4.2 1 5.9L10 15l-5.3 2.8 1-5.9L1.5 7.7l5.9-.9z" />
                       </svg>
                     </div>
                     <div>
-                      <div className="text-sm font-bold leading-tight">Trusted</div>
-                      <div className="text-[11px] text-muted-foreground">Verified publisher</div>
+                      <div className="text-base font-bold leading-tight">Trusted</div>
+                      <div className="text-xs text-muted-foreground">Verified publisher</div>
                     </div>
                   </motion.div>
 
@@ -594,14 +594,14 @@ export default function LandingPage() {
                     whileInView={{ opacity: 1, x: 0, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.45, duration: 0.5 }}
-                    className="hidden sm:flex absolute -right-6 -bottom-10 z-20 items-center gap-3 rounded-2xl bg-white text-foreground px-4 py-3 shadow-xl ring-1 ring-black/5"
+                    className="hidden sm:flex absolute -right-8 -bottom-12 z-20 items-center gap-3 rounded-2xl bg-white text-foreground px-5 py-4 shadow-xl ring-1 ring-black/5"
                   >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-success/10">
-                      <Smartphone className="h-5 w-5 text-success" />
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-success/10">
+                      <Smartphone className="h-6 w-6 text-success" />
                     </div>
                     <div>
-                      <div className="text-sm font-bold leading-tight">Any Android</div>
-                      <div className="text-[11px] text-muted-foreground">Phone or tablet</div>
+                      <div className="text-base font-bold leading-tight">Any Android</div>
+                      <div className="text-xs text-muted-foreground">Phone or tablet</div>
                     </div>
                   </motion.div>
                 </div>
