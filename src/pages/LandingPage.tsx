@@ -669,6 +669,27 @@ export default function LandingPage() {
             </p>
           </div>
         </footer>
+
+        <Dialog open={demoOpen} onOpenChange={setDemoOpen}>
+          <DialogContent className="max-w-5xl w-[95vw] p-0 overflow-hidden border-border bg-background sm:rounded-2xl">
+            <VisuallyHidden>
+              <DialogTitle>Staff Tracker product demo</DialogTitle>
+              <DialogDescription>Watch a short demo of the Staff Tracker dashboard and mobile app.</DialogDescription>
+            </VisuallyHidden>
+            <div className="relative w-full bg-black" style={{ aspectRatio: "16 / 9" }}>
+              {demoOpen && (
+                <iframe
+                  src="https://iframe.mediadelivery.net/embed/655691/433c41a7-5218-48e4-8dc5-f87a011c3060?autoplay=true&loop=false&muted=false&preload=true&responsive=true"
+                  loading="lazy"
+                  allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                  allowFullScreen
+                  className="absolute inset-0 h-full w-full border-0"
+                  title="Staff Tracker demo"
+                />
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );
