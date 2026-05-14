@@ -216,11 +216,15 @@ export default function LandingPage() {
                       Start Tracking <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </Link>
-                  <a href="#features">
-                    <Button size="lg" variant="outline" className="text-base px-8">
-                      See Features
-                    </Button>
-                  </a>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="text-base px-8 group"
+                    onClick={() => setDemoOpen(true)}
+                  >
+                    <PlayCircle className="mr-2 h-5 w-5 text-primary transition-transform group-hover:scale-110" />
+                    See Demo
+                  </Button>
                 </motion.div>
                 <motion.div variants={fadeUp} custom={3} className="flex flex-wrap gap-x-6 gap-y-2 text-base text-muted-foreground">
                   {["Real-time GPS", "Face verification", "Geofence alerts", "Works offline"].map((t) => (
