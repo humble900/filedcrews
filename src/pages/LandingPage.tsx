@@ -18,9 +18,12 @@ import {
   X,
   Search,
   Download,
+  PlayCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import SEO from "@/components/SEO";
 
 import heroDashboard from "@/assets/hero-dashboard.jpg";
