@@ -99,6 +99,7 @@ const steps = [
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [demoOpen, setDemoOpen] = useState(false);
 
   return (
     <>
