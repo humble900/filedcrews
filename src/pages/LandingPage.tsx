@@ -18,9 +18,12 @@ import {
   X,
   Search,
   Download,
+  PlayCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import SEO from "@/components/SEO";
 
 import heroDashboard from "@/assets/hero-dashboard.jpg";
@@ -96,6 +99,7 @@ const steps = [
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [demoOpen, setDemoOpen] = useState(false);
 
   return (
     <>
@@ -212,11 +216,15 @@ export default function LandingPage() {
                       Start Tracking <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </Link>
-                  <a href="#features">
-                    <Button size="lg" variant="outline" className="text-base px-8">
-                      See Features
-                    </Button>
-                  </a>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="text-base px-8 group"
+                    onClick={() => setDemoOpen(true)}
+                  >
+                    <PlayCircle className="mr-2 h-5 w-5 text-primary transition-transform group-hover:scale-110" />
+                    See Demo
+                  </Button>
                 </motion.div>
                 <motion.div variants={fadeUp} custom={3} className="flex flex-wrap gap-x-6 gap-y-2 text-base text-muted-foreground">
                   {["Real-time GPS", "Face verification", "Geofence alerts", "Works offline"].map((t) => (
@@ -661,6 +669,27 @@ export default function LandingPage() {
             </p>
           </div>
         </footer>
+
+        <Dialog open={demoOpen} onOpenChange={setDemoOpen}>
+          <DialogContent className="max-w-5xl w-[95vw] p-0 overflow-hidden border-border bg-background sm:rounded-2xl">
+            <VisuallyHidden>
+              <DialogTitle>Staff Tracker product demo</DialogTitle>
+              <DialogDescription>Watch a short demo of the Staff Tracker dashboard and mobile app.</DialogDescription>
+            </VisuallyHidden>
+            <div className="relative w-full bg-black" style={{ aspectRatio: "16 / 9" }}>
+              {demoOpen && (
+                <iframe
+                  src="https://iframe.mediadelivery.net/embed/655691/433c41a7-5218-48e4-8dc5-f87a011c3060?autoplay=true&loop=false&muted=false&preload=true&responsive=true"
+                  loading="lazy"
+                  allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                  allowFullScreen
+                  className="absolute inset-0 h-full w-full border-0"
+                  title="Staff Tracker demo"
+                />
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );
