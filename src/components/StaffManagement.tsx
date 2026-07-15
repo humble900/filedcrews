@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import StaffShiftManager from "./StaffShiftManager";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -119,6 +119,70 @@ const FEATURES_LIST: { id: Feature; label: string }[] = [
   { id: 'compliance',     label: 'Tech Compliance Checklists' },
 ];
 
+function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+const getGeocodedAddress = async (lat: number, lng: number, staffId: string) => {
+  const cacheKey = `geo_address_${staffId}_${lat.toFixed(3)}_${lng.toFixed(3)}`;
+  const cached = localStorage.getItem(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`,
+      {
+        headers: {
+          "User-Agent": "FieldCrewsFSM/1.0",
+        },
+      }
+    );
+    const data = await res.json();
+    if (data && data.address) {
+      const city = data.address.city || data.address.town || data.address.village || data.address.suburb || "";
+      const state = data.address.state || "";
+      const country = data.address.country || "";
+      
+      let addressString = "";
+      if (city && state) {
+        addressString = `${city}, ${state}`;
+      } else if (city) {
+        addressString = city;
+      } else if (state) {
+        addressString = state;
+      } else {
+        addressString = country || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      }
+      localStorage.setItem(cacheKey, addressString);
+      return addressString;
+    }
+  } catch (err) {
+    console.error("Geocoding failed:", err);
+  }
+  return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+};
+
+const timeAgo = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  
+  if (diffMins < 1) return "just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+};
+
 const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: string }) => {
   const { canManageRoles, canDelegateRoleManagement, isOwner } = usePermissions();
 
@@ -196,19 +260,110 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
 
   const { company } = useAuth();
 
-  // Fetch staff
+  // Fetch active geofences
+  const { data: geofences = [] } = useQuery({
+    queryKey: ["geofences", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("geofences")
+        .select("*")
+        .eq("company_id", companyId)
+        .eq("is_active", true);
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  // Fetch staff with locations (poll every 8 seconds for real-time presence)
   const { data: staff, refetch } = useQuery({
     queryKey: ["staff_profiles", companyId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("staff_profiles")
-        .select("*")
+        .select(`
+          *,
+          staff_locations (
+            latitude,
+            longitude,
+            accuracy,
+            updated_at
+          )
+        `)
         .eq("company_id", companyId)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
+    refetchInterval: 8000,
   });
+
+  const [resolvedAddresses, setResolvedAddresses] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!staff) return;
+    staff.forEach(async (s: any) => {
+      const locData = s.staff_locations;
+      const loc = Array.isArray(locData) ? locData[0] : locData;
+      if (loc && loc.latitude && loc.longitude) {
+        const key = `${s.id}_${loc.latitude.toFixed(3)}_${loc.longitude.toFixed(3)}`;
+        if (resolvedAddresses[key]) return;
+        
+        const addr = await getGeocodedAddress(loc.latitude, loc.longitude, s.id);
+        setResolvedAddresses(prev => ({ ...prev, [key]: addr }));
+      }
+    });
+  }, [staff]);
+
+  const getPresenceStatus = (s: any) => {
+    if (!s.is_active) {
+      return { 
+        label: "Inactive", 
+        color: "bg-rose-500/10 text-rose-400 border-rose-500/20" 
+      };
+    }
+
+    const locData = s.staff_locations;
+    const loc = Array.isArray(locData) ? locData[0] : locData;
+    if (!loc || !loc.updated_at) {
+      return { 
+        label: "Offline", 
+        color: "bg-slate-500/10 text-slate-400 border-slate-500/20" 
+      };
+    }
+
+    // Check if updated in last 5 minutes
+    const diffMs = new Date().getTime() - new Date(loc.updated_at).getTime();
+    const isOnline = diffMs < 300000;
+
+    if (!isOnline) {
+      return { 
+        label: "Offline", 
+        color: "bg-slate-500/10 text-slate-400 border-slate-500/20" 
+      };
+    }
+
+    // Check if inside any active geofence
+    let insideGeofenceName = "";
+    for (const gf of geofences) {
+      const dist = haversineMeters(loc.latitude, loc.longitude, gf.latitude, gf.longitude);
+      if (dist <= gf.radius_meters) {
+        insideGeofenceName = gf.name;
+        break;
+      }
+    }
+
+    if (insideGeofenceName) {
+      return { 
+        label: `Active (On Site: ${insideGeofenceName})`, 
+        color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/25 animate-pulse" 
+      };
+    }
+
+    return { 
+      label: "Active (Roaming)", 
+      color: "bg-teal-500/15 text-teal-400 border-teal-500/25" 
+    };
+  };
 
   // Fetch roles from DB
   const { data: roles = [] } = useQuery({
@@ -509,17 +664,18 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
                   <TableHead className="w-12"></TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Username</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Last Seen</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead className="hidden md:table-cell">Job Title</TableHead>
                   <TableHead className="hidden lg:table-cell">Contact</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredStaff.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground text-sm">
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground text-sm">
                       {searchQuery ? "No staff matching your search" : "No staff created yet. Click \"Add Staff\" to get started."}
                     </TableCell>
                   </TableRow>
@@ -528,6 +684,16 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
                     const role = (s as any).global_role as string;
                     const canDelegate = (s as any).can_manage_roles as boolean;
                     const roleColor = getRoleColor(role);
+
+                    // Presence calculation
+                    const presence = getPresenceStatus(s);
+
+                    // Location lookup
+                    const locData = (s as any).staff_locations;
+                    const loc = Array.isArray(locData) ? locData[0] : locData;
+                    const geoKey = loc ? `${s.id}_${loc.latitude.toFixed(3)}_${loc.longitude.toFixed(3)}` : "";
+                    const address = loc ? resolvedAddresses[geoKey] || "Resolving location..." : "Never seen";
+                    const seenTime = loc?.updated_at ? timeAgo(loc.updated_at) : "";
 
                     return (
                       <TableRow key={s.id} className={!s.is_active ? "opacity-50" : ""}>
@@ -554,6 +720,21 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
                         {/* Username */}
                         <TableCell>
                           <code className="text-xs bg-muted/50 px-1.5 py-0.5 rounded">@{s.username}</code>
+                        </TableCell>
+
+                        {/* Status */}
+                        <TableCell>
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${presence.color}`}>
+                            {presence.label}
+                          </span>
+                        </TableCell>
+
+                        {/* Last Seen */}
+                        <TableCell>
+                          <div>
+                            <p className="text-xs font-semibold text-foreground/90">{address}</p>
+                            {seenTime && <p className="text-[10px] text-muted-foreground">{seenTime}</p>}
+                          </div>
                         </TableCell>
 
                         {/* Role */}
@@ -611,33 +792,36 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
                           </div>
                         </TableCell>
 
-                        {/* Status */}
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Switch
-                              checked={s.is_active}
-                              onCheckedChange={async (checked) => {
-                                const { error } = await supabase
-                                  .from("staff_profiles")
-                                  .update({ is_active: checked })
-                                  .eq("id", s.id);
-                                if (error) {
-                                  toast.error("Failed to update staff status");
-                                } else {
-                                  toast.success(`${s.full_name} ${checked ? "activated" : "deactivated"}`);
-                                  refetch();
-                                }
-                              }}
-                            />
-                            <Badge variant={s.is_active ? "default" : "secondary"} className="text-[10px]">
-                              {s.is_active ? "Active" : "Inactive"}
-                            </Badge>
-                          </div>
-                        </TableCell>
-
                         {/* Actions */}
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="flex items-center mr-2">
+                                    <Switch
+                                      checked={s.is_active}
+                                      onCheckedChange={async (checked) => {
+                                        const { error } = await supabase
+                                          .from("staff_profiles")
+                                          .update({ is_active: checked })
+                                          .eq("id", s.id);
+                                        if (error) {
+                                          toast.error("Failed to update staff status");
+                                        } else {
+                                          toast.success(`${s.full_name} ${checked ? "activated" : "deactivated"}`);
+                                          refetch();
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {s.is_active ? "Suspend account" : "Activate account"}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+
                             <Button variant="ghost" size="sm" className="h-7 w-7 p-0"
                               onClick={() => setShiftStaff({ id: s.id, name: s.full_name })} title="Manage shifts">
                               <Clock className="h-3.5 w-3.5" />

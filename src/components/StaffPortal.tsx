@@ -90,6 +90,50 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
     return () => window.removeEventListener("popstate", handleBack);
   }, [selectedTask]);
 
+  // Automatic Real-time Geolocation tracking (calls the staff_update_location edge function)
+  useEffect(() => {
+    if (isOfflineMode || !staffProfile?.id) return;
+
+    let activeWatchId: number | null = null;
+
+    const updateLocation = async (position: GeolocationPosition) => {
+      try {
+        const { latitude, longitude, accuracy } = position.coords;
+        await supabase.functions.invoke("staff_update_location", {
+          body: { latitude, longitude, accuracy },
+        });
+      } catch (err) {
+        console.warn("Failed to auto-update location:", err);
+      }
+    };
+
+    if (navigator.geolocation) {
+      // First update immediately
+      navigator.geolocation.getCurrentPosition(
+        updateLocation,
+        (err) => console.warn("Initial portal location update failed:", err.message),
+        { enableHighAccuracy: true }
+      );
+
+      // Periodically update location whenever it changes
+      activeWatchId = navigator.geolocation.watchPosition(
+        updateLocation,
+        (err) => console.warn("Watch position update failed:", err.message),
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0,
+        }
+      );
+    }
+
+    return () => {
+      if (activeWatchId !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(activeWatchId);
+      }
+    };
+  }, [isOfflineMode, staffProfile?.id]);
+
   const [formResponses, setFormResponses] = useState<Record<string, any>>({});
 
   // Offline states
