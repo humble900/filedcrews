@@ -36,6 +36,7 @@ import {
   FileCheck,
   Package,
   Search,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import NotificationCenter from "./NotificationCenter";
@@ -74,7 +75,7 @@ const navItems: { id: string; label: string; mobileLabel?: string; icon: any; fe
   { id: "compliance", label: "Compliance", icon: FileCheck, feature: "compliance", group: "Admin & Reports" },
   { id: "reports", label: "Reports & Logs", mobileLabel: "Reports", icon: BarChart3, feature: "reports", group: "Admin & Reports" },
   { id: "tracker", label: "Tracker App", icon: Smartphone, feature: "tracker", group: "Admin & Reports" },
-  { id: "billing", label: "Billing & Plans", mobileLabel: "Billing", icon: CreditCard, feature: "billing", group: "Admin & Reports" },
+  { id: "settings", label: "Settings", icon: Settings, feature: "settings", group: "Admin & Reports" },
 ];
 
 function SidebarContent({
@@ -280,7 +281,7 @@ function SidebarContent({
                   const pathMap: Record<string, string> = {
                     "/crm": "crm", "/projects": "projects", "/jobs": "work-orders", "/work-orders": "work-orders",
                     "/invoices": "invoices", "/safety": "safety", "/change-orders": "change-orders",
-                    "/reports": "reports", "/billing": "billing", "/memberships": "memberships",
+                    "/reports": "reports", "/billing": "settings", "/settings": "settings", "/memberships": "memberships",
                     "/inventory": "inventory", "/timesheets": "timesheets", "/estimates": "estimates",
                     "/compliance": "compliance"
                   };
@@ -372,7 +373,7 @@ export default function DashboardLayout({
     return saved === "true";
   });
   const { hasPermission } = usePermissions();
-  const { signOut } = useAuth();
+  const { signOut, isTrialExpired } = useAuth();
   const { t } = useTerminology();
   const location = useLocation();
   const navigate = useNavigate();
@@ -448,8 +449,8 @@ export default function DashboardLayout({
           navigate("/change-orders");
         } else if (itemId === "compliance") {
           navigate("/compliance");
-        } else if (itemId === "billing") {
-          navigate("/billing");
+        } else if (itemId === "billing" || itemId === "settings") {
+          navigate("/settings?tab=billing");
         } else if (itemId === "map") {
           navigate("/", { state: { tab: "map" } });
         } else if (itemId === "tracker") {
@@ -474,8 +475,8 @@ export default function DashboardLayout({
         navigate("/change-orders");
       } else if (itemId === "reports") {
         navigate("/reports");
-      } else if (itemId === "billing") {
-        navigate("/billing");
+      } else if (itemId === "billing" || itemId === "settings") {
+        navigate("/settings");
       } else if (itemId === "memberships") {
         navigate("/memberships");
       } else if (itemId === "inventory") {
@@ -560,6 +561,24 @@ export default function DashboardLayout({
         "flex-1 overflow-y-auto bg-background text-foreground h-screen",
         isProjectMode ? "pb-0" : "pb-16 md:pb-0"
       )}>
+        {isTrialExpired && !location.pathname.startsWith('/settings') && (
+          <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-md flex items-center justify-center p-4">
+            <div className="max-w-md w-full text-center space-y-6 bg-card border border-border/50 rounded-2xl p-8 shadow-2xl">
+              <div className="mx-auto w-16 h-16 rounded-full bg-amber-500/15 flex items-center justify-center">
+                <CreditCard className="h-8 w-8 text-amber-500" />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-2xl font-extrabold">Trial Period Expired</h2>
+                <p className="text-muted-foreground text-sm">
+                  Your 14-day free trial has ended. Upgrade to a paid plan or join our Founding Partner Charter to continue using OnSite Crew Manager.
+                </p>
+              </div>
+              <Button onClick={() => navigate('/settings?tab=billing')} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500">
+                View Plans & Upgrade
+              </Button>
+            </div>
+          </div>
+        )}
         {children}
       </main>
 

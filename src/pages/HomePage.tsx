@@ -1,6 +1,4 @@
 import { useAuth } from "@/hooks/useAuth";
-import LandingPage from "./LandingPage";
-import CompanySetup from "./CompanySetup";
 import StaffManagement from "@/components/StaffManagement";
 import LiveMap from "@/components/LiveMap";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -12,10 +10,12 @@ import { useTerminology } from "@/hooks/useTerminology";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SEO from "@/components/SEO";
 import { Loader2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, Suspense, lazy } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLocation, Navigate } from "react-router-dom";
 import { APIProvider } from "@vis.gl/react-google-maps";
+
+const LandingPage = lazy(() => import("./LandingPage"));
 
 const HomePage = () => {
   const { user, company, staffProfile, loading, signOut } = useAuth();
@@ -61,7 +61,15 @@ const HomePage = () => {
 
   // Not logged in → show landing page
   if (!user) {
-    return <LandingPage />;
+    return (
+      <Suspense fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#0c121f]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      }>
+        <LandingPage />
+      </Suspense>
+    );
   }
 
   // Logged in as staff member

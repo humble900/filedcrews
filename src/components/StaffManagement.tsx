@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import StaffShiftManager from "./StaffShiftManager";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -206,6 +207,20 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
   const [updatingRoleId, setUpdatingRoleId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Edit staff dialog states
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<any>(null);
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editAddress, setEditAddress] = useState("");
+  const [editJobTitle, setEditJobTitle] = useState("");
+  const [editHourlyRate, setEditHourlyRate] = useState("");
+  const [editRole, setEditRole] = useState("");
+  const [editCanManageRoles, setEditCanManageRoles] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+
   // Limit warnings state
   const [showLimitWarning, setShowLimitWarning] = useState(false);
   const [limitWarningRole, setLimitWarningRole] = useState("");
@@ -259,6 +274,55 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
   });
 
   const { company } = useAuth();
+
+  const openEditDialog = (staff: any) => {
+    setEditingStaff(staff);
+    setEditFirstName(staff.first_name || "");
+    setEditLastName(staff.last_name || "");
+    setEditEmail(staff.email || "");
+    setEditPhone(staff.phone || "");
+    setEditAddress(staff.address || "");
+    setEditJobTitle(staff.job_title || "");
+    setEditHourlyRate(staff.hourly_rate ? String(staff.hourly_rate) : "");
+    setEditRole(staff.global_role || "Field Crew");
+    setEditCanManageRoles(staff.can_manage_roles || false);
+    setEditDialogOpen(true);
+  };
+
+  const saveEditStaff = async () => {
+    if (!editingStaff) return;
+    setEditSaving(true);
+    try {
+      const updates: any = {
+        first_name: editFirstName.trim() || null,
+        last_name: editLastName.trim() || null,
+        full_name: [editFirstName.trim(), editLastName.trim()].filter(Boolean).join(" ") || editingStaff.full_name,
+        email: editEmail.trim() || null,
+        phone: editPhone.trim() || null,
+        address: editAddress.trim() || null,
+        job_title: editJobTitle.trim() || null,
+        hourly_rate: editHourlyRate ? parseFloat(editHourlyRate) : null,
+      };
+      if (canManageRoles) {
+        updates.global_role = editRole;
+      }
+      if (canDelegateRoleManagement) {
+        updates.can_manage_roles = editCanManageRoles;
+      }
+      const { error } = await supabase
+        .from("staff_profiles")
+        .update(updates)
+        .eq("id", editingStaff.id);
+      if (error) throw error;
+      toast.success(`${updates.full_name}'s profile updated`);
+      setEditDialogOpen(false);
+      refetch();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update staff profile");
+    } finally {
+      setEditSaving(false);
+    }
+  };
 
   // Fetch active geofences
   const { data: geofences = [] } = useQuery({
@@ -696,7 +760,7 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
                     const seenTime = loc?.updated_at ? timeAgo(loc.updated_at) : "";
 
                     return (
-                      <TableRow key={s.id} className={!s.is_active ? "opacity-50" : ""}>
+                      <TableRow key={s.id} className={cn(!s.is_active ? "opacity-50" : "", "cursor-pointer hover:bg-muted/50 transition-colors")} onClick={() => openEditDialog(s)}>
                         {/* Avatar */}
                         <TableCell className="w-12 pr-0">
                           <StaffPhotoUpload
@@ -738,7 +802,7 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
                         </TableCell>
 
                         {/* Role */}
-                        <TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
                           <div className="flex flex-col gap-1">
                             {canManageRoles ? (
                               <Select
@@ -793,7 +857,7 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
                         </TableCell>
 
                         {/* Actions */}
-                        <TableCell className="text-right">
+                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-1">
                             <TooltipProvider>
                               <Tooltip>
@@ -1222,6 +1286,80 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
           onOpenChange={(open) => { if (!open) setShiftStaff(null); }}
         />
       )}
+
+      {/* ─── Edit Staff Profile Dialog ─── */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              Edit Staff Profile
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto pr-1">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground">First Name</label>
+                <Input value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} placeholder="First name" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground">Last Name</label>
+                <Input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} placeholder="Last name" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-muted-foreground">Job Title</label>
+              <Input value={editJobTitle} onChange={(e) => setEditJobTitle(e.target.value)} placeholder="e.g. Lead Technician" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground">Email</label>
+                <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} placeholder="email@company.com" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground">Phone</label>
+                <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="+1 (555) 000-0000" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-muted-foreground">Address</label>
+              <Input value={editAddress} onChange={(e) => setEditAddress(e.target.value)} placeholder="Street address" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-muted-foreground">Hourly Rate ($)</label>
+              <Input type="number" step="0.01" value={editHourlyRate} onChange={(e) => setEditHourlyRate(e.target.value)} placeholder="0.00" />
+            </div>
+            {canManageRoles && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground">Role</label>
+                <Select value={editRole} onValueChange={setEditRole}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {roles.map((r: any) => (
+                      <SelectItem key={r.name} value={r.name}>{r.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {canDelegateRoleManagement && (
+              <div className="flex items-center justify-between p-3 rounded-lg border border-border/40 bg-muted/20">
+                <div>
+                  <p className="text-sm font-semibold">Can Manage Roles</p>
+                  <p className="text-xs text-muted-foreground">Allow this staff member to assign roles to others</p>
+                </div>
+                <Switch checked={editCanManageRoles} onCheckedChange={setEditCanManageRoles} />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={saveEditStaff} disabled={editSaving}>
+              {editSaving ? "Saving…" : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useAuth } from "@/hooks/useAuth";
 import TaskPhotoUpload from "./TaskPhotoUpload";
 import DocumentScanner from "./DocumentScanner";
 import InteractiveSpreadsheet from "./InteractiveSpreadsheet";
@@ -60,6 +61,7 @@ interface StaffPortalProps {
 type MobileTab = "tasks" | "docs" | "shifts" | "settings";
 
 export default function StaffPortal({ staffProfile, company, onSignOut }: StaffPortalProps) {
+  const { isTrialExpired } = useAuth();
   const queryClient = useQueryClient();
   const apkDownloadUrl = "/downloads/Ocrem.apk";
 
@@ -74,6 +76,12 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
   const [taskNotes, setTaskNotes] = useState("");
   const [beforePhoto, setBeforePhoto] = useState<string | null>(null);
   const [afterPhoto, setAfterPhoto] = useState<string | null>(null);
+
+  const [formResponses, setFormResponses] = useState<Record<string, any>>({});
+
+  // Offline states
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
+  const [offlineQueue, setOfflineQueue] = useState<{ taskId: string; payload: any; taskTitle: string }[]>([]);
 
   // Close task sheet on back button
   useEffect(() => {
@@ -133,12 +141,6 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
       }
     };
   }, [isOfflineMode, staffProfile?.id]);
-
-  const [formResponses, setFormResponses] = useState<Record<string, any>>({});
-
-  // Offline states
-  const [isOfflineMode, setIsOfflineMode] = useState(false);
-  const [offlineQueue, setOfflineQueue] = useState<{ taskId: string; payload: any; taskTitle: string }[]>([]);
 
   const syncOfflineQueue = async () => {
     if (offlineQueue.length === 0) return;
@@ -392,6 +394,22 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
+      {isTrialExpired && (
+        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center space-y-6">
+          <div className="w-16 h-16 rounded-full bg-rose-500/10 flex items-center justify-center border border-rose-500/20 shadow-inner">
+            <AlertTriangle className="h-8 w-8 text-rose-500 animate-pulse" />
+          </div>
+          <div className="space-y-2 max-w-sm">
+            <h3 className="text-xl font-black text-foreground">Trial Period Expired</h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Your company's trial period for <strong>OnSite Crew Manager</strong> has ended. Please contact your company administrator to upgrade the account and resume access.
+            </p>
+          </div>
+          <Button onClick={onSignOut} variant="outline" className="w-full max-w-[200px] border-border/60 hover:bg-muted font-bold text-xs gap-1.5 h-9">
+            <LogOut className="h-4 w-4" /> Sign Out
+          </Button>
+        </div>
+      )}
       {/* ═══ STICKY GLASS HEADER ═══ */}
       <header className="glass-header sticky top-0 z-40 safe-top">
         <div className="flex items-center justify-between px-4 py-3">
@@ -709,42 +727,28 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
               </div>
             </div>
 
-            {/* App Download */}
+            {/* PWA App Installation Guide */}
             <div className="p-4 rounded-xl border bg-card card-elevated space-y-3">
               <div className="flex items-center gap-2">
                 <Smartphone className="h-5 w-5 text-primary" />
-                <p className="font-bold text-sm">Android App</p>
+                <p className="font-bold text-sm">Add App to Home Screen</p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Download the official APK for real-time GPS tracking and geofence check-ins.
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                This app runs directly in your browser. Install it on your home screen for full-screen access and off-line support:
               </p>
-              <a href={apkDownloadUrl} download>
-                <Button className="w-full h-11 font-bold gap-2">
-                  <Download className="h-4 w-4" />
-                  Download APK
-                </Button>
-              </a>
-            </div>
-
-            {/* Installation Steps */}
-            <div className="p-4 rounded-xl border bg-muted/30 space-y-3">
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Installation Steps
-              </p>
-              <div className="space-y-2.5">
-                {[
-                  "Download the APK file to your device",
-                  "Open it from notifications or downloads",
-                  "Enable 'Allow installation from this source'",
-                  "Install, open, and log in to start tracking",
-                ].map((step, idx) => (
-                  <div key={idx} className="flex gap-3 items-start text-xs">
-                    <div className="h-5 w-5 rounded-full bg-primary/10 text-primary font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
-                      {idx + 1}
-                    </div>
-                    <span className="text-muted-foreground">{step}</span>
-                  </div>
-                ))}
+              <div className="space-y-3 pt-1 border-t border-border/50">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold uppercase text-slate-400">For Android (Chrome)</span>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Tap the Chrome menu button (⋮) and select <strong className="text-slate-200">"Install app"</strong> or <strong className="text-slate-200">"Add to Home screen"</strong>.
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold uppercase text-slate-400">For iPhone (Safari)</span>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Tap the Share button (box with up arrow) and select <strong className="text-slate-200">"Add to Home Screen"</strong>.
+                  </p>
+                </div>
               </div>
             </div>
 

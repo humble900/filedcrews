@@ -31,8 +31,12 @@ import {
   Loader2,
   Share2,
   Send,
-  MessageCircle
+  MessageCircle,
+  User,
+  Eye,
+  EyeOff,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import SEO from "@/components/SEO";
 
@@ -188,9 +192,84 @@ function MapHandler({ center }: MapHandlerProps) {
   return null;
 }
 
-export default function ProjectSetupWizard() {
+function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
   const { user, company, loading, createCompany } = useAuth();
   const navigate = useNavigate();
+
+  const computePrefix = (name: string) => {
+    const clean = name.toUpperCase().replace(/[^A-Z]/g, "");
+    return clean.slice(0, 5) || "ONST";
+  };
+
+  const applyVerticalPresets = (val: string) => {
+    setCompanyVertical(val);
+    saveSandboxProgress({ companyVertical: val });
+
+    if (val === "HVAC") {
+      setProjectName("Furnace Installation & Smart Setup");
+      setJobTitle("Heating System Testing & Air Sweep");
+      setJobDescription("- Mount the furnace unit safely\n- Install smart Wi-Fi thermostat\n- Test duct pressure and record levels\n- Upload before/after photos of connections");
+      saveSandboxProgress({
+        projectName: "Furnace Installation & Smart Setup",
+        jobTitle: "Heating System Testing & Air Sweep",
+        jobDescription: "- Mount the furnace unit safely\n- Install smart Wi-Fi thermostat\n- Test duct pressure and record levels\n- Upload before/after photos of connections"
+      });
+    } else if (val === "Landscaping") {
+      setProjectName("Irrigation & Turf Sod Installation");
+      setJobTitle("Sprinkler Alignment & Turf Rolling");
+      setJobDescription("- Map out sprinkler valve coordinates\n- Prep ground soil and roll grass turf\n- Verify flow pressure at main line valve\n- Upload photos of finished green lanes");
+      saveSandboxProgress({
+        projectName: "Irrigation & Turf Sod Installation",
+        jobTitle: "Sprinkler Alignment & Turf Rolling",
+        jobDescription: "- Map out sprinkler valve coordinates\n- Prep ground soil and roll grass turf\n- Verify flow pressure at main line valve\n- Upload photos of finished green lanes"
+      });
+    } else if (val === "Electrical") {
+      setProjectName("EV Charging Station & Panel Upgrade");
+      setJobTitle("Charger Panel Wiring & Load Balance");
+      setJobDescription("- Install Level-2 EV charging station\n- Replace main breaker panels to 200A\n- Verify grounding resistance and label panels\n- Upload safety sign-off photo");
+      saveSandboxProgress({
+        projectName: "EV Charging Station & Panel Upgrade",
+        jobTitle: "Charger Panel Wiring & Load Balance",
+        jobDescription: "- Install Level-2 EV charging station\n- Replace main breaker panels to 200A\n- Verify grounding resistance and label panels\n- Upload safety sign-off photo"
+      });
+    } else if (val === "Plumbing") {
+      setProjectName("Tankless Water Heater Installation");
+      setJobTitle("Gas Line Extension & Heater Flush");
+      setJobDescription("- Mount tankless heater to exterior wall\n- Connect gas lines and test for leaks\n- Install expansion valves and flush water lines\n- Upload before/after plumbing photos");
+      saveSandboxProgress({
+        projectName: "Tankless Water Heater Installation",
+        jobTitle: "Gas Line Extension & Heater Flush",
+        jobDescription: "- Mount tankless heater to exterior wall\n- Connect gas lines and test for leaks\n- Install expansion valves and flush water lines\n- Upload before/after plumbing photos"
+      });
+    } else if (val === "Cleaning") {
+      setProjectName("Commercial Cleaning & Disinfection");
+      setJobTitle("Deep Office Sanitation Sweep");
+      setJobDescription("- Spray high-touch areas with medical sanitizer\n- HEPA vacuum carpets and mop tile rows\n- Clean ventilation covers and window seals\n- Upload post-cleaning photos for reports");
+      saveSandboxProgress({
+        projectName: "Commercial Cleaning & Disinfection",
+        jobTitle: "Deep Office Sanitation Sweep",
+        jobDescription: "- Spray high-touch areas with medical sanitizer\n- HEPA vacuum carpets and mop tile rows\n- Clean ventilation covers and window seals\n- Upload post-cleaning photos for reports"
+      });
+    } else if (val === "Security" || val === "Pest Control") {
+      setProjectName("General Inspection & Service Setup");
+      setJobTitle("Initial Site Sweep & Assessment");
+      setJobDescription("- Perform walkaround check\n- Log safety markers\n- Upload check-off photo");
+      saveSandboxProgress({
+        projectName: "General Inspection & Service Setup",
+        jobTitle: "Initial Site Sweep & Assessment",
+        jobDescription: "- Perform walkaround check\n- Log safety markers\n- Upload check-off photo"
+      });
+    } else {
+      setProjectName("");
+      setJobTitle("");
+      setJobDescription("");
+      saveSandboxProgress({
+        projectName: "",
+        jobTitle: "",
+        jobDescription: ""
+      });
+    }
+  };
 
   // Wizard mode determination
   // Mode 1: "public-sandbox" (unauthenticated)
@@ -207,7 +286,6 @@ export default function ProjectSetupWizard() {
   // Step 6: Deploy Setup (Signup Form in Mode 1, Confirm action in Mode 2 & 3)
   // Step 7: Handover Details & QR Code
   const [step, setStep] = useState(1);
-  const [apiKey, setApiKey] = useState<string>("AIzaSyC9uIJFFtEeqXJDCQdz-m346o3B7X7cZNw");
   const [saving, setSaving] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCreds, setCopiedCreds] = useState(false);
@@ -249,6 +327,24 @@ export default function ProjectSetupWizard() {
   const [jobStart, setJobStart] = useState("");
   const [jobEnd, setJobEnd] = useState("");
 
+  // New onboarding metadata fields
+  const [companyAddress, setCompanyAddress] = useState("");
+  const [companyWebsite, setCompanyWebsite] = useState("");
+  const [companyStaffCount, setCompanyStaffCount] = useState("");
+  const [companyAnnualRevenue, setCompanyAnnualRevenue] = useState("");
+  const [adminFirstName, setAdminFirstName] = useState("");
+  const [adminLastName, setAdminLastName] = useState("");
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPhone, setAdminPhone] = useState("");
+  const [adminPhoneDialCode, setAdminPhoneDialCode] = useState("+1");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [crewEmail, setCrewEmail] = useState("");
+  const [crewPhone, setCrewPhone] = useState("");
+  const [crewPhoneDialCode, setCrewPhoneDialCode] = useState("+1");
+  const [introStep, setIntroStep] = useState(1); // 1 to 5 for clay-style card introduction
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
+  const [showCrewPassword, setShowCrewPassword] = useState(false);
+
   // Signup fields (for Mode 1 Step 6)
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
@@ -258,33 +354,67 @@ export default function ProjectSetupWizard() {
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [phoneDialCode, setPhoneDialCode] = useState("+1");
   const [phoneOpen, setPhoneOpen] = useState(false);
+  const [crewPhoneOpen, setCrewPhoneOpen] = useState(false);
+  const [adminPhoneOpen, setAdminPhoneOpen] = useState(false);
 
   // Address Autocomplete references and instances
   const placesLibrary = useMapsLibrary("places");
   const addressInputRef = useRef<HTMLInputElement>(null);
   const [addressAutocomplete, setAddressAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
 
+  const companyAddressInputRef = useRef<HTMLInputElement>(null);
+  const [companyAddressAutocomplete, setCompanyAddressAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
+
   const mapSearchInputRef = useRef<HTMLInputElement>(null);
   const [mapSearchAutocomplete, setMapSearchAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
 
-  // Load Maps API Key on startup
+
+
+  // Synchronize state with DOM input values for Google Autocomplete compatibility
   useEffect(() => {
-    (async () => {
-      try {
-        const { data } = await supabase.functions.invoke("get-maps-key");
-        if (data?.key) setApiKey(data.key);
-      } catch (e) {
-        console.warn("Could not retrieve dynamic maps key. Falling back to default.");
+    if (companyAddressInputRef.current && companyAddressInputRef.current.value !== companyAddress) {
+      companyAddressInputRef.current.value = companyAddress;
+    }
+  }, [companyAddress]);
+
+  useEffect(() => {
+    if (addressInputRef.current && addressInputRef.current.value !== customerBillingAddress) {
+      addressInputRef.current.value = customerBillingAddress;
+    }
+  }, [customerBillingAddress]);
+
+  // Address autocomplete for Company Headquarters Address (Intro Card Step 2)
+  useEffect(() => {
+    if (!placesLibrary || !companyAddressInputRef.current) return;
+
+    const ac = new placesLibrary.Autocomplete(companyAddressInputRef.current, {
+      fields: ["address_components", "formatted_address", "name"],
+    });
+    setCompanyAddressAutocomplete(ac);
+  }, [placesLibrary, introStep]);
+
+  useEffect(() => {
+    if (!companyAddressAutocomplete) return;
+
+    const listener = companyAddressAutocomplete.addListener("place_changed", () => {
+      const place = companyAddressAutocomplete.getPlace();
+      if (place.formatted_address) {
+        setCompanyAddress(place.formatted_address);
+        saveSandboxProgress({ companyAddress: place.formatted_address });
       }
-    })();
-  }, []);
+    });
+
+    return () => {
+      listener.remove();
+    };
+  }, [companyAddressAutocomplete]);
 
   // Address autocomplete for Billing Address (Step 2)
   useEffect(() => {
     if (!placesLibrary || !addressInputRef.current) return;
 
     const ac = new placesLibrary.Autocomplete(addressInputRef.current, {
-      fields: ["formatted_address"],
+      fields: ["address_components", "formatted_address", "name"],
     });
     setAddressAutocomplete(ac);
   }, [placesLibrary, step]);
@@ -350,8 +480,22 @@ export default function ProjectSetupWizard() {
         const stored = localStorage.getItem(SANDBOX_STORAGE_KEY);
         if (stored) {
           const parsed = JSON.parse(stored);
-          setCompanyName(parsed.companyName || "");
+           setCompanyName(parsed.companyName || "");
           setCompanyPrefix(parsed.companyPrefix || "");
+          setCompanyAddress(parsed.companyAddress || "");
+          setCompanyWebsite(parsed.companyWebsite || "");
+          setCompanyStaffCount(parsed.companyStaffCount || "");
+          setCompanyAnnualRevenue(parsed.companyAnnualRevenue || "");
+          setAdminFirstName(parsed.adminFirstName || "");
+          setAdminLastName(parsed.adminLastName || "");
+          setAdminEmail(parsed.adminEmail || "");
+          setAdminPhone(parsed.adminPhone || "");
+          setAdminPhoneDialCode(parsed.adminPhoneDialCode || "+1");
+          setAdminPassword(parsed.adminPassword || "");
+          setCrewEmail(parsed.crewEmail || "");
+          setCrewPhone(parsed.crewPhone || "");
+          setCrewPhoneDialCode(parsed.crewPhoneDialCode || "+1");
+          setIntroStep(parsed.introStep || 1);
           setCustomerName(parsed.customerName || "");
           setCustomerEmail(parsed.customerEmail || "");
           setCustomerPhone(parsed.customerPhone || "");
@@ -552,6 +696,10 @@ export default function ProjectSetupWizard() {
             auth_user_id: userId,
             currency: currencyCode,
             industry: companyVertical,
+            address: companyAddress.trim() || null,
+            website: companyWebsite.trim() || null,
+            staff_count: companyStaffCount.trim() || null,
+            annual_revenue: companyAnnualRevenue.trim() || null,
           })
           .select()
           .single();
@@ -680,6 +828,8 @@ export default function ProjectSetupWizard() {
             company_id: activeCompanyId,
             isActive: true,
             global_role: "Field Crew",
+            email: crewEmail.trim() || null,
+            phone: crewPhone.trim() ? (crewPhoneDialCode + " " + crewPhone.trim()) : null,
           },
         });
 
@@ -861,7 +1011,6 @@ export default function ProjectSetupWizard() {
 
   // Step definitions list for the sidebar index indicator
   const stepsList = [
-    { num: 1, label: "Your Company", desc: "Name your business and abbreviation" },
     { num: 2, label: "First Client & Project", desc: "Who and what are we setting up today?" },
     { num: 3, label: "Worksite Boundary", desc: "Draw your first circular geofence zone" },
     { num: 4, label: "Crew Member Account", desc: "Create mobile credentials for your crew" },
@@ -869,8 +1018,8 @@ export default function ProjectSetupWizard() {
     { num: 6, label: "Deploy Everything!", desc: "Review and publish your custom workspace" },
   ];
 
-  // Adjust steps listing for Mode 3 (skips step 1)
-  const activeStepsList = wizardMode === "new-project" ? stepsList.slice(1) : stepsList;
+  // Adjust steps listing for all modes
+  const activeStepsList = stepsList;
 
   if (loading || !apiKey) {
     return (
@@ -880,8 +1029,627 @@ export default function ProjectSetupWizard() {
     );
   }
 
+  if (wizardMode === "public-sandbox" && introStep <= 5 && !user) {
+    return (
+      <>
+        <SEO
+          title="Onboarding — OnSite Crew Manager"
+          description="Clay-style enterprise onboarding wizard."
+          path="/wizard"
+          noIndex
+        />
+        <div className="min-h-screen bg-[#0a0f1d] flex flex-col items-center justify-center p-4 sm:p-6 md:p-12 relative overflow-hidden font-sans select-none">
+          {/* Subtle decorative glow blur spheres */}
+          <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-blue-600/10 rounded-full blur-[100px] pointer-events-none" />
+          <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[400px] h-[400px] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none" />
+
+          {/* Clean minimal top logo/nav */}
+          <div className="w-full max-w-xl flex items-center justify-between mb-8 z-10">
+            <div className="flex items-center gap-3">
+              <img src="/favicon.png" alt="Ocrem Logo" className="h-8 w-8 rounded-lg" />
+              <span className="text-base font-extrabold text-white tracking-tight">OnSite Crew Manager</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-1.5 w-24 bg-[#14223c] rounded-full border border-[#233558]/30 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-300 shadow-[0_0_8px_rgba(59,130,246,0.6)]"
+                  style={{ width: `${(introStep / 5) * 100}%` }}
+                />
+              </div>
+              <span className="text-[10px] font-mono font-bold text-slate-400">{introStep} of 5</span>
+            </div>
+          </div>
+
+          {/* Main Card Container */}
+          <Card className="w-full max-w-xl bg-[#14223c]/40 border-[#233558]/60 shadow-2xl relative overflow-hidden backdrop-blur-md text-slate-100 z-10 p-6 md:p-8 rounded-2xl">
+            <div className="space-y-6">
+              
+              {/* Card 1: Company Name */}
+              {introStep === 1 && (
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Get Started</span>
+                    <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight">What is your company's name?</h2>
+                    <p className="text-slate-400 text-xs leading-relaxed">
+                      We'll set up your personalized enterprise workspace under this name.
+                    </p>
+                  </div>
+                  <div className="space-y-2.5">
+                    <Label htmlFor="intro-company-name" className="text-xs font-semibold text-slate-300 uppercase">Company Name</Label>
+                    <Input
+                      id="intro-company-name"
+                      placeholder="e.g. Paramount Constructors"
+                      value={companyName}
+                      onChange={(e) => {
+                        setCompanyName(e.target.value);
+                        saveSandboxProgress({ companyName: e.target.value });
+                        // Auto-generate prefix
+                        const prefix = computePrefix(e.target.value);
+                        setCompanyPrefix(prefix);
+                        saveSandboxProgress({ companyPrefix: prefix });
+                      }}
+                      className="bg-[#0c121f] border-[#233558] text-slate-100 text-base h-12 focus:ring-blue-500 focus:border-blue-500 px-4 rounded-lg"
+                    />
+                  </div>
+                  {companyName && (
+                    <div className="p-3 bg-blue-500/5 border border-blue-500/10 rounded-lg flex items-center justify-between text-xs">
+                      <span className="text-slate-400">Generated crew prefix code:</span>
+                      <span className="font-mono text-blue-400 font-bold bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">@{companyPrefix}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Card 2: Company Address */}
+              {introStep === 2 && (
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">HQ Location</span>
+                    <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight">Where is your company located?</h2>
+                    <p className="text-slate-400 text-xs leading-relaxed">
+                      This establishes your region for local mapping and geofence tracking.
+                    </p>
+                  </div>
+                  <div className="space-y-2.5">
+                    <Label htmlFor="intro-company-address" className="text-xs font-semibold text-slate-300 uppercase">Headquarters Address</Label>
+                    <Input
+                      id="intro-company-address"
+                      ref={companyAddressInputRef}
+                      placeholder="Search or enter address"
+                      value={companyAddress}
+                      onChange={(e) => {
+                        setCompanyAddress(e.target.value);
+                        saveSandboxProgress({ companyAddress: e.target.value });
+                      }}
+                      className="bg-[#0c121f] border-[#233558] text-slate-100 text-base h-12 focus:ring-blue-500 focus:border-blue-500 px-4 rounded-lg"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Card 3: Website, Staff Size, and Revenue */}
+              {introStep === 3 && (
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Metadata</span>
+                    <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight">Tell us about your operations</h2>
+                    <p className="text-slate-400 text-xs leading-relaxed">
+                      We'll configure your dashboard parameters based on your team structure.
+                    </p>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="intro-company-website" className="text-xs font-semibold text-slate-300 uppercase">Company Website</Label>
+                      <Input
+                        id="intro-company-website"
+                        placeholder="www.company.com"
+                        value={companyWebsite}
+                        onChange={(e) => {
+                          setCompanyWebsite(e.target.value);
+                          saveSandboxProgress({ companyWebsite: e.target.value });
+                        }}
+                        className="bg-[#0c121f] border-[#233558] text-slate-100 h-11 px-3 rounded-lg"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="intro-staff-count" className="text-xs font-semibold text-slate-300 uppercase">Team Size</Label>
+                        <select
+                          id="intro-staff-count"
+                          value={companyStaffCount}
+                          onChange={(e) => {
+                            setCompanyStaffCount(e.target.value);
+                            saveSandboxProgress({ companyStaffCount: e.target.value });
+                          }}
+                          className="w-full bg-[#0c121f] border border-[#233558] text-slate-100 h-11 rounded-lg px-2 text-xs focus:ring-blue-500 outline-none"
+                        >
+                          <option value="">Select size</option>
+                          <option value="1-5">1-5 members</option>
+                          <option value="6-15">6-15 members</option>
+                          <option value="16-50">16-50 members</option>
+                          <option value="51+">51+ members</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="intro-annual-revenue" className="text-xs font-semibold text-slate-300 uppercase font-mono">Annual Revenue</Label>
+                        <select
+                          id="intro-annual-revenue"
+                          value={companyAnnualRevenue}
+                          onChange={(e) => {
+                            setCompanyAnnualRevenue(e.target.value);
+                            saveSandboxProgress({ companyAnnualRevenue: e.target.value });
+                          }}
+                          className="w-full bg-[#0c121f] border border-[#233558] text-slate-100 h-11 rounded-lg px-2 text-xs focus:ring-blue-500 outline-none"
+                        >
+                          <option value="">Select range</option>
+                          <option value="Under $100K">Under $100K</option>
+                          <option value="$100K - $500K">$100K - $500K</option>
+                          <option value="$500K - $2M">$500K - $2M</option>
+                          <option value="$2M+">$2M+</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="space-y-2 relative">
+                      <Label className="text-xs font-semibold text-slate-300 uppercase">Default Currency</Label>
+                      <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={currencyOpen}
+                            className="w-full justify-between bg-[#0c121f] border-[#233558] text-slate-100 hover:bg-slate-900 hover:text-white h-11 px-3 py-2 text-xs rounded-lg"
+                          >
+                            {currencyCode ? (
+                              <span className="flex items-center gap-2">
+                                <span>{currenciesList.find(c => c.code === currencyCode)?.flag || "🌐"}</span>
+                                <span className="font-mono font-semibold">{currencyCode}</span>
+                                <span className="text-slate-400">({getCurrencySymbol(currencyCode)})</span>
+                                <span className="text-slate-500 text-xs truncate max-w-[200px] hidden sm:inline">
+                                  - {currenciesList.find(c => c.code === currencyCode)?.name}
+                                </span>
+                              </span>
+                            ) : (
+                              "Select currency..."
+                            )}
+                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 bg-[#14223c] border-[#233558] text-slate-100">
+                          <Command className="bg-transparent text-slate-100">
+                            <CommandInput placeholder="Search currency..." className="border-0 focus:ring-0 text-slate-100 bg-[#0c121f]" />
+                            <CommandEmpty className="py-2 text-center text-xs text-slate-400">No currency found.</CommandEmpty>
+                            <CommandGroup>
+                              <CommandList className="max-h-[220px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                                {currenciesList.map((c) => (
+                                  <CommandItem
+                                    key={c.code}
+                                    value={c.code + " " + c.name}
+                                    onSelect={() => {
+                                      setCurrencyCode(c.code);
+                                      setCurrencyOpen(false);
+                                      saveSandboxProgress({ currencyCode: c.code });
+                                    }}
+                                    className="hover:bg-[#1f355c] cursor-pointer py-2 px-3 text-xs flex justify-between items-center"
+                                  >
+                                    <span className="flex items-center gap-2">
+                                      <span>{c.flag}</span>
+                                      <span className="font-mono font-bold">{c.code}</span>
+                                      <span className="text-slate-400">({c.symbol})</span>
+                                      <span className="text-slate-500 font-sans truncate max-w-[150px]">- {c.name}</span>
+                                    </span>
+                                    {currencyCode === c.code && (
+                                      <CheckCircle className="h-4 w-4 text-emerald-500" />
+                                    )}
+                                  </CommandItem>
+                                ))}
+                              </CommandList>
+                            </CommandGroup>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Card 4: Niche Industry Vertical */}
+              {introStep === 4 && (
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Industry Vertical</span>
+                    <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight">Select your operational niche</h2>
+                    <p className="text-slate-400 text-xs leading-relaxed">
+                      We calibrate vertical presets and workflows matching your business field.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2.5 max-h-[220px] overflow-y-auto pr-1">
+                    {[
+                      { val: "HVAC", label: "HVAC Services" },
+                      { val: "Plumbing", label: "Plumbing & Piping" },
+                      { val: "Landscaping", label: "Landscaping & Lawn" },
+                      { val: "Electrical", label: "Electrical Systems" },
+                      { val: "Cleaning", label: "Commercial Cleaning" },
+                      { val: "General Construction", label: "General Contractor" },
+                      { val: "Pest Control", label: "Pest Extermination" },
+                    ].map((v) => {
+                      const isSelected = companyVertical === v.val;
+                      return (
+                        <button
+                          key={v.val}
+                          type="button"
+                          onClick={() => {
+                            applyVerticalPresets(v.val);
+                          }}
+                          className={cn(
+                            "p-3 rounded-lg border text-left text-xs font-semibold transition-all flex items-center justify-between",
+                            isSelected
+                              ? "bg-blue-600/10 border-blue-500 text-white shadow-md shadow-blue-500/15"
+                              : "bg-[#0c121f] border-[#233558]/60 text-slate-300 hover:border-slate-500"
+                          )}
+                        >
+                          <span>{v.label}</span>
+                          {isSelected && <CheckCircle className="h-4 w-4 text-blue-400" />}
+                        </button>
+                      );
+                    })}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        applyVerticalPresets("Other");
+                      }}
+                      className={cn(
+                        "p-3 rounded-lg border text-left text-xs font-semibold transition-all flex items-center justify-between col-span-2",
+                        companyVertical !== "HVAC" &&
+                          companyVertical !== "Plumbing" &&
+                          companyVertical !== "Landscaping" &&
+                          companyVertical !== "Electrical" &&
+                          companyVertical !== "Cleaning" &&
+                          companyVertical !== "General Construction" &&
+                          companyVertical !== "Pest Control"
+                          ? "bg-blue-600/10 border-blue-500 text-white shadow-md shadow-blue-500/15"
+                          : "bg-[#0c121f] border-[#233558]/60 text-slate-300 hover:border-slate-500"
+                      )}
+                    >
+                      <span>Custom / Other Vertical</span>
+                      {companyVertical !== "HVAC" &&
+                        companyVertical !== "Plumbing" &&
+                        companyVertical !== "Landscaping" &&
+                        companyVertical !== "Electrical" &&
+                        companyVertical !== "Cleaning" &&
+                        companyVertical !== "General Construction" &&
+                        companyVertical !== "Pest Control" && (
+                          <CheckCircle className="h-4 w-4 text-blue-400" />
+                        )}
+                    </button>
+                  </div>
+                  {companyVertical !== "HVAC" &&
+                    companyVertical !== "Plumbing" &&
+                    companyVertical !== "Landscaping" &&
+                    companyVertical !== "Electrical" &&
+                    companyVertical !== "Cleaning" &&
+                    companyVertical !== "General Construction" &&
+                    companyVertical !== "Pest Control" && (
+                      <div className="space-y-2">
+                        <Label htmlFor="custom-vertical-name" className="text-xs font-semibold text-slate-300 uppercase">Specify Industry</Label>
+                        <Input
+                          id="custom-vertical-name"
+                          placeholder="e.g. Roof Repair, Solar Install"
+                          value={companyVertical === "Other" ? "" : companyVertical}
+                          onChange={(e) => {
+                            setCompanyVertical(e.target.value || "Other");
+                            saveSandboxProgress({ companyVertical: e.target.value || "Other" });
+                          }}
+                          className="bg-[#0c121f] border-[#233558] text-slate-100 h-10 px-3 rounded-lg"
+                        />
+                      </div>
+                    )}
+                </div>
+              )}
+
+              {/* Card 5: Admin Credentials Signup */}
+              {introStep === 5 && (
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Final Step</span>
+                    <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight">Create your administrator account</h2>
+                    <p className="text-slate-400 text-xs leading-relaxed">
+                      You will use these credentials to log in to your desktop control board.
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="admin-first-name" className="text-[10px] font-semibold text-slate-400 uppercase">First Name</Label>
+                        <Input
+                          id="admin-first-name"
+                          placeholder="John"
+                          value={adminFirstName}
+                          onChange={(e) => {
+                            setAdminFirstName(e.target.value);
+                            saveSandboxProgress({ adminFirstName: e.target.value });
+                          }}
+                          className="bg-[#0c121f] border-[#233558] text-slate-100 h-10"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="admin-last-name" className="text-[10px] font-semibold text-slate-400 uppercase">Last Name</Label>
+                        <Input
+                          id="admin-last-name"
+                          placeholder="Doe"
+                          value={adminLastName}
+                          onChange={(e) => {
+                            setAdminLastName(e.target.value);
+                            saveSandboxProgress({ adminLastName: e.target.value });
+                          }}
+                          className="bg-[#0c121f] border-[#233558] text-slate-100 h-10"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="admin-email" className="text-[10px] font-semibold text-slate-400 uppercase">Email Address</Label>
+                      <Input
+                        id="admin-email"
+                        type="email"
+                        placeholder="admin@company.com"
+                        value={adminEmail}
+                        onChange={(e) => {
+                          setAdminEmail(e.target.value);
+                          saveSandboxProgress({ adminEmail: e.target.value });
+                          setSignupEmail(e.target.value);
+                        }}
+                        className="bg-[#0c121f] border-[#233558] text-slate-100 h-10"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="admin-phone" className="text-[10px] font-semibold text-slate-400 uppercase">Phone Number</Label>
+                        <div className="flex gap-2">
+                          <div className="flex items-center bg-[#0c121f] border border-[#233558] rounded-md pl-1.5 pr-0.5 w-[82px] shrink-0 focus-within:ring-2 focus-within:ring-blue-500 h-10">
+                            <span className="mr-0.5 select-none text-base">{getFlagFromDialCode(adminPhoneDialCode)}</span>
+                            <Input
+                              type="text"
+                              placeholder="+1"
+                              value={adminPhoneDialCode}
+                              onChange={(e) => {
+                                let val = e.target.value;
+                                if (val.length > 0 && !val.startsWith("+")) {
+                                  val = "+" + val.replace(/[^0-9]/g, "");
+                                } else {
+                                  val = "+" + val.slice(1).replace(/[^0-9]/g, "");
+                                }
+                                setAdminPhoneDialCode(val);
+                                saveSandboxProgress({ adminPhoneDialCode: val });
+                              }}
+                              className="border-0 bg-transparent p-0 text-slate-100 placeholder-slate-500 focus-visible:ring-0 focus-visible:ring-offset-0 w-[30px] text-xs h-7"
+                            />
+                            <Popover open={adminPhoneOpen} onOpenChange={setAdminPhoneOpen}>
+                              <PopoverTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-5 w-5 text-slate-400 hover:text-white p-0 shrink-0">
+                                  <ChevronDown className="h-3 w-3" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-[280px] p-0 bg-[#14223c] border-[#233558] text-slate-100">
+                                <Command className="bg-transparent text-slate-100">
+                                  <CommandInput placeholder="Search country or code..." className="border-0 focus:ring-0 text-slate-100 bg-[#0c121f]" />
+                                  <CommandEmpty className="py-2 text-center text-xs text-slate-400">No country found.</CommandEmpty>
+                                  <CommandGroup>
+                                    <CommandList className="max-h-[220px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                                      {countriesList.map((c) => (
+                                        <CommandItem
+                                          key={c.code}
+                                          value={c.name + " " + c.dial_code}
+                                          onSelect={() => {
+                                            setAdminPhoneDialCode(c.dial_code);
+                                            setAdminPhoneOpen(false);
+                                            saveSandboxProgress({ adminPhoneDialCode: c.dial_code });
+                                          }}
+                                          className="hover:bg-[#1f355c] cursor-pointer py-2 px-3 text-xs flex justify-between items-center"
+                                        >
+                                          <span className="flex items-center gap-2">
+                                            <span>{c.flag}</span>
+                                            <span className="text-slate-300 font-sans truncate max-w-[120px]">{c.name}</span>
+                                          </span>
+                                          <span className="font-mono text-slate-400 font-semibold">{c.dial_code}</span>
+                                        </CommandItem>
+                                      ))}
+                                    </CommandList>
+                                  </CommandGroup>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                          <Input
+                            id="admin-phone"
+                            placeholder="(555) 000-0000"
+                            value={adminPhone}
+                            onChange={(e) => {
+                              setAdminPhone(e.target.value);
+                              saveSandboxProgress({ adminPhone: e.target.value });
+                            }}
+                            className="bg-[#0c121f] border-[#233558] text-slate-100 h-10 flex-1"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="admin-pass" className="text-[10px] font-semibold text-slate-400 uppercase font-mono">Password</Label>
+                        <div className="relative">
+                          <Input
+                            id="admin-pass"
+                            type={showAdminPassword ? "text" : "password"}
+                            placeholder="At least 6 characters"
+                            value={adminPassword}
+                            onChange={(e) => {
+                              setAdminPassword(e.target.value);
+                              saveSandboxProgress({ adminPassword: e.target.value });
+                              setSignupPassword(e.target.value);
+                            }}
+                            className="bg-[#0c121f] border-[#233558] text-slate-100 h-10 pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowAdminPassword(!showAdminPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none"
+                            tabIndex={-1}
+                          >
+                            {showAdminPassword ? (
+                              <EyeOff className="h-4 w-4 shrink-0" />
+                            ) : (
+                              <Eye className="h-4 w-4 shrink-0" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Card Footer Controls */}
+              <div className="border-t border-[#233558]/40 pt-5 mt-4 flex items-center justify-between">
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    if (introStep > 1) {
+                      const nextStep = introStep - 1;
+                      setIntroStep(nextStep);
+                      saveSandboxProgress({ introStep: nextStep });
+                    }
+                  }}
+                  disabled={introStep === 1}
+                  className="text-xs font-bold text-slate-400 hover:text-white"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5 mr-1.5" /> Back
+                </Button>
+
+                {introStep < 5 ? (
+                  <Button
+                    onClick={() => {
+                      if (introStep === 1 && !companyName.trim()) {
+                        toast.error("Company Name is required");
+                        return;
+                      }
+                      if (introStep === 2 && !companyAddress.trim()) {
+                        toast.error("HQ Address is required");
+                        return;
+                      }
+                      if (introStep === 3) {
+                        if (!companyWebsite.trim()) {
+                          toast.error("Company Website is required");
+                          return;
+                        }
+                        if (!companyStaffCount) {
+                          toast.error("Team Size is required");
+                          return;
+                        }
+                        if (!companyAnnualRevenue) {
+                          toast.error("Annual Revenue range is required");
+                          return;
+                        }
+                      }
+                      if (introStep === 4 && !companyVertical.trim()) {
+                        toast.error("Industry Vertical is required");
+                        return;
+                      }
+
+                      const nextStep = introStep + 1;
+                      setIntroStep(nextStep);
+                      saveSandboxProgress({ introStep: nextStep });
+                    }}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold px-5 h-10 rounded-lg shadow-lg flex items-center gap-1"
+                  >
+                    Continue <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={async (e) => {
+                      if (!adminFirstName.trim() || !adminLastName.trim()) {
+                        toast.error("Admin name fields are required");
+                        return;
+                      }
+                      if (!adminEmail.trim()) {
+                        toast.error("Admin Email is required");
+                        return;
+                      }
+                      if (adminPassword.length < 6) {
+                        toast.error("Password must be at least 6 characters");
+                        return;
+                      }
+
+                      setSaving(true);
+                      try {
+                        // 1. Sign up the user account
+                        const { data: authData, error: authErr } = await supabase.auth.signUp({
+                          email: adminEmail.trim(),
+                          password: adminPassword,
+                          options: {
+                            data: {
+                              first_name: adminFirstName.trim(),
+                              last_name: adminLastName.trim(),
+                            }
+                          }
+                        });
+
+                        if (authErr) {
+                          if (authErr.message?.includes("already registered")) {
+                            throw new Error("This email is already registered. Please log in.");
+                          }
+                          throw authErr;
+                        }
+
+                        const createdUser = authData?.user;
+                        if (!createdUser) {
+                          throw new Error("Failed to register account credentials.");
+                        }
+
+                        // 2. Create the company entry in the DB immediately!
+                        const { data: comp, error: compErr } = await supabase
+                          .from("companies")
+                          .insert({
+                            name: companyName.trim(),
+                            prefix: companyPrefix.toUpperCase(),
+                            auth_user_id: createdUser.id,
+                            currency: currencyCode,
+                            industry: companyVertical,
+                            address: companyAddress.trim() || null,
+                            website: companyWebsite.trim() || null,
+                            staff_count: companyStaffCount.trim() || null,
+                            annual_revenue: companyAnnualRevenue.trim() || null,
+                          })
+                          .select()
+                          .single();
+
+                        if (compErr) throw compErr;
+
+                        toast.success("Account created and company profile registered!");
+                        
+                        // Transition to the second wizard: Customer & Project (Step 2)
+                        setStep(2);
+                        const nextStep = 6;
+                        setIntroStep(nextStep);
+                        saveSandboxProgress({ introStep: nextStep, step: 2 });
+                      } catch (err: any) {
+                        toast.error(err.message || "Sign up failed. Please check inputs and retry.");
+                      } finally {
+                        setSaving(false);
+                      }
+                    }}
+                    disabled={saving}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-extrabold px-6 h-10 rounded-lg shadow-lg"
+                  >
+                    {saving ? "Registering..." : "Create Account & Start Setup"}
+                  </Button>
+                )}
+              </div>
+
+            </div>
+          </Card>
+        </div>
+      </>
+    );
+  }
+
   return (
-    <APIProvider apiKey={apiKey} libraries={["places"]}>
+    <>
       <SEO
         title={wizardMode === "new-project" ? "Guided Project Setup" : "Setup Wizard Onboarding"}
         description="Frictionless guided setup flow to provision clients, geofences, crew credentials, and work orders."
@@ -1024,206 +1792,6 @@ export default function ProjectSetupWizard() {
                 </CardHeader>
 
                 <CardContent className="pt-6 space-y-6">
-                  {/* STEP 1: Company Profile Form */}
-                  {step === 1 && (
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="company-name" className="text-sm font-semibold text-slate-300">Company Name</Label>
-                        <Input
-                          id="company-name"
-                          placeholder="e.g. Paramount Constructors"
-                          value={companyName}
-                          onChange={(e) => {
-                            setCompanyName(e.target.value);
-                            saveSandboxProgress({ companyName: e.target.value });
-                          }}
-                          className="bg-[#0c121f] border-[#233558] text-slate-100 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="company-prefix" className="text-sm font-semibold text-slate-300">Staff Username Prefix (5 Letters Only)</Label>
-                        <Input
-                          id="company-prefix"
-                          placeholder="e.g. PARCO"
-                          maxLength={5}
-                          value={companyPrefix}
-                          onChange={(e) => {
-                            const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 5);
-                            setCompanyPrefix(val);
-                            saveSandboxProgress({ companyPrefix: val });
-                          }}
-                          className="font-mono text-lg tracking-widest uppercase bg-[#0c121f] border-[#233558] text-slate-100"
-                        />
-                        {companyPrefix.length > 0 && (
-                          <p className="text-xs text-slate-400">
-                            Field crew accounts will look like:{" "}
-                            <span className="font-mono text-blue-400 font-medium">
-                              @{companyPrefix.toLowerCase()}_johndoe
-                            </span>
-                          </p>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="company-vertical" className="text-sm font-semibold text-slate-300">Operational Industry (Vertical)</Label>
-                        <Select
-                          value={companyVertical}
-                          onValueChange={(val) => {
-                            setCompanyVertical(val);
-                            saveSandboxProgress({ companyVertical: val });
-                            
-                            // Auto-fill project and job titles based on vertical to wow the user!
-                            if (val === "HVAC") {
-                              setProjectName("Furnace Installation & Smart Setup");
-                              setJobTitle("Heating System Testing & Air Sweep");
-                              setJobDescription("- Mount the furnace unit safely\n- Install smart Wi-Fi thermostat\n- Test duct pressure and record levels\n- Upload before/after photos of connections");
-                              saveSandboxProgress({
-                                projectName: "Furnace Installation & Smart Setup",
-                                jobTitle: "Heating System Testing & Air Sweep",
-                                jobDescription: "- Mount the furnace unit safely\n- Install smart Wi-Fi thermostat\n- Test duct pressure and record levels\n- Upload before/after photos of connections"
-                              });
-                            } else if (val === "Landscaping") {
-                              setProjectName("Irrigation & Turf Sod Installation");
-                              setJobTitle("Sprinkler Alignment & Turf Rolling");
-                              setJobDescription("- Map out sprinkler valve coordinates\n- Prep ground soil and roll grass turf\n- Verify flow pressure at main line valve\n- Upload photos of finished green lanes");
-                              saveSandboxProgress({
-                                projectName: "Irrigation & Turf Sod Installation",
-                                jobTitle: "Sprinkler Alignment & Turf Rolling",
-                                jobDescription: "- Map out sprinkler valve coordinates\n- Prep ground soil and roll grass turf\n- Verify flow pressure at main line valve\n- Upload photos of finished green lanes"
-                              });
-                            } else if (val === "Electrical") {
-                              setProjectName("EV Charging Station & Panel Upgrade");
-                              setJobTitle("Charger Panel Wiring & Load Balance");
-                              setJobDescription("- Install Level-2 EV charging station\n- Replace main breaker panels to 200A\n- Verify grounding resistance and label panels\n- Upload safety sign-off photo");
-                              saveSandboxProgress({
-                                projectName: "EV Charging Station & Panel Upgrade",
-                                jobTitle: "Charger Panel Wiring & Load Balance",
-                                jobDescription: "- Install Level-2 EV charging station\n- Replace main breaker panels to 200A\n- Verify grounding resistance and label panels\n- Upload safety sign-off photo"
-                              });
-                            } else if (val === "Plumbing") {
-                              setProjectName("Tankless Water Heater Installation");
-                              setJobTitle("Gas Line Extension & Heater Flush");
-                              setJobDescription("- Mount tankless heater to exterior wall\n- Connect gas lines and test for leaks\n- Install expansion valves and flush water lines\n- Upload before/after plumbing photos");
-                              saveSandboxProgress({
-                                projectName: "Tankless Water Heater Installation",
-                                jobTitle: "Gas Line Extension & Heater Flush",
-                                jobDescription: "- Mount tankless heater to exterior wall\n- Connect gas lines and test for leaks\n- Install expansion valves and flush water lines\n- Upload before/after plumbing photos"
-                              });
-                            } else if (val === "Cleaning") {
-                              setProjectName("Commercial Cleaning & Disinfection");
-                              setJobTitle("Deep Office Sanitation Sweep");
-                              setJobDescription("- Spray high-touch areas with medical sanitizer\n- HEPA vacuum carpets and mop tile rows\n- Clean ventilation covers and window seals\n- Upload post-cleaning photos for reports");
-                              saveSandboxProgress({
-                                projectName: "Commercial Cleaning & Disinfection",
-                                jobTitle: "Deep Office Sanitation Sweep",
-                                jobDescription: "- Spray high-touch areas with medical sanitizer\n- HEPA vacuum carpets and mop tile rows\n- Clean ventilation covers and window seals\n- Upload post-cleaning photos for reports"
-                              });
-                            } else if (val === "Security") {
-                              setProjectName("Commercial Security Patrol Site");
-                              setJobTitle("Nightly Guard Patrol Sweep");
-                              setJobDescription("- Check and secure all exterior entry doors\n- Scan barcode checkpoints at north and south gates\n- Log shift log details of any suspicious vehicles\n- Upload safety patrol log photos");
-                              saveSandboxProgress({
-                                projectName: "Commercial Security Patrol Site",
-                                jobTitle: "Nightly Guard Patrol Sweep",
-                                jobDescription: "- Check and secure all exterior entry doors\n- Scan barcode checkpoints at north and south gates\n- Log shift log details of any suspicious vehicles\n- Upload safety patrol log photos"
-                              });
-                            } else if (val === "Fleet") {
-                              setProjectName("Downtown Delivery Route & Stop Sequence");
-                              setJobTitle("Courier Route Run & Parcel Drop-off");
-                              setJobDescription("- Complete pre-trip vehicle safety checklist\n- Scan and load cargo parcels at main hub\n- Log delivery signature at recipient address\n- Upload parcel delivery confirmation photos");
-                              saveSandboxProgress({
-                                projectName: "Downtown Delivery Route & Stop Sequence",
-                                jobTitle: "Courier Route Run & Parcel Drop-off",
-                                jobDescription: "- Complete pre-trip vehicle safety checklist\n- Scan and load cargo parcels at main hub\n- Log delivery signature at recipient address\n- Upload parcel delivery confirmation photos"
-                              });
-                            } else {
-                              setProjectName("");
-                              setJobTitle("");
-                              setJobDescription("");
-                              saveSandboxProgress({
-                                projectName: "",
-                                jobTitle: "",
-                                jobDescription: ""
-                              });
-                            }
-                          }}
-                        >
-                          <SelectTrigger className="bg-[#0c121f] border-[#233558] text-slate-100">
-                            <SelectValue placeholder="Select business industry" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-[#14223c] border-[#233558] text-slate-100">
-                            <SelectItem value="General" className="focus:bg-blue-600 focus:text-white">General Construction / Services</SelectItem>
-                            <SelectItem value="HVAC" className="focus:bg-blue-600 focus:text-white">HVAC (Heating & Cooling)</SelectItem>
-                            <SelectItem value="Landscaping" className="focus:bg-blue-600 focus:text-white">Landscaping & Lawn Care</SelectItem>
-                            <SelectItem value="Electrical" className="focus:bg-blue-600 focus:text-white">Electrical Services</SelectItem>
-                            <SelectItem value="Plumbing" className="focus:bg-blue-600 focus:text-white">Plumbing Services</SelectItem>
-                            <SelectItem value="Cleaning" className="focus:bg-blue-600 focus:text-white">Commercial & Home Cleaning</SelectItem>
-                            <SelectItem value="Security" className="focus:bg-blue-600 focus:text-white">Security & Patrol Services</SelectItem>
-                            <SelectItem value="Fleet" className="focus:bg-blue-600 focus:text-white">Internal Fleet Logistics & Scheduled Dispatch</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2 relative">
-                        <Label className="text-sm font-semibold text-slate-300">Default Currency</Label>
-                        <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              aria-expanded={currencyOpen}
-                              className="w-full justify-between bg-[#0c121f] border-[#233558] text-slate-100 hover:bg-slate-900 hover:text-white h-10 px-3 py-2 text-sm rounded-md"
-                            >
-                              {currencyCode ? (
-                                <span className="flex items-center gap-2">
-                                  <span>{currenciesList.find(c => c.code === currencyCode)?.flag || "🌐"}</span>
-                                  <span className="font-mono font-semibold">{currencyCode}</span>
-                                  <span className="text-slate-400">({getCurrencySymbol(currencyCode)})</span>
-                                  <span className="text-slate-500 text-xs truncate max-w-[200px] hidden sm:inline">
-                                    - {currenciesList.find(c => c.code === currencyCode)?.name}
-                                  </span>
-                                </span>
-                              ) : (
-                                "Select currency..."
-                              )}
-                              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 bg-[#14223c] border-[#233558] text-slate-100">
-                            <Command className="bg-transparent text-slate-100">
-                              <CommandInput placeholder="Search currency..." className="border-0 focus:ring-0 text-slate-100 bg-[#0c121f]" />
-                              <CommandEmpty className="py-2 text-center text-xs text-slate-400">No currency found.</CommandEmpty>
-                              <CommandGroup>
-                                <CommandList className="max-h-[220px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                                  {currenciesList.map((c) => (
-                                    <CommandItem
-                                      key={c.code}
-                                      value={c.code + " " + c.name}
-                                      onSelect={() => {
-                                        setCurrencyCode(c.code);
-                                        setCurrencyOpen(false);
-                                        saveSandboxProgress({ currencyCode: c.code });
-                                      }}
-                                      className="hover:bg-[#1f355c] cursor-pointer py-2 px-3 text-xs flex justify-between items-center"
-                                    >
-                                      <span className="flex items-center gap-2">
-                                        <span>{c.flag}</span>
-                                        <span className="font-mono font-bold">{c.code}</span>
-                                        <span className="text-slate-400">({c.symbol})</span>
-                                        <span className="text-slate-500 font-sans truncate max-w-[150px]">- {c.name}</span>
-                                      </span>
-                                      {currencyCode === c.code && (
-                                        <CheckCircle className="h-4 w-4 text-emerald-500" />
-                                      )}
-                                    </CommandItem>
-                                  ))}
-                                </CommandList>
-                              </CommandGroup>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                    </div>
-                  )}
-
                   {/* STEP 2: Customer & Project Form */}
                   {step === 2 && (
                     <div className="space-y-6">
@@ -1261,8 +1829,8 @@ export default function ProjectSetupWizard() {
                           <div className="space-y-2">
                             <Label htmlFor="customer-phone" className="text-sm font-semibold text-slate-300">Client Phone (Optional)</Label>
                             <div className="flex gap-2">
-                              <div className="flex items-center bg-[#0c121f] border border-[#233558] rounded-md pl-2.5 pr-1.5 w-[115px] shrink-0 focus-within:ring-2 focus-within:ring-blue-500">
-                                <span className="mr-1 select-none text-base">{getFlagFromDialCode(phoneDialCode)}</span>
+                              <div className="flex items-center bg-[#0c121f] border border-[#233558] rounded-md pl-1.5 pr-0.5 w-[82px] shrink-0 focus-within:ring-2 focus-within:ring-blue-500">
+                                <span className="mr-0.5 select-none text-base">{getFlagFromDialCode(phoneDialCode)}</span>
                                 <Input
                                   type="text"
                                   placeholder="+1"
@@ -1277,12 +1845,12 @@ export default function ProjectSetupWizard() {
                                     setPhoneDialCode(val);
                                     saveSandboxProgress({ phoneDialCode: val });
                                   }}
-                                  className="bg-transparent border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-slate-100 font-mono text-sm w-full"
+                                  className="bg-transparent border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-slate-100 font-mono text-xs w-full"
                                 />
                                 <Popover open={phoneOpen} onOpenChange={setPhoneOpen}>
                                   <PopoverTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-white p-0 shrink-0">
-                                      <ChevronDown className="h-3.5 w-3.5" />
+                                    <Button variant="ghost" size="icon" className="h-5 w-5 text-slate-400 hover:text-white p-0 shrink-0">
+                                      <ChevronDown className="h-3 w-3" />
                                     </Button>
                                   </PopoverTrigger>
                                   <PopoverContent className="w-[280px] p-0 bg-[#14223c] border-[#233558] text-slate-100">
@@ -1633,19 +2201,118 @@ export default function ProjectSetupWizard() {
                               Field crew member will log in with username: <span className="font-mono text-white font-medium">{formattedStaffUsername}</span>
                             </p>
                           </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="crew-email" className="text-sm font-semibold text-slate-300">Email Address</Label>
+                              <Input
+                                id="crew-email"
+                                type="email"
+                                placeholder="crew@company.com"
+                                value={crewEmail}
+                                onChange={(e) => {
+                                  setCrewEmail(e.target.value);
+                                  saveSandboxProgress({ crewEmail: e.target.value });
+                                }}
+                                className="bg-[#0c121f] border-[#233558] text-slate-100"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="crew-phone" className="text-sm font-semibold text-slate-300">Phone Number</Label>
+                              <div className="flex gap-2">
+                                <div className="flex items-center bg-[#0c121f] border border-[#233558] rounded-md pl-1.5 pr-0.5 w-[82px] shrink-0 focus-within:ring-2 focus-within:ring-blue-500">
+                                  <span className="mr-0.5 select-none text-base">{getFlagFromDialCode(crewPhoneDialCode)}</span>
+                                  <Input
+                                    type="text"
+                                    placeholder="+1"
+                                    value={crewPhoneDialCode}
+                                    onChange={(e) => {
+                                      let val = e.target.value;
+                                      if (val.length > 0 && !val.startsWith("+")) {
+                                        val = "+" + val.replace(/[^0-9]/g, "");
+                                      } else {
+                                        val = "+" + val.slice(1).replace(/[^0-9]/g, "");
+                                      }
+                                      setCrewPhoneDialCode(val);
+                                      saveSandboxProgress({ crewPhoneDialCode: val });
+                                    }}
+                                    className="border-0 bg-transparent p-0 text-slate-100 placeholder-slate-500 focus-visible:ring-0 focus-visible:ring-offset-0 w-[30px] text-xs h-8"
+                                  />
+                                  <Popover open={crewPhoneOpen} onOpenChange={setCrewPhoneOpen}>
+                                    <PopoverTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-5 w-5 text-slate-400 hover:text-white p-0 shrink-0">
+                                        <ChevronDown className="h-3 w-3" />
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[280px] p-0 bg-[#14223c] border-[#233558] text-slate-100">
+                                      <Command className="bg-transparent text-slate-100">
+                                        <CommandInput placeholder="Search country or code..." className="border-0 focus:ring-0 text-slate-100 bg-[#0c121f]" />
+                                        <CommandEmpty className="py-2 text-center text-xs text-slate-400">No country found.</CommandEmpty>
+                                        <CommandGroup>
+                                          <CommandList className="max-h-[220px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                                            {countriesList.map((c) => (
+                                              <CommandItem
+                                                key={c.code}
+                                                value={c.name + " " + c.dial_code}
+                                                onSelect={() => {
+                                                  setCrewPhoneDialCode(c.dial_code);
+                                                  setCrewPhoneOpen(false);
+                                                  saveSandboxProgress({ crewPhoneDialCode: c.dial_code });
+                                                }}
+                                                className="hover:bg-[#1f355c] cursor-pointer py-2 px-3 text-xs flex justify-between items-center"
+                                              >
+                                                <span className="flex items-center gap-2">
+                                                  <span>{c.flag}</span>
+                                                  <span className="text-slate-300 font-sans truncate max-w-[120px]">{c.name}</span>
+                                                </span>
+                                                <span className="font-mono text-slate-400 font-semibold">{c.dial_code}</span>
+                                              </CommandItem>
+                                            ))}
+                                          </CommandList>
+                                        </CommandGroup>
+                                      </Command>
+                                    </PopoverContent>
+                                  </Popover>
+                                </div>
+                                <Input
+                                  id="crew-phone"
+                                  placeholder="(555) 000-0000"
+                                  value={crewPhone}
+                                  onChange={(e) => {
+                                    setCrewPhone(e.target.value);
+                                    saveSandboxProgress({ crewPhone: e.target.value });
+                                  }}
+                                  className="bg-[#0c121f] border-[#233558] text-slate-100 flex-1"
+                                />
+                              </div>
+                            </div>
+                          </div>
                           <div className="space-y-2">
                             <Label htmlFor="staff-pass" className="text-sm font-semibold text-slate-300">Password</Label>
-                            <Input
-                              id="staff-pass"
-                              type="text"
-                              placeholder="At least 6 characters"
-                              value={staffPassword}
-                              onChange={(e) => {
-                                setStaffPassword(e.target.value);
-                                saveSandboxProgress({ staffPassword: e.target.value });
-                              }}
-                              className="bg-[#0c121f] border-[#233558] text-slate-100 font-mono"
-                            />
+                            <div className="relative">
+                              <Input
+                                id="staff-pass"
+                                type={showCrewPassword ? "text" : "password"}
+                                placeholder="At least 6 characters"
+                                value={staffPassword}
+                                onChange={(e) => {
+                                  setStaffPassword(e.target.value);
+                                  saveSandboxProgress({ staffPassword: e.target.value });
+                                }}
+                                className="bg-[#0c121f] border-[#233558] text-slate-100 font-mono pr-10"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowCrewPassword(!showCrewPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none"
+                                tabIndex={-1}
+                              >
+                                {showCrewPassword ? (
+                                  <EyeOff className="h-4 w-4 shrink-0" />
+                                ) : (
+                                  <Eye className="h-4 w-4 shrink-0" />
+                                )}
+                              </button>
+                            </div>
                           </div>
                         </>
                       ) : (
@@ -1883,7 +2550,7 @@ export default function ProjectSetupWizard() {
                     <Button
                       variant="ghost"
                       onClick={handleBack}
-                      disabled={step === 1 || (wizardMode === "new-project" && step === 2)}
+                      disabled={step === 2}
                       className="gap-1.5 text-slate-400 hover:text-white"
                     >
                       <ArrowLeft className="h-4 w-4" /> Back
@@ -2125,6 +2792,40 @@ export default function ProjectSetupWizard() {
           </div>
         </div>
       </div>
+    </>
+  );
+}
+
+export default function ProjectSetupWizard() {
+  const [apiKey, setApiKey] = useState<string>("AIzaSyC9uIJFFtEeqXJDCQdz-m346o3B7X7cZNw");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await supabase.functions.invoke("get-maps-key");
+        if (data?.key) {
+          setApiKey(data.key);
+        }
+      } catch (e) {
+        console.warn("Could not retrieve dynamic maps key. Falling back to default.");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0c121f]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <APIProvider apiKey={apiKey} libraries={["places"]}>
+      <ProjectSetupWizardContent apiKey={apiKey} />
     </APIProvider>
   );
 }

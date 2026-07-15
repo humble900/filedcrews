@@ -33,6 +33,7 @@ export type Feature =
   | 'memberships'
   | 'timesheets'
   | 'compliance'
+  | 'settings'
   | 'inventory';
 
 /**
@@ -57,6 +58,7 @@ const PERMISSION_MATRIX: Record<Feature, Record<GlobalRole, boolean | 'read'>> =
   'memberships':    { Owner: true,  Admin: true,  Finance: true,   Dispatcher: false, 'Field Crew': false },
   'timesheets':     { Owner: true,  Admin: true,  Finance: true,   Dispatcher: true,  'Field Crew': true },
   'compliance':     { Owner: true,  Admin: true,  Finance: false,  Dispatcher: true,  'Field Crew': false },
+  'settings':       { Owner: true,  Admin: true,  Finance: true,   Dispatcher: true,  'Field Crew': false },
   'inventory':      { Owner: true,  Admin: true,  Finance: true,   Dispatcher: false, 'Field Crew': false },
 };
 

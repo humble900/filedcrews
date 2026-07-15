@@ -10,11 +10,11 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./hooks/useAuth";
 
 // ─── Eagerly loaded (small, always-needed) ─────────────────────────
-import HomePage from "./pages/HomePage";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
 // ─── Lazy loaded (large pages, loaded on demand) ───────────────────
+const HomePage = lazy(() => import("./pages/HomePage"));
 const FaceVerification = lazy(() => import("./pages/FaceVerification"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
@@ -33,7 +33,7 @@ const ChangeOrdersPage = lazy(() => import("./pages/ChangeOrdersPage"));
 const ReportsPage = lazy(() => import("./pages/ReportsPage"));
 const ProjectSetupWizard = lazy(() => import("./pages/ProjectSetupWizard"));
 const ProjectDetailWorkspace = lazy(() => import("./pages/ProjectDetailWorkspace"));
-const BillingPage = lazy(() => import("./pages/BillingPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const PublicApprovalPage = lazy(() => import("./pages/PublicApprovalPage"));
 const PublicPayPage = lazy(() => import("./pages/PublicPayPage"));
@@ -169,11 +169,12 @@ const App = () => (
                 </ProtectedRoute>
               } />
               
-              <Route path="/billing" element={
-                <ProtectedRoute feature="billing">
-                  <BillingPage />
+              <Route path="/settings" element={
+                <ProtectedRoute feature="settings">
+                  <SettingsPage />
                 </ProtectedRoute>
               } />
+              <Route path="/billing" element={<Navigate to="/settings?tab=billing" replace />} />
               <Route path="/timesheets" element={
                 <ProtectedRoute feature="timesheets">
                   <TimesheetsPage />

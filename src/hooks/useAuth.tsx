@@ -39,6 +39,8 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
+  isTrialExpired: boolean;
+  daysRemaining: number;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -210,8 +212,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, company: data ?? null }));
   }, [state.user]);
 
+  const calculateTrialStatus = () => {
+    if (!state.company) return { isTrialExpired: false, daysRemaining: 14 };
+    const trialDurationDays = 14;
+    const createdAtDate = new Date(state.company.created_at);
+    const trialEndDate = new Date(createdAtDate.getTime() + trialDurationDays * 24 * 60 * 60 * 1000);
+    const now = new Date();
+    const timeDiff = trialEndDate.getTime() - now.getTime();
+    const daysRemaining = Math.max(0, Math.ceil(timeDiff / (1000 * 60 * 60 * 24)));
+    const isTrialExpired = timeDiff <= 0 && state.company.subscription_tier !== 'Founding Partner';
+    return { isTrialExpired, daysRemaining };
+  };
+
+  const { isTrialExpired, daysRemaining } = calculateTrialStatus();
+
   const contextValue: AuthContextType = {
     ...state,
+    isTrialExpired,
+    daysRemaining,
     signUp,
     signIn,
     signOut,
