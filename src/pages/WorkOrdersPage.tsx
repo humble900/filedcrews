@@ -323,7 +323,7 @@ export default function WorkOrdersPage({ projectId }: { projectId?: string }) {
         description: taskDesc.trim() || null,
         priority: taskPriority,
         status: taskStatus,
-        assignee_id: taskAssignee || null,
+        assignee_id: taskAssignee && taskAssignee !== "__unassigned__" ? taskAssignee : null,
         est_hours: parseFloat(taskHours) || 0.00,
         before_photo_url: taskBeforePhoto.trim() || null,
         after_photo_url: taskAfterPhoto.trim() || null,
@@ -1055,7 +1055,7 @@ export default function WorkOrdersPage({ projectId }: { projectId?: string }) {
                       <SelectValue placeholder="Select field crew member" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Unassigned</SelectItem>
+                      <SelectItem value="__unassigned__">Unassigned</SelectItem>
                       {staff.map((s) => (
                         <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>
                       ))}
