@@ -347,7 +347,7 @@ export default function ProjectsPage() {
                 Establish client contract limits, geofence radius sites, and launch isolated workspaces for your {t("projects").toLowerCase()}.
               </p>
             </div>
-            <Button onClick={() => openProjectDialog()} className="gap-2 shrink-0">
+            <Button onClick={() => navigate("/dashboard/wizard?mode=new-project")} className="gap-2 shrink-0">
               <Plus className="h-4 w-4" /> Add {t("Project")}
             </Button>
           </div>

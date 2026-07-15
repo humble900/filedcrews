@@ -53,12 +53,18 @@ interface StaffProfile {
   company_id: string;
   is_active: boolean;
   photo_url?: string | null;
+  bank_name?: string | null;
+  routing_number?: string | null;
+  account_number?: string | null;
+  hourly_rate?: number | null;
+  global_role?: string | null;
 }
 
 interface Company {
   id: string;
   name: string;
   prefix: string;
+  currency?: string | null;
 }
 
 interface StaffPortalProps {
@@ -439,11 +445,8 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
     queryFn: async () => {
       const { data, error } = await supabase
         .from("incident_reports")
-        .select(`
-          *,
-          project:projects(id, name, ref_number)
-        `)
-        .eq("reported_by", staffProfile.id)
+        .select("*, project:projects(id, name, ref_number)")
+        .eq("reporter_id", staffProfile.id)
         .order("created_at", { ascending: false });
       if (error) return [];
       return data || [];
@@ -697,12 +700,10 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
     setIsSubmittingIncident(true);
     try {
       const { error } = await supabase.from("incident_reports").insert({
-        company_id: staffProfile.company_id,
         project_id: incidentProject,
-        reported_by: staffProfile.id,
-        title: incidentTitle.trim(),
+        reporter_id: staffProfile.id,
         type: incidentType,
-        description: incidentDescription.trim(),
+        description: `[${incidentTitle.trim()}] ${incidentDescription.trim()}`,
         severity: incidentSeverity,
         status: "Open",
         attachment_urls: incidentAttachments,
@@ -1078,7 +1079,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Clock className="h-3.5 w-3.5 text-muted-foreground/60" />
-                      {todayShift.start_time?.slice(0, 5)} – {todayShift.end_time?.slice(0, 5)}
+                      {todayShift.check_in_time?.slice(0, 5)} – {todayShift.check_out_time?.slice(0, 5)}
                     </span>
                   </div>
                   {todayShift.job?.project?.address && (
@@ -1502,7 +1503,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            {shift.start_time?.slice(0, 5)} – {shift.end_time?.slice(0, 5)}
+                            {(shift.check_in_time || "").slice(0, 5)} – {(shift.check_out_time || "").slice(0, 5)}
                           </p>
                         </div>
                         <div className="text-right space-y-1">
