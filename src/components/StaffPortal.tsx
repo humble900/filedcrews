@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   MapPin,
   Download,
@@ -30,13 +31,17 @@ import {
   Building2,
   ChevronDown,
   WifiOff,
+  Briefcase,
+  Package,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import TaskPhotoUpload from "./TaskPhotoUpload";
+import TaskMultiplePhotoUpload from "./TaskMultiplePhotoUpload";
 import DocumentScanner from "./DocumentScanner";
 import InteractiveSpreadsheet from "./InteractiveSpreadsheet";
+import { ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 interface StaffProfile {
   id: string;
@@ -44,6 +49,7 @@ interface StaffProfile {
   full_name: string;
   company_id: string;
   is_active: boolean;
+  photo_url?: string | null;
 }
 
 interface Company {
@@ -76,12 +82,116 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
   const [taskNotes, setTaskNotes] = useState("");
   const [beforePhoto, setBeforePhoto] = useState<string | null>(null);
   const [afterPhoto, setAfterPhoto] = useState<string | null>(null);
+  const [beforePhotos, setBeforePhotos] = useState<string[]>([]);
+  const [afterPhotos, setAfterPhotos] = useState<string[]>([]);
 
   const [formResponses, setFormResponses] = useState<Record<string, any>>({});
+  const [isJobContextExpanded, setIsJobContextExpanded] = useState(false);
+
+  // PIN Lock state
+  const [isPinLocked, setIsPinLocked] = useState(() => {
+    return !!localStorage.getItem("onsite_pin_hash");
+  });
+  const [showPinSetup, setShowPinSetup] = useState(false);
+  const [pinInput, setPinInput] = useState("");
+  const [pinStep, setPinStep] = useState<"enter" | "confirm">("enter");
+  const [tempPin, setTempPin] = useState("");
+  const [pinError, setPinError] = useState("");
+  const [isAppLocked, setIsAppLocked] = useState(() => {
+    return !!localStorage.getItem("onsite_pin_hash");
+  });
+
+  // Incident report state
+  const [showIncidentReport, setShowIncidentReport] = useState(false);
+  const [incidentTitle, setIncidentTitle] = useState("");
+  const [incidentDescription, setIncidentDescription] = useState("");
+  const [incidentSeverity, setIncidentSeverity] = useState("medium");
+  const [isSubmittingIncident, setIsSubmittingIncident] = useState(false);
+
+  // Decline task/shift state
+  const [declineTarget, setDeclineTarget] = useState<{ type: "task" | "shift"; id: string; name: string } | null>(null);
+  const [declineReason, setDeclineReason] = useState("");
+  const [isDeclining, setIsDeclining] = useState(false);
+
+  // Settings: password change
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // Settings: payment details
+  const [bankName, setBankName] = useState(staffProfile.bank_name || "");
+  const [routingNumber, setRoutingNumber] = useState(staffProfile.routing_number || "");
+  const [accountNumber, setAccountNumber] = useState(staffProfile.account_number || "");
+  const [isSavingPayment, setIsSavingPayment] = useState(false);
+
+  // Settings: avatar upload
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   // Offline states
   const [isOfflineMode, setIsOfflineMode] = useState(false);
-  const [offlineQueue, setOfflineQueue] = useState<{ taskId: string; payload: any; taskTitle: string }[]>([]);
+  const [offlineQueue, setOfflineQueue] = useState<{ taskId: string; payload: any; taskTitle: string }[]>(() => {
+    try {
+      const saved = localStorage.getItem("onsite_offline_queue");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Sync offline queue to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem("onsite_offline_queue", JSON.stringify(offlineQueue));
+    } catch (e) {
+      console.warn("Failed to save offline queue to localStorage:", e);
+    }
+  }, [offlineQueue]);
+
+  // Network connection listeners
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOfflineMode(false);
+      toast.success("Connection restored! Syncing offline updates.");
+    };
+
+    const handleOffline = () => {
+      setIsOfflineMode(true);
+      toast.info("Connection lost. Working in offline mode.");
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    // Initial check
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setIsOfflineMode(true);
+    }
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  // Trigger sync automatically when online
+  useEffect(() => {
+    if (!isOfflineMode && offlineQueue.length > 0) {
+      syncOfflineQueue();
+    }
+  }, [isOfflineMode]);
+
+  // Face verification modal states
+  const [activeFaceVerification, setActiveFaceVerification] = useState<{
+    eventId: string;
+    geofenceName: string;
+  } | null>(null);
+  const [isVerifyingFace, setIsVerifyingFace] = useState(false);
+  const [faceVerifyPhoto, setFaceVerifyPhoto] = useState<string | null>(null);
+  const [faceVerifyResult, setFaceVerifyResult] = useState<{
+    match: boolean;
+    confidence?: string;
+    error?: string;
+  } | null>(null);
 
   // Close task sheet on back button
   useEffect(() => {
@@ -107,9 +217,18 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
     const updateLocation = async (position: GeolocationPosition) => {
       try {
         const { latitude, longitude, accuracy } = position.coords;
-        await supabase.functions.invoke("staff_update_location", {
+        const { data, error } = await supabase.functions.invoke("staff_update_location", {
           body: { latitude, longitude, accuracy },
         });
+        if (error) throw error;
+        if (data?.faceVerificationRequested && data?.geofenceEventId) {
+          setActiveFaceVerification({
+            eventId: data.geofenceEventId,
+            geofenceName: data.geofenceName || "Gated Zone",
+          });
+          setFaceVerifyPhoto(null);
+          setFaceVerifyResult(null);
+        }
       } catch (err) {
         console.warn("Failed to auto-update location:", err);
       }
@@ -142,7 +261,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
     };
   }, [isOfflineMode, staffProfile?.id]);
 
-  const syncOfflineQueue = async () => {
+  async function syncOfflineQueue() {
     if (offlineQueue.length === 0) return;
     try {
       for (const item of offlineQueue) {
@@ -155,7 +274,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
     } catch (e: any) {
       toast.error(`Sync error: ${e.message}`);
     }
-  };
+  }
 
   const toggleOfflineMode = () => {
     const nextState = !isOfflineMode;
@@ -207,7 +326,12 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
             title,
             description,
             project_id,
-            project:projects(id, name, address)
+            project:projects(id, name, address),
+            job_equipment(
+              id,
+              notes,
+              asset:assets(id, name, serial_number, make, model, equipment_type)
+            )
           )
         `)
         .eq("assignee_id", staffProfile.id)
@@ -269,7 +393,15 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
     queryFn: async () => {
       const { data, error } = await supabase
         .from("staff_shifts")
-        .select(`*, geofence:geofences(name)`)
+        .select(`
+          *,
+          geofence:geofences(id, name, latitude, longitude, radius_meters),
+          job:jobs(
+            id,
+            title,
+            project:projects(id, name, address)
+          )
+        `)
         .eq("staff_id", staffProfile.id)
         .gte("shift_date", new Date().toISOString().split("T")[0])
         .order("shift_date", { ascending: true })
@@ -278,6 +410,61 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
       return data || [];
     },
   });
+
+  // Fetch timesheet entries for payroll calculations
+  const { data: timesheets = [], isLoading: timesheetsLoading } = useQuery({
+    queryKey: ["staff_timesheets", staffProfile.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("timesheet_entries")
+        .select("*")
+        .eq("staff_id", staffProfile.id)
+        .order("start_time", { ascending: false });
+      if (error) return [];
+      return data || [];
+    },
+  });
+
+  const timesheetSummary = useMemo(() => {
+    let totalMinutes = 0;
+    let approvedMinutes = 0;
+    let pendingMinutes = 0;
+    let rejectedMinutes = 0;
+
+    timesheets.forEach((entry: any) => {
+      const dur = Number(entry.duration_minutes || 0);
+      totalMinutes += dur;
+      if (entry.approval_status === "approved") {
+        approvedMinutes += dur;
+      } else if (entry.approval_status === "pending") {
+        pendingMinutes += dur;
+      } else if (entry.approval_status === "rejected") {
+        rejectedMinutes += dur;
+      }
+    });
+
+    const totalHours = totalMinutes / 60;
+    const approvedHours = approvedMinutes / 60;
+    const pendingHours = pendingMinutes / 60;
+    const rejectedHours = rejectedMinutes / 60;
+    const rate = Number(staffProfile.hourly_rate || 0);
+    const earnings = approvedHours * rate;
+
+    return {
+      totalHours: totalHours.toFixed(1),
+      approvedHours: approvedHours.toFixed(1),
+      pendingHours: pendingHours.toFixed(1),
+      rejectedHours: rejectedHours.toFixed(1),
+      hourlyRate: rate.toFixed(2),
+      earnings: earnings.toFixed(2),
+      raw: {
+        totalHours,
+        approvedHours,
+        pendingHours,
+        rejectedHours
+      }
+    };
+  }, [timesheets, staffProfile.hourly_rate]);
 
   // ── Mutations ──────────────────────────────────────────────────
 
@@ -334,11 +521,249 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
     }
   };
 
+  const handleFaceVerifySubmit = async () => {
+    if (!activeFaceVerification || !faceVerifyPhoto) return;
+    setIsVerifyingFace(true);
+    setFaceVerifyResult(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("staff_submit_face_for_event", {
+        body: {
+          geofenceEventId: activeFaceVerification.eventId,
+          comparisonPhoto: faceVerifyPhoto,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.ok) {
+        const isMatch = data.status === "verified";
+        setFaceVerifyResult({
+          match: isMatch,
+          confidence: data.confidence,
+        });
+
+        if (isMatch) {
+          toast.success("Face identity verified successfully!");
+          setTimeout(() => {
+            setActiveFaceVerification(null);
+            setFaceVerifyPhoto(null);
+            setFaceVerifyResult(null);
+          }, 2000);
+        } else {
+          toast.error("Face mismatch. Verification rejected.");
+        }
+      }
+    } catch (err: any) {
+      console.error("Face verification error:", err);
+      setFaceVerifyResult({
+        match: false,
+        error: err.message || "Failed to analyze photo.",
+      });
+      toast.error(err.message || "Verification API error.");
+    } finally {
+      setIsVerifyingFace(false);
+    }
+  };
+
   const openTaskDetails = (task: any) => {
     setSelectedTask(task);
     setTaskNotes(task.staff_notes || "");
     setBeforePhoto(task.before_photo_url || null);
     setAfterPhoto(task.after_photo_url || null);
+    setBeforePhotos(task.before_photo_urls || []);
+    setAfterPhotos(task.after_photo_urls || []);
+  };
+
+  // ── PIN Lock Handlers ──
+  const hashPin = (pin: string) => btoa(pin + "_onsite_salt");
+
+  const handlePinKeyPress = (digit: string) => {
+    if (digit === "clear") {
+      setPinInput("");
+      setPinError("");
+      return;
+    }
+    if (digit === "delete") {
+      setPinInput(prev => prev.slice(0, -1));
+      return;
+    }
+    const next = pinInput + digit;
+    if (next.length > 4) return;
+    setPinInput(next);
+
+    if (next.length === 4) {
+      if (showPinSetup) {
+        if (pinStep === "enter") {
+          setTempPin(next);
+          setPinStep("confirm");
+          setPinInput("");
+        } else {
+          if (next === tempPin) {
+            localStorage.setItem("onsite_pin_hash", hashPin(next));
+            setIsPinLocked(true);
+            setShowPinSetup(false);
+            setPinInput("");
+            setPinStep("enter");
+            setTempPin("");
+            toast.success("4-digit PIN set successfully!");
+          } else {
+            setPinError("PINs don't match. Try again.");
+            setPinStep("enter");
+            setPinInput("");
+            setTempPin("");
+          }
+        }
+      } else if (isAppLocked) {
+        const stored = localStorage.getItem("onsite_pin_hash");
+        if (stored && hashPin(next) === stored) {
+          setIsAppLocked(false);
+          setPinInput("");
+        } else {
+          setPinError("Incorrect PIN");
+          setPinInput("");
+        }
+      }
+    }
+  };
+
+  const removePinLock = () => {
+    localStorage.removeItem("onsite_pin_hash");
+    setIsPinLocked(false);
+    setIsAppLocked(false);
+    toast.success("PIN lock removed");
+  };
+
+  // ── Incident Report Handler ──
+  const handleSubmitIncident = async () => {
+    if (!incidentTitle.trim() || !incidentDescription.trim()) return;
+    setIsSubmittingIncident(true);
+    try {
+      const { error } = await supabase.from("incident_reports").insert({
+        company_id: staffProfile.company_id,
+        reported_by: staffProfile.id,
+        title: incidentTitle.trim(),
+        description: incidentDescription.trim(),
+        severity: incidentSeverity,
+        status: "Open",
+      });
+      if (error) throw error;
+      toast.success("Incident report submitted successfully!");
+      setShowIncidentReport(false);
+      setIncidentTitle("");
+      setIncidentDescription("");
+      setIncidentSeverity("medium");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit report");
+    } finally {
+      setIsSubmittingIncident(false);
+    }
+  };
+
+  // ── Decline Task/Shift Handler ──
+  const handleDecline = async () => {
+    if (!declineTarget || !declineReason.trim()) return;
+    setIsDeclining(true);
+    try {
+      if (declineTarget.type === "shift") {
+        const { error } = await supabase
+          .from("staff_shifts")
+          .update({ status: "Declined", decline_reason: declineReason.trim() })
+          .eq("id", declineTarget.id);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ["staff_shifts", staffProfile.id] });
+      } else {
+        const { error } = await supabase
+          .from("tasks")
+          .update({ status: "Declined", staff_notes: `DECLINED: ${declineReason.trim()}` })
+          .eq("id", declineTarget.id);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ["staff_tasks", staffProfile.id] });
+      }
+      toast.success(`${declineTarget.type === "shift" ? "Shift" : "Task"} declined.`);
+      setDeclineTarget(null);
+      setDeclineReason("");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to decline");
+    } finally {
+      setIsDeclining(false);
+    }
+  };
+
+  // ── Password Change Handler ──
+  const handleChangePassword = async () => {
+    if (newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    setIsChangingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast.success("Password updated successfully!");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to change password");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  // ── Payment Details Handler ──
+  const handleSavePaymentDetails = async () => {
+    setIsSavingPayment(true);
+    try {
+      const { error } = await supabase
+        .from("staff_profiles")
+        .update({
+          bank_name: bankName.trim() || null,
+          routing_number: routingNumber.trim() || null,
+          account_number: accountNumber.trim() || null,
+        })
+        .eq("id", staffProfile.id);
+      if (error) throw error;
+      toast.success("Payment details saved!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save payment details");
+    } finally {
+      setIsSavingPayment(false);
+    }
+  };
+
+  // ── Avatar Upload Handler ──
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingAvatar(true);
+    try {
+      const filePath = `avatars/${staffProfile.id}_${Date.now()}.webp`;
+      const { error: uploadErr } = await supabase.storage
+        .from("task-attachments")
+        .upload(filePath, file, { upsert: true, contentType: file.type });
+      if (uploadErr) throw uploadErr;
+
+      const { data: urlData } = supabase.storage
+        .from("task-attachments")
+        .getPublicUrl(filePath);
+
+      const { error: updateErr } = await supabase
+        .from("staff_profiles")
+        .update({ photo_url: urlData.publicUrl })
+        .eq("id", staffProfile.id);
+      if (updateErr) throw updateErr;
+
+      toast.success("Profile photo updated!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to upload avatar");
+    } finally {
+      setIsUploadingAvatar(false);
+      e.target.value = "";
+    }
   };
 
   // ── Helpers ──────────────────────────────────────────────────
@@ -368,6 +793,11 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
   const isOnSite =
     latestCheckIn &&
     (latestCheckIn.event_type.includes("inside") || latestCheckIn.event_type === "entered");
+
+  const todayShift = myShifts.find((shift: any) => {
+    const shiftDate = new Date((shift.shift_date || "") + "T00:00:00");
+    return new Date().toDateString() === shiftDate.toDateString();
+  });
 
   const getPriorityBorder = (priority: string) => {
     switch (priority) {
@@ -408,6 +838,79 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
           <Button onClick={onSignOut} variant="outline" className="w-full max-w-[200px] border-border/60 hover:bg-muted font-bold text-xs gap-1.5 h-9">
             <LogOut className="h-4 w-4" /> Sign Out
           </Button>
+        </div>
+      )}
+
+      {!isTrialExpired && !staffProfile?.photo_url && (
+        <div className="fixed inset-0 z-50 bg-background flex flex-col items-center justify-center p-6 text-center space-y-6">
+          <div className="w-16 h-16 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-inner">
+            <Camera className="h-8 w-8 text-indigo-500" />
+          </div>
+          <div className="space-y-2 max-w-sm">
+            <h3 className="text-xl font-black text-foreground">Profile Photo Required</h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              To activate your crew account and view assigned tasks, you must upload a profile photo. This photo will be visible to dispatchers on the live map and in the crew directory.
+            </p>
+          </div>
+          <div className="w-full max-w-[280px] flex flex-col items-center gap-3">
+            <input
+              type="file"
+              accept="image/*"
+              capture="user"
+              id="onboarding-avatar-input"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setIsUploadingAvatar(true);
+                try {
+                  const filePath = `avatars/${staffProfile.id}_${Date.now()}.webp`;
+                  const { error: uploadErr } = await supabase.storage
+                    .from("task-attachments")
+                    .upload(filePath, file, { upsert: true, contentType: file.type });
+                  if (uploadErr) throw uploadErr;
+
+                  const { data: urlData } = supabase.storage
+                    .from("task-attachments")
+                    .getPublicUrl(filePath);
+
+                  const { error: updateErr } = await supabase
+                    .from("staff_profiles")
+                    .update({ photo_url: urlData.publicUrl })
+                    .eq("id", staffProfile.id);
+                  if (updateErr) throw updateErr;
+
+                  toast.success("Profile photo uploaded! Account activated.");
+                  window.location.reload();
+                } catch (err: any) {
+                  toast.error(err.message || "Failed to upload photo");
+                } finally {
+                  setIsUploadingAvatar(false);
+                }
+              }}
+              disabled={isUploadingAvatar}
+            />
+            <Button
+              onClick={() => document.getElementById("onboarding-avatar-input")?.click()}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11"
+              disabled={isUploadingAvatar}
+            >
+              {isUploadingAvatar ? (
+                <>
+                  <Loader2 className="h-4.5 w-4.5 animate-spin mr-2" />
+                  Uploading Photo...
+                </>
+              ) : (
+                <>
+                  <Camera className="h-4.5 w-4.5 mr-2" />
+                  Take Selfie Image
+                </>
+              )}
+            </Button>
+            <Button onClick={onSignOut} variant="ghost" className="w-full text-destructive hover:bg-destructive/5 font-bold h-9">
+              <LogOut className="h-4 w-4 mr-1.5" /> Sign Out
+            </Button>
+          </div>
         </div>
       )}
       {/* ═══ STICKY GLASS HEADER ═══ */}
@@ -487,6 +990,54 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
         {/* ─── TASKS TAB ─── */}
         {activeTab === "tasks" && (
           <div className="px-4 py-4 space-y-5 animate-fade-in">
+            {/* Today's Schedule Card */}
+            {todayShift && (
+              <div className="p-4 rounded-2xl border bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-card border-indigo-500/20 card-elevated space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4.5 w-4.5 text-indigo-500" />
+                    <span className="font-bold text-xs text-indigo-500 uppercase tracking-wider">Today's Schedule</span>
+                  </div>
+                  <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                    isOnSite
+                      ? "bg-emerald-500/15 text-emerald-600 border border-emerald-500/20"
+                      : "bg-amber-500/15 text-amber-600 border border-amber-500/20"
+                  }`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${isOnSite ? "bg-emerald-500 animate-pulse" : "bg-amber-500 animate-pulse"}`} />
+                    {isOnSite ? "On Site" : "Away"}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-bold text-sm text-foreground">
+                    {todayShift.job?.title || "Shift Duties"} · {todayShift.geofence?.name || "Gated Site"}
+                  </h3>
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground/60" />
+                      {todayShift.start_time?.slice(0, 5)} – {todayShift.end_time?.slice(0, 5)}
+                    </span>
+                  </div>
+                  {todayShift.job?.project?.address && (
+                    <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                      <MapPin className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
+                      {todayShift.job.project.address}
+                    </p>
+                  )}
+                </div>
+                {todayShift.job?.project?.address && (
+                  <Button
+                    size="sm"
+                    className="w-full h-9 text-xs font-bold gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white"
+                    onClick={() => {
+                      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(todayShift.job.project.address)}`, "_blank");
+                    }}
+                  >
+                    <MapPin className="h-3.5 w-3.5" /> Navigate to Worksite
+                  </Button>
+                )}
+              </div>
+            )}
+
             {/* Quick Stats Bar */}
             <div className="grid grid-cols-3 gap-2">
               {[
@@ -641,6 +1192,91 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
           <div className="px-4 py-4 space-y-4 animate-fade-in">
             <h2 className="text-base font-bold">My Shifts</h2>
 
+            {/* Worked Hours & Earnings Payroll Summary */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-4 rounded-2xl border bg-card card-elevated flex flex-col justify-between">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Gross Earnings</span>
+                <div>
+                  <p className="text-xl font-black text-emerald-500 mt-2">
+                    {company?.currency || "$"}{timesheetSummary.earnings}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground font-semibold mt-1">
+                    Based on {timesheetSummary.approvedHours} approved hrs
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: "Approved", value: `${timesheetSummary.approvedHours}h`, color: "text-emerald-500 bg-emerald-500/10" },
+                  { label: "Pending", value: `${timesheetSummary.pendingHours}h`, color: "text-amber-500 bg-amber-500/10" },
+                  { label: "Total Hours", value: `${timesheetSummary.totalHours}h`, color: "text-slate-300 bg-slate-500/10" },
+                  { label: "Rate", value: `${company?.currency || "$"}${timesheetSummary.hourlyRate}/h`, color: "text-indigo-500 bg-indigo-500/10" },
+                ].map((stat) => (
+                  <div key={stat.label} className={`p-2 rounded-xl text-center flex flex-col justify-center ${stat.color}`}>
+                    <p className="text-xs font-black">{stat.value}</p>
+                    <p className="text-[9px] font-semibold text-muted-foreground leading-tight mt-0.5">{stat.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Recharts Donut Allocation Chart */}
+            {timesheets.length > 0 && (
+              <div className="p-4 rounded-2xl border bg-card card-elevated space-y-3">
+                {(() => {
+                  const donutData = [
+                    { name: "Approved", value: timesheetSummary.raw.approvedHours, color: "#10b981" },
+                    { name: "Pending", value: timesheetSummary.raw.pendingHours, color: "#f59e0b" },
+                    { name: "Rejected", value: timesheetSummary.raw.rejectedHours, color: "#f43f5e" },
+                  ].filter(d => d.value > 0);
+
+                  if (donutData.length === 0) {
+                    return (
+                      <p className="text-[10px] text-center text-muted-foreground py-2 font-medium">
+                        No logged timesheet hours to display chart.
+                      </p>
+                    );
+                  }
+
+                  return (
+                    <div className="flex items-center justify-between">
+                      <div className="w-[100px] h-[100px] shrink-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={donutData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={30}
+                              outerRadius={42}
+                              paddingAngle={3}
+                              dataKey="value"
+                            >
+                              {donutData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="flex-1 space-y-1.5 pl-6">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Timesheet Allocation</p>
+                        {donutData.map((d) => (
+                          <div key={d.name} className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-1.5">
+                              <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                              <span className="font-semibold text-slate-300">{d.name}</span>
+                            </div>
+                            <span className="font-mono text-muted-foreground font-semibold">{d.value.toFixed(1)}h</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
             {shiftsLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => <div key={i} className="skeleton h-16 rounded-xl" />)}
@@ -664,7 +1300,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
                     <div
                       key={shift.id}
                       className={`p-4 rounded-xl border card-elevated ${
-                        isToday ? "bg-primary/5 border-primary/20" : "bg-card"
+                        shift.status === "Declined" ? "opacity-50 bg-muted/30" : isToday ? "bg-primary/5 border-primary/20" : "bg-card"
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -676,18 +1312,41 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
                             {isToday && (
                               <Badge className="bg-primary/15 text-primary text-[10px] font-bold">Today</Badge>
                             )}
+                            {shift.status === "Declined" && (
+                              <Badge className="bg-rose-500/15 text-rose-600 text-[10px] font-bold">Declined</Badge>
+                            )}
                           </div>
                           <p className="text-xs text-muted-foreground">
                             {shift.start_time?.slice(0, 5)} – {shift.end_time?.slice(0, 5)}
                           </p>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right space-y-1">
                           <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1 justify-end">
                             <MapPin className="h-3 w-3" />
                             {shift.geofence?.name || "Unassigned"}
                           </p>
+                          {shift.job?.project?.address && (
+                            <button
+                              className="text-[10px] text-indigo-400 hover:text-indigo-300 underline underline-offset-2"
+                              onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shift.job.project.address)}`, "_blank")}
+                            >
+                              Directions ↗
+                            </button>
+                          )}
                         </div>
                       </div>
+                      {shift.status !== "Declined" && (
+                        <button
+                          className="mt-2 text-[10px] font-bold text-rose-500/70 hover:text-rose-500 transition-colors"
+                          onClick={() => setDeclineTarget({
+                            type: "shift",
+                            id: shift.id,
+                            name: `${isToday ? "Today" : format(shiftDate, "EEE, MMM d")} shift at ${shift.geofence?.name || "site"}`,
+                          })}
+                        >
+                          Decline this shift
+                        </button>
+                      )}
                     </div>
                   );
                 })}
@@ -701,11 +1360,32 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
           <div className="px-4 py-4 space-y-4 animate-fade-in">
             <h2 className="text-base font-bold">Settings</h2>
 
-            {/* Profile Card */}
+            {/* Profile Card with Avatar Upload */}
             <div className="p-4 rounded-xl border bg-card card-elevated space-y-3">
               <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User className="h-6 w-6 text-primary" />
+                <div className="relative group">
+                  <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border-2 border-border">
+                    {staffProfile.photo_url ? (
+                      <img src={staffProfile.photo_url} alt="Avatar" className="h-full w-full object-cover" />
+                    ) : (
+                      <User className="h-7 w-7 text-primary" />
+                    )}
+                  </div>
+                  <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                    {isUploadingAvatar ? (
+                      <Loader2 className="h-4 w-4 text-white animate-spin" />
+                    ) : (
+                      <Camera className="h-4 w-4 text-white" />
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="user"
+                      className="hidden"
+                      onChange={handleAvatarUpload}
+                      disabled={isUploadingAvatar}
+                    />
+                  </label>
                 </div>
                 <div>
                   <p className="font-bold text-sm">{staffProfile.full_name}</p>
@@ -726,6 +1406,121 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
                 </div>
               </div>
             </div>
+
+            {/* Change Password */}
+            <div className="p-4 rounded-xl border bg-card card-elevated space-y-3">
+              <p className="font-bold text-sm flex items-center gap-2">
+                <Settings className="h-4 w-4 text-indigo-500" />
+                Change Password
+              </p>
+              <div className="space-y-2">
+                <Input
+                  type="password"
+                  placeholder="New password (min 6 chars)"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="h-10 text-sm"
+                />
+                <Input
+                  type="password"
+                  placeholder="Confirm new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="h-10 text-sm"
+                />
+                <Button
+                  className="w-full h-10 font-bold text-xs"
+                  onClick={handleChangePassword}
+                  disabled={isChangingPassword || !newPassword || !confirmPassword}
+                >
+                  {isChangingPassword ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  Update Password
+                </Button>
+              </div>
+            </div>
+
+            {/* Direct Deposit / Payment Details */}
+            <div className="p-4 rounded-xl border bg-card card-elevated space-y-3">
+              <p className="font-bold text-sm flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-emerald-500" />
+                Direct Deposit Details
+              </p>
+              <p className="text-[10px] text-muted-foreground">Your bank details are shared securely with your employer for payroll processing.</p>
+              <div className="space-y-2">
+                <Input
+                  placeholder="Bank Name"
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                  className="h-10 text-sm"
+                />
+                <Input
+                  placeholder="Routing Number"
+                  value={routingNumber}
+                  onChange={(e) => setRoutingNumber(e.target.value)}
+                  className="h-10 text-sm"
+                />
+                <Input
+                  placeholder="Account Number"
+                  value={accountNumber}
+                  onChange={(e) => setAccountNumber(e.target.value)}
+                  className="h-10 text-sm"
+                />
+                <Button
+                  className="w-full h-10 font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={handleSavePaymentDetails}
+                  disabled={isSavingPayment}
+                >
+                  {isSavingPayment ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  Save Payment Details
+                </Button>
+              </div>
+            </div>
+
+            {/* 4-Digit PIN Lock Toggle */}
+            <div className="p-4 rounded-xl border bg-card card-elevated space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="font-bold text-sm flex items-center gap-2">
+                  <Settings className="h-4 w-4 text-amber-500" />
+                  App Lock PIN
+                </p>
+                {isPinLocked ? (
+                  <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30 text-[10px] font-bold">Active</Badge>
+                ) : (
+                  <Badge className="bg-muted text-muted-foreground text-[10px] font-bold">Disabled</Badge>
+                )}
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Secure your portal with a 4-digit PIN code that locks the app when you open it.
+              </p>
+              {isPinLocked ? (
+                <Button variant="outline" className="w-full h-10 text-xs font-bold text-destructive" onClick={removePinLock}>
+                  Remove PIN Lock
+                </Button>
+              ) : (
+                <Button
+                  className="w-full h-10 text-xs font-bold"
+                  onClick={() => {
+                    setShowPinSetup(true);
+                    setPinInput("");
+                    setPinStep("enter");
+                    setTempPin("");
+                    setPinError("");
+                  }}
+                >
+                  Set Up PIN
+                </Button>
+              )}
+            </div>
+
+            {/* File Incident Report */}
+            <Button
+              variant="outline"
+              className="w-full h-11 font-bold gap-2 border-amber-500/30 text-amber-600 hover:bg-amber-500/5"
+              onClick={() => setShowIncidentReport(true)}
+            >
+              <AlertTriangle className="h-4 w-4" />
+              File Incident / Safety Report
+            </Button>
 
             {/* PWA App Installation Guide */}
             <div className="p-4 rounded-xl border bg-card card-elevated space-y-3">
@@ -826,21 +1621,89 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
               </div>
             </div>
 
+            {/* Collapsible Job Context & Equipment */}
+            {(selectedTask.job?.description || (selectedTask.job?.job_equipment && selectedTask.job.job_equipment.length > 0)) && (
+              <div className="rounded-xl border border-border/60 overflow-hidden">
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between p-3 text-left hover:bg-muted/30 transition-colors"
+                  onClick={() => setIsJobContextExpanded(!isJobContextExpanded)}
+                >
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="h-4 w-4 text-indigo-500" />
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Job Context & Equipment</span>
+                  </div>
+                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isJobContextExpanded ? "rotate-180" : ""}`} />
+                </button>
+                {isJobContextExpanded && (
+                  <div className="px-3 pb-3 space-y-3 border-t border-border/40">
+                    {selectedTask.job?.description && (
+                      <div className="pt-3">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">Job Description</p>
+                        <p className="text-xs text-foreground/80 leading-relaxed">{selectedTask.job.description}</p>
+                      </div>
+                    )}
+                    {selectedTask.job?.project?.address && (
+                      <div>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">Worksite Address</p>
+                        <button
+                          className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 underline underline-offset-2"
+                          onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedTask.job.project.address)}`, "_blank")}
+                        >
+                          <MapPin className="h-3 w-3" />
+                          {selectedTask.job.project.address}
+                        </button>
+                      </div>
+                    )}
+                    {selectedTask.job?.job_equipment && selectedTask.job.job_equipment.length > 0 && (
+                      <div>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase mb-2">Assigned Equipment</p>
+                        <div className="space-y-2">
+                          {selectedTask.job.job_equipment.map((eq: any) => (
+                            <div key={eq.id} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-muted/30">
+                              <Package className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-xs font-bold text-foreground truncate">{eq.asset?.name || "Unknown Asset"}</p>
+                                <p className="text-[10px] text-muted-foreground">
+                                  {[eq.asset?.make, eq.asset?.model].filter(Boolean).join(" · ") || "No specs"}
+                                  {eq.asset?.serial_number && ` · S/N: ${eq.asset.serial_number}`}
+                                </p>
+                                {eq.notes && <p className="text-[10px] text-muted-foreground/70 mt-0.5 italic">{eq.notes}</p>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Action Area */}
             {selectedTask.status === "Pending" ? (
-              <Button
-                className="w-full font-bold h-12 text-base"
-                onClick={() =>
-                  handleUpdateTask(selectedTask.id, { status: "In Progress" }, selectedTask.title)
-                }
-                disabled={updateTaskMutation.isPending}
-              >
-                {updateTaskMutation.isPending ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  "Start Task"
-                )}
-              </Button>
+              <div className="space-y-2">
+                <Button
+                  className="w-full font-bold h-12 text-base"
+                  onClick={() =>
+                    handleUpdateTask(selectedTask.id, { status: "In Progress" }, selectedTask.title)
+                  }
+                  disabled={updateTaskMutation.isPending}
+                >
+                  {updateTaskMutation.isPending ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    "Start Task"
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full font-bold h-10 text-xs text-rose-500 border-rose-500/20 hover:bg-rose-500/5"
+                  onClick={() => setDeclineTarget({ type: "task", id: selectedTask.id, name: selectedTask.name })}
+                >
+                  <X className="h-3.5 w-3.5 mr-1.5" /> Decline Task
+                </Button>
+              </div>
             ) : (
               <div className="space-y-4 pt-2 border-t border-border/50">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -849,16 +1712,19 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase">Before *</label>
-                    <TaskPhotoUpload
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase">Before * (Up to 6)</label>
+                    <TaskMultiplePhotoUpload
                       taskId={selectedTask.id}
                       type="before"
-                      currentUrl={beforePhoto}
-                      onPhotoUpdated={(url) => {
-                        setBeforePhoto(url);
+                      currentUrls={beforePhotos}
+                      onPhotosUpdated={(urls) => {
+                        setBeforePhotos(urls);
                         handleUpdateTask(
                           selectedTask.id,
-                          { before_photo_url: url },
+                          {
+                            before_photo_urls: urls,
+                            before_photo_url: urls[0] || null
+                          },
                           selectedTask.title
                         );
                       }}
@@ -866,16 +1732,19 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase">After *</label>
-                    <TaskPhotoUpload
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase">After * (Up to 6)</label>
+                    <TaskMultiplePhotoUpload
                       taskId={selectedTask.id}
                       type="after"
-                      currentUrl={afterPhoto}
-                      onPhotoUpdated={(url) => {
-                        setAfterPhoto(url);
+                      currentUrls={afterPhotos}
+                      onPhotosUpdated={(urls) => {
+                        setAfterPhotos(urls);
                         handleUpdateTask(
                           selectedTask.id,
-                          { after_photo_url: url },
+                          {
+                            after_photo_urls: urls,
+                            after_photo_url: urls[0] || null
+                          },
                           selectedTask.title
                         );
                       }}
@@ -969,7 +1838,11 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
                 <Button
                   className="w-full font-bold h-12 text-base bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
                   disabled={
-                    updateTaskMutation.isPending || !beforePhoto || !afterPhoto || !taskNotes.trim() || !isChecklistCompleted()
+                    updateTaskMutation.isPending || 
+                    (beforePhotos.length === 0 && !beforePhoto) || 
+                    (afterPhotos.length === 0 && !afterPhoto) || 
+                    !taskNotes.trim() || 
+                    !isChecklistCompleted()
                   }
                   onClick={() =>
                     handleUpdateTask(selectedTask.id, {
@@ -1022,6 +1895,270 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
         open={scannerOpen}
         onOpenChange={setScannerOpen}
       />
+
+      {/* ═══ BIOMETRIC FACE GATE DIALOG ═══ */}
+      <Dialog open={!!activeFaceVerification} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md [&>button]:hidden bg-background border-border" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+          <DialogHeader className="text-center space-y-2">
+            <DialogTitle className="text-lg font-black text-foreground flex items-center justify-center gap-2">
+              <Camera className="h-5 w-5 text-indigo-500 animate-pulse" />
+              Biometric Identity Check
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground leading-relaxed text-center">
+              Before checking in at <strong className="text-slate-200">{activeFaceVerification?.geofenceName}</strong>, please verify your identity by capturing a selfie.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col items-center justify-center py-4 space-y-4">
+            {faceVerifyPhoto ? (
+              <div className="relative rounded-2xl overflow-hidden border border-border/80 aspect-[4/3] w-full max-w-[280px] bg-muted shadow-inner">
+                <img src={faceVerifyPhoto} alt="Selfie preview" className="w-full h-full object-cover" />
+                {!isVerifyingFace && !faceVerifyResult?.match && (
+                  <button
+                    onClick={() => setFaceVerifyPhoto(null)}
+                    className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="w-full flex flex-col items-center justify-center">
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="user"
+                  id="selfie-file-input"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = () => setFaceVerifyPhoto(reader.result as string);
+                    reader.readAsDataURL(file);
+                  }}
+                />
+                <Button
+                  onClick={() => document.getElementById("selfie-file-input")?.click()}
+                  className="h-28 w-full max-w-[280px] border-2 border-dashed flex flex-col gap-2 rounded-2xl bg-muted/30 border-muted-foreground/30 hover:border-indigo-500/50 hover:bg-indigo-500/5 items-center justify-center"
+                  variant="outline"
+                >
+                  <Camera className="h-8 w-8 text-indigo-500" />
+                  <span className="text-xs font-bold text-slate-300">Take Selfie Image</span>
+                </Button>
+              </div>
+            )}
+
+            {/* Results feedback */}
+            {faceVerifyResult && (
+              <div className={`p-3 rounded-xl border w-full max-w-[280px] text-center ${
+                faceVerifyResult.match
+                  ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600"
+                  : "bg-rose-500/10 border-rose-500/20 text-rose-600"
+              }`}>
+                <p className="text-xs font-black">
+                  {faceVerifyResult.match ? "Verification Passed" : "Verification Failed"}
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  {faceVerifyResult.match
+                    ? `Match confidence: ${faceVerifyResult.confidence || "high"}`
+                    : faceVerifyResult.error || "The selfie does not match the reference photo."}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-2 justify-center w-full pb-2">
+            {faceVerifyPhoto && !faceVerifyResult?.match && (
+              <Button
+                onClick={handleFaceVerifySubmit}
+                disabled={isVerifyingFace}
+                className="w-full max-w-[280px] h-11 font-bold bg-indigo-600 hover:bg-indigo-700 text-white"
+              >
+                {isVerifyingFace ? (
+                  <>
+                    <Loader2 className="h-4.5 w-4.5 animate-spin mr-2" />
+                    Analyzing Face...
+                  </>
+                ) : (
+                  "Verify Identity"
+                )}
+              </Button>
+            )}
+            {faceVerifyResult && !faceVerifyResult.match && (
+              <Button
+                onClick={() => {
+                  setFaceVerifyPhoto(null);
+                  setFaceVerifyResult(null);
+                }}
+                className="w-full max-w-[280px]"
+                variant="outline"
+              >
+                Try Again
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══ APP PIN LOCK OVERLAY ═══ */}
+      {isAppLocked && (
+        <div className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center p-6">
+          <div className="flex flex-col items-center gap-6 w-full max-w-[280px]">
+            <div className="h-16 w-16 rounded-full bg-indigo-500/10 flex items-center justify-center">
+              <Settings className="h-8 w-8 text-indigo-500" />
+            </div>
+            <div className="text-center space-y-1">
+              <h2 className="font-black text-lg">Enter PIN</h2>
+              <p className="text-xs text-muted-foreground">Enter your 4-digit code to unlock</p>
+            </div>
+            <div className="flex gap-3 justify-center">
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className={`h-4 w-4 rounded-full border-2 transition-all ${pinInput.length > i ? "bg-indigo-500 border-indigo-500 scale-110" : "border-muted-foreground/40"}`} />
+              ))}
+            </div>
+            {pinError && <p className="text-xs text-rose-500 font-bold">{pinError}</p>}
+            <div className="grid grid-cols-3 gap-3 w-full">
+              {["1","2","3","4","5","6","7","8","9","clear","0","delete"].map((key) => (
+                <button
+                  key={key}
+                  className={`h-14 rounded-xl font-bold text-lg transition-all active:scale-95 ${
+                    key === "clear" || key === "delete"
+                      ? "bg-muted/50 text-muted-foreground text-xs"
+                      : "bg-card border border-border hover:bg-muted/60 text-foreground"
+                  }`}
+                  onClick={() => handlePinKeyPress(key)}
+                >
+                  {key === "delete" ? "⌫" : key === "clear" ? "Clear" : key}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ PIN SETUP DIALOG ═══ */}
+      <Dialog open={showPinSetup} onOpenChange={setShowPinSetup}>
+        <DialogContent className="sm:max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="text-center">
+              {pinStep === "enter" ? "Create 4-Digit PIN" : "Confirm Your PIN"}
+            </DialogTitle>
+            <DialogDescription className="text-center text-xs">
+              {pinStep === "enter" ? "Choose a 4-digit security code" : "Re-enter the same PIN to confirm"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="flex gap-3 justify-center">
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className={`h-4 w-4 rounded-full border-2 transition-all ${pinInput.length > i ? "bg-indigo-500 border-indigo-500 scale-110" : "border-muted-foreground/40"}`} />
+              ))}
+            </div>
+            {pinError && <p className="text-xs text-rose-500 font-bold">{pinError}</p>}
+            <div className="grid grid-cols-3 gap-2.5 w-full max-w-[220px]">
+              {["1","2","3","4","5","6","7","8","9","clear","0","delete"].map((key) => (
+                <button
+                  key={key}
+                  className={`h-12 rounded-xl font-bold text-base transition-all active:scale-95 ${
+                    key === "clear" || key === "delete"
+                      ? "bg-muted/50 text-muted-foreground text-[10px]"
+                      : "bg-card border border-border hover:bg-muted/60 text-foreground"
+                  }`}
+                  onClick={() => handlePinKeyPress(key)}
+                >
+                  {key === "delete" ? "⌫" : key === "clear" ? "Clear" : key}
+                </button>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══ INCIDENT REPORT DIALOG ═══ */}
+      <Dialog open={showIncidentReport} onOpenChange={setShowIncidentReport}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              File Incident Report
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Submit a safety incident, equipment issue, or shift report to your back office.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase text-muted-foreground">Report Title *</label>
+              <Input
+                placeholder="e.g. Equipment malfunction on site B"
+                value={incidentTitle}
+                onChange={(e) => setIncidentTitle(e.target.value)}
+                className="h-10 text-sm"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase text-muted-foreground">Severity</label>
+              <Select value={incidentSeverity} onValueChange={setIncidentSeverity}>
+                <SelectTrigger className="h-10 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase text-muted-foreground">Description *</label>
+              <Textarea
+                placeholder="Describe the incident in detail..."
+                value={incidentDescription}
+                onChange={(e) => setIncidentDescription(e.target.value)}
+                className="min-h-[100px] text-sm"
+              />
+            </div>
+            <Button
+              className="w-full h-11 font-bold bg-amber-600 hover:bg-amber-700 text-white"
+              onClick={handleSubmitIncident}
+              disabled={isSubmittingIncident || !incidentTitle.trim() || !incidentDescription.trim()}
+            >
+              {isSubmittingIncident ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Submit Report
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══ DECLINE TASK / SHIFT DIALOG ═══ */}
+      <Dialog open={!!declineTarget} onOpenChange={() => { setDeclineTarget(null); setDeclineReason(""); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-rose-500 flex items-center gap-2">
+              <X className="h-5 w-5" />
+              Decline {declineTarget?.type === "shift" ? "Shift" : "Task"}
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Declining <strong>{declineTarget?.name}</strong>. Please provide a reason.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <Textarea
+              placeholder="e.g. Sick leave, scheduling conflict, equipment unavailable..."
+              value={declineReason}
+              onChange={(e) => setDeclineReason(e.target.value)}
+              className="min-h-[80px] text-sm"
+            />
+            <Button
+              className="w-full h-11 font-bold bg-rose-600 hover:bg-rose-700 text-white"
+              onClick={handleDecline}
+              disabled={isDeclining || !declineReason.trim()}
+            >
+              {isDeclining ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Confirm Decline
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* ═══ BOTTOM NAVIGATION BAR ═══ */}
       {!selectedTask && !sheetOpen && (

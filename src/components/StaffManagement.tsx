@@ -1351,6 +1351,26 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
                 <Switch checked={editCanManageRoles} onCheckedChange={setEditCanManageRoles} />
               </div>
             )}
+            {/* Read-only Payment Details (submitted by crew) */}
+            {editingStaff && (editingStaff.bank_name || editingStaff.routing_number || editingStaff.account_number) && (
+              <div className="p-3 rounded-lg border border-border/40 bg-muted/20 space-y-2">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Direct Deposit Details</p>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <span className="text-muted-foreground block text-[10px]">Bank</span>
+                    <span className="font-semibold">{editingStaff.bank_name || "—"}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-[10px]">Routing</span>
+                    <span className="font-semibold font-mono">{editingStaff.routing_number || "—"}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-[10px]">Account</span>
+                    <span className="font-semibold font-mono">{editingStaff.account_number ? `•••${editingStaff.account_number.slice(-4)}` : "—"}</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
