@@ -1025,8 +1025,8 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
           </div>
         )}
 
-        {/* Live Status Pill */}
-        <div className="px-4 pb-3 flex items-center gap-2">
+        {/* Live Status Pill & Dev Simulator */}
+        <div className="px-4 pb-3 flex items-center justify-between gap-2">
           <div
             className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold ${
               isOnSite
@@ -1047,6 +1047,27 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
               <>No active shift tracked</>
             )}
           </div>
+          <Button
+            size="xs"
+            variant="outline"
+            onClick={async () => {
+              try {
+                // Call the supabase update location function with mock coordinates near the active project geofence
+                const { data, error } = await supabase.functions.invoke("staff_update_location", {
+                  body: { latitude: 37.7749, longitude: -122.4194, accuracy: 10.0 }
+                });
+                if (error) throw error;
+                toast.success("GPS check-in simulated successfully!");
+                queryClient.invalidateQueries({ queryKey: ["staff_latest_checkin", staffProfile.id] });
+                queryClient.invalidateQueries({ queryKey: ["staff_profiles", staffProfile.company_id] });
+              } catch (e: any) {
+                toast.error(e.message || "Failed to simulate check-in");
+              }
+            }}
+            className="h-7 text-[10px] gap-1 px-2 border-dashed bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary font-bold shadow-sm"
+          >
+            <MapPin className="h-3 w-3" /> Simulate GPS
+          </Button>
         </div>
       </header>
 
