@@ -75,6 +75,17 @@ interface StaffPortalProps {
 
 type MobileTab = "tasks" | "docs" | "shifts" | "settings";
 
+function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export default function StaffPortal({ staffProfile, company, onSignOut }: StaffPortalProps) {
   const { isTrialExpired } = useAuth();
   const queryClient = useQueryClient();
@@ -222,30 +233,119 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
     return () => window.removeEventListener("popstate", handleBack);
   }, [selectedTask]);
 
-  // Automatic Real-time Geolocation tracking (calls the staff_update_location edge function)
+  const updateLocationClientSide = async (latitude: number, longitude: number, accuracy: number | null) => {
+    try {
+      // 1. Upsert latest location to staff_locations
+      const { error: locError } = await supabase
+        .from("staff_locations")
+        .upsert({
+          staff_id: staffProfile.id,
+          latitude,
+          longitude,
+          accuracy: accuracy || null,
+          updated_at: new Date().toISOString(),
+        });
+      if (locError) throw locError;
+
+      // 2. Insert into location history
+      const { error: histError } = await supabase
+        .from("staff_location_history")
+        .insert({
+          staff_id: staffProfile.id,
+          latitude,
+          longitude,
+          accuracy: accuracy || null,
+        });
+      if (histError) throw histError;
+
+      // 3. Geofence detection (same logic as edge function)
+      const { data: geofences } = await supabase
+        .from("geofences")
+        .select("id, name, latitude, longitude, radius_meters, ask_for_face_id")
+        .eq("company_id", staffProfile.company_id)
+        .eq("is_active", true);
+
+      if (geofences && geofences.length > 0) {
+        for (const gf of geofences) {
+          const dist = haversineMeters(latitude, longitude, gf.latitude, gf.longitude);
+          const isInside = dist <= (gf.radius_meters || 100);
+
+          // Get last event for this staff+geofence
+          const { data: lastEvent } = await supabase
+            .from("geofence_events")
+            .select("event_type, created_at")
+            .eq("geofence_id", gf.id)
+            .eq("staff_id", staffProfile.id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          let eventType: string | null = null;
+
+          if (!lastEvent) {
+            // First signal for this staff+geofence
+            eventType = isInside ? "logged_in_inside" : "logged_in_outside";
+          } else {
+            const lastIsInside = ["inside", "entered", "logged_in", "logged_in_inside"].includes(lastEvent.event_type);
+            const lastTime = new Date(lastEvent.created_at);
+            const nowDate = new Date();
+            
+            // Check if last event was on a different day
+            const isDifferentDay = lastTime.toDateString() !== nowDate.toDateString();
+
+            if (isDifferentDay) {
+              eventType = isInside ? "logged_in_inside" : "logged_in_outside";
+            } else if (isInside && !lastIsInside) {
+              eventType = "entered";
+            } else if (!isInside && lastIsInside) {
+              eventType = "exited";
+            }
+          }
+
+          if (eventType) {
+            const isEntryEvent = eventType === "entered" || eventType === "logged_in_inside";
+            const shouldRequestFace = isEntryEvent && gf.ask_for_face_id === true;
+
+            const { data: insertedEvent } = await supabase
+              .from("geofence_events")
+              .insert({
+                geofence_id: gf.id,
+                staff_id: staffProfile.id,
+                event_type: eventType,
+                face_check_status: shouldRequestFace ? "requested" : "not_requested",
+              })
+              .select("id")
+              .single();
+
+            if (shouldRequestFace && insertedEvent) {
+              setActiveFaceVerification({
+                eventId: insertedEvent.id,
+                geofenceName: gf.name || "Gated Zone",
+              });
+              setFaceVerifyPhoto(null);
+              setFaceVerifyResult(null);
+            }
+          }
+        }
+      }
+
+      // Invalidate relevant react-query cache keys
+      queryClient.invalidateQueries({ queryKey: ["staff_latest_checkin", staffProfile.id] });
+      queryClient.invalidateQueries({ queryKey: ["staff_profiles", staffProfile.company_id] });
+    } catch (err) {
+      console.warn("Failed to update location client-side:", err);
+    }
+  };
+
+  // Automatic Real-time Geolocation tracking (client-side update fallback)
   useEffect(() => {
     if (isOfflineMode || !staffProfile?.id) return;
 
     let activeWatchId: number | null = null;
 
     const updateLocation = async (position: GeolocationPosition) => {
-      try {
-        const { latitude, longitude, accuracy } = position.coords;
-        const { data, error } = await supabase.functions.invoke("staff_update_location", {
-          body: { latitude, longitude, accuracy },
-        });
-        if (error) throw error;
-        if (data?.faceVerificationRequested && data?.geofenceEventId) {
-          setActiveFaceVerification({
-            eventId: data.geofenceEventId,
-            geofenceName: data.geofenceName || "Gated Zone",
-          });
-          setFaceVerifyPhoto(null);
-          setFaceVerifyResult(null);
-        }
-      } catch (err) {
-        console.warn("Failed to auto-update location:", err);
-      }
+      const { latitude, longitude, accuracy } = position.coords;
+      await updateLocationClientSide(latitude, longitude, accuracy);
     };
 
     if (navigator.geolocation) {
@@ -1052,14 +1152,23 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
             variant="outline"
             onClick={async () => {
               try {
-                // Call the supabase update location function with mock coordinates near the active project geofence
-                const { data, error } = await supabase.functions.invoke("staff_update_location", {
-                  body: { latitude: 37.7749, longitude: -122.4194, accuracy: 10.0 }
-                });
-                if (error) throw error;
+                // Fetch active geofences to get coordinates
+                const { data: geofences } = await supabase
+                  .from("geofences")
+                  .select("latitude, longitude")
+                  .eq("company_id", staffProfile.company_id)
+                  .eq("is_active", true)
+                  .limit(1);
+
+                let lat = 37.7749;
+                let lng = -122.4194;
+                if (geofences && geofences.length > 0 && geofences[0].latitude && geofences[0].longitude) {
+                  lat = geofences[0].latitude;
+                  lng = geofences[0].longitude;
+                }
+
+                await updateLocationClientSide(lat, lng, 10.0);
                 toast.success("GPS check-in simulated successfully!");
-                queryClient.invalidateQueries({ queryKey: ["staff_latest_checkin", staffProfile.id] });
-                queryClient.invalidateQueries({ queryKey: ["staff_profiles", staffProfile.company_id] });
               } catch (e: any) {
                 toast.error(e.message || "Failed to simulate check-in");
               }
