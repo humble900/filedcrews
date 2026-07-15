@@ -264,10 +264,13 @@ export default function DispatchBoard({ companyId, projectId }: DispatchBoardPro
                           }
                         }}
                       >
-                        <SelectTrigger className="h-7 text-[10px] w-32 bg-primary text-primary-foreground">
+                        <SelectTrigger className="h-7 text-[10px] w-32 bg-indigo-600 hover:bg-indigo-700 text-white border-none font-bold">
                           <SelectValue placeholder="Dispatch Staff" />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="assign" disabled className="text-xs text-muted-foreground">
+                            Dispatch Staff
+                          </SelectItem>
                           {staffList.map((s) => {
                             const availability = getStaffStatus(s.id);
                             return (
