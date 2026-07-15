@@ -309,15 +309,6 @@ export default function ProjectsPage() {
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     );
   };
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("create") === "true") {
-      window.history.replaceState({}, document.title, window.location.pathname);
-      openGuidedFlow();
-    }
-  }, [customers]);
-
   // 1. Fetch Customers (for selection dropdown)
   const { data: customers = [] } = useQuery({
     queryKey: ["project_customers", company?.id],
@@ -356,6 +347,14 @@ export default function ProjectsPage() {
     },
     enabled: !!company?.id,
   });
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("create") === "true") {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      openGuidedFlow();
+    }
+  }, [customers]);
 
   // 3. Project Mutations
   const saveProjectMutation = useMutation({
