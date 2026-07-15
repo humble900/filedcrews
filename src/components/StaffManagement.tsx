@@ -667,8 +667,8 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
                   <TableHead>Status</TableHead>
                   <TableHead>Last Seen</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead className="hidden md:table-cell">Job Title</TableHead>
-                  <TableHead className="hidden lg:table-cell">Contact</TableHead>
+                  <TableHead>Job Title</TableHead>
+                  <TableHead>Contact</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -780,12 +780,12 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
                         </TableCell>
 
                         {/* Job Title */}
-                        <TableCell className="hidden md:table-cell">
+                        <TableCell>
                           <span className="text-xs text-muted-foreground">{(s as any).job_title || "—"}</span>
                         </TableCell>
 
                         {/* Contact */}
-                        <TableCell className="hidden lg:table-cell">
+                        <TableCell>
                           <div className="text-xs text-muted-foreground space-y-0.5">
                             {(s as any).email && <p>{(s as any).email}</p>}
                             {(s as any).phone && <p>{(s as any).phone}</p>}
