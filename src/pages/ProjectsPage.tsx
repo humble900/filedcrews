@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PaginatedTableFull } from "@/components/PaginatedTable";
 import FilterChipBar, { FilterChip } from "@/components/FilterChipBar";
 import { useAuth } from "@/hooks/useAuth";
@@ -41,6 +41,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2,
@@ -60,6 +61,18 @@ import {
   Play,
   Pause,
   AlertTriangle,
+  ArrowRight,
+  ArrowLeft,
+  Check,
+  ChevronRight,
+  Users,
+  FileText,
+  Receipt,
+  Target,
+  Shield,
+  Wrench,
+  Sparkles,
+  Rocket,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -114,6 +127,188 @@ export default function ProjectsPage() {
   const [pStatus, setPStatus] = useState("Planning");
   const [pStart, setPStart] = useState("");
   const [pEnd, setPEnd] = useState("");
+
+  // ─── Guided Project Creation Flow ────────────────────────────────
+  const [guidedOpen, setGuidedOpen] = useState(false);
+  const [guidedStep, setGuidedStep] = useState(0);
+  const [guidedSaving, setGuidedSaving] = useState(false);
+  const [createdProjectId, setCreatedProjectId] = useState<string | null>(null);
+  const [createdProjectName, setCreatedProjectName] = useState("");
+
+  // Step 5: Work Order fields
+  const [woTitle, setWoTitle] = useState("");
+  const [woDesc, setWoDesc] = useState("");
+  const [woStart, setWoStart] = useState("");
+  const [woEnd, setWoEnd] = useState("");
+  const [createdJobId, setCreatedJobId] = useState<string | null>(null);
+
+  // Step 6: Crew assignment
+  const [selectedCrewIds, setSelectedCrewIds] = useState<string[]>([]);
+
+  // Staff query for crew assignment step
+  const { data: staffList = [] } = useQuery({
+    queryKey: ["guided_staff", company?.id],
+    queryFn: async () => {
+      if (!company?.id) return [];
+      const { data, error } = await supabase
+        .from("staff_profiles")
+        .select("id, full_name, username, job_title, photo_url")
+        .eq("company_id", company.id)
+        .eq("is_active", true)
+        .order("full_name", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!company?.id,
+  });
+
+  // Guided flow step definitions
+  const GUIDED_STEPS = [
+    { label: "Project Info", icon: Briefcase, desc: "Name your project and link a client" },
+    { label: "Site Location", icon: MapPin, desc: "Set the job site address & geofence" },
+    { label: "Budget & Timeline", icon: DollarSign, desc: "Define contract value and dates" },
+    { label: "First Work Order", icon: Wrench, desc: "Create the first job for this project" },
+    { label: "Assign Crew", icon: Users, desc: "Pick team members to deploy on site" },
+    { label: "Launch", icon: Rocket, desc: "Review and launch your project" },
+  ];
+
+  const guidedProgress = Math.round(((guidedStep) / (GUIDED_STEPS.length - 1)) * 100);
+
+  const openGuidedFlow = () => {
+    setGuidedStep(0);
+    setGuidedSaving(false);
+    setCreatedProjectId(null);
+    setCreatedProjectName("");
+    setCreatedJobId(null);
+    setPName("");
+    setPCustId(customers.length > 0 ? customers[0].id : "");
+    setPRef("");
+    setPDesc("");
+    setPAddress("");
+    setPLat("");
+    setPLng("");
+    setPRadius("150");
+    setPBudget("0");
+    setPContract("0");
+    setPStatus("Planning");
+    setPStart(format(new Date(), "yyyy-MM-dd"));
+    setPEnd("");
+    setWoTitle("");
+    setWoDesc("");
+    setWoStart("");
+    setWoEnd("");
+    setSelectedCrewIds([]);
+    setGuidedOpen(true);
+  };
+
+  const canAdvanceStep = () => {
+    switch (guidedStep) {
+      case 0: return pName.trim().length > 0 && !!pCustId;
+      case 1: return true; // location optional
+      case 2: return true; // budget optional
+      case 3: return woTitle.trim().length > 0;
+      case 4: return true; // crew optional
+      case 5: return true; // launch always valid
+      default: return false;
+    }
+  };
+
+  const handleGuidedNext = async () => {
+    if (guidedStep === 2 && !createdProjectId) {
+      // Save project on completing budget step
+      setGuidedSaving(true);
+      try {
+        const payload = {
+          company_id: company!.id,
+          customer_id: pCustId,
+          name: pName.trim(),
+          ref_number: pRef.trim() || `PRJ-${Date.now().toString().slice(-6)}`,
+          description: pDesc.trim() || null,
+          address: pAddress.trim() || null,
+          latitude: pLat ? parseFloat(pLat) : null,
+          longitude: pLng ? parseFloat(pLng) : null,
+          geofence_radius: parseFloat(pRadius) || 150.0,
+          budget_labour_cost: parseFloat(pBudget) || 0.00,
+          contract_value: parseFloat(pContract) || 0.00,
+          status: pStatus,
+          start_date: pStart || null,
+          end_date: pEnd || null,
+        };
+        const { data, error } = await supabase.from("projects").insert(payload).select("id, name").single();
+        if (error) throw error;
+        setCreatedProjectId(data.id);
+        setCreatedProjectName(data.name);
+        queryClient.invalidateQueries({ queryKey: ["projects_list", company?.id] });
+        toast({ title: "Project created!", description: `${data.name} has been saved.` });
+      } catch (err: any) {
+        toast({ title: "Error creating project", description: err.message, variant: "destructive" });
+        setGuidedSaving(false);
+        return;
+      }
+      setGuidedSaving(false);
+    }
+
+    if (guidedStep === 3 && !createdJobId && createdProjectId) {
+      // Save work order on completing WO step
+      setGuidedSaving(true);
+      try {
+        const payload = {
+          project_id: createdProjectId,
+          customer_id: pCustId,
+          title: woTitle.trim(),
+          status: "Scheduled",
+          description: woDesc.trim() || null,
+          scheduled_start: woStart || null,
+          scheduled_end: woEnd || null,
+        };
+        const { data, error } = await supabase.from("jobs").insert(payload).select("id").single();
+        if (error) throw error;
+        setCreatedJobId(data.id);
+        queryClient.invalidateQueries({ queryKey: ["jobs", company?.id] });
+        toast({ title: "Work order created!", description: `"${woTitle}" has been scheduled.` });
+      } catch (err: any) {
+        toast({ title: "Error creating work order", description: err.message, variant: "destructive" });
+        setGuidedSaving(false);
+        return;
+      }
+      setGuidedSaving(false);
+    }
+
+    if (guidedStep === 4 && createdProjectId && selectedCrewIds.length > 0) {
+      // Assign crew to project
+      setGuidedSaving(true);
+      try {
+        const assignments = selectedCrewIds.map((staffId) => ({
+          project_id: createdProjectId,
+          staff_id: staffId,
+          role: "Field Crew",
+        }));
+        const { error } = await supabase.from("project_assignments").insert(assignments);
+        if (error) throw error;
+        toast({ title: "Crew assigned!", description: `${selectedCrewIds.length} team member(s) deployed.` });
+      } catch (err: any) {
+        toast({ title: "Error assigning crew", description: err.message, variant: "destructive" });
+      }
+      setGuidedSaving(false);
+    }
+
+    if (guidedStep < GUIDED_STEPS.length - 1) {
+      setGuidedStep(guidedStep + 1);
+    }
+  };
+
+  const handleGuidedLaunch = () => {
+    setGuidedOpen(false);
+    if (createdProjectId) {
+      navigate(`/projects/${createdProjectId}`);
+    }
+  };
+
+  const toggleCrewSelection = (id: string) => {
+    setSelectedCrewIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
 
   // 1. Fetch Customers (for selection dropdown)
   const { data: customers = [] } = useQuery({
@@ -347,8 +542,8 @@ export default function ProjectsPage() {
                 Establish client contract limits, geofence radius sites, and launch isolated workspaces for your {t("projects").toLowerCase()}.
               </p>
             </div>
-            <Button onClick={() => navigate("/dashboard/wizard?mode=new-project")} className="gap-2 shrink-0">
-              <Plus className="h-4 w-4" /> Add {t("Project")}
+            <Button onClick={openGuidedFlow} className="gap-2 shrink-0 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500">
+              <Sparkles className="h-4 w-4" /> New {t("Project")}
             </Button>
           </div>
 
@@ -474,11 +669,11 @@ export default function ProjectsPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => openProjectDialog()}
+                                onClick={openGuidedFlow}
                                 className="mt-3 text-xs gap-1.5"
                               >
-                                <Plus className="h-3.5 w-3.5" />
-                                Add Project
+                                <Sparkles className="h-3.5 w-3.5" />
+                                Create Your First Project
                               </Button>
                             </div>
                           </TableCell>
@@ -694,6 +889,408 @@ export default function ProjectsPage() {
                 Save Project
               </Button>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* ─── Guided Project Creation Flow ─── */}
+        <Dialog open={guidedOpen} onOpenChange={setGuidedOpen}>
+          <DialogContent className="max-w-full w-screen h-[100dvh] max-h-[100dvh] rounded-none border-none p-0 bg-background flex flex-col animate-in fade-in slide-in-from-bottom-6 duration-300">
+            {/* Stepper Header */}
+            <div className="sticky top-0 z-10 bg-card border-b border-border/40 pt-6 pb-5">
+              <div className="max-w-3xl mx-auto w-full px-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500/15 to-indigo-500/15">
+                      <Sparkles className="h-5 w-5 text-blue-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-extrabold tracking-tight">New Project Setup Flow</h3>
+                      <p className="text-xs text-muted-foreground">Step {guidedStep + 1} of {GUIDED_STEPS.length} — {GUIDED_STEPS[guidedStep].desc}</p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => setGuidedOpen(false)} className="rounded-full">
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+                <Progress value={guidedProgress} className="h-1.5 bg-muted/40 mb-4" />
+                {/* Step indicators */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                  {GUIDED_STEPS.map((s, i) => {
+                    const StepIcon = s.icon;
+                    const isActive = i === guidedStep;
+                    const isDone = i < guidedStep;
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => { if (isDone) setGuidedStep(i); }}
+                        disabled={!isDone}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                          isActive
+                            ? "bg-primary text-primary-foreground shadow-sm shadow-primary/25"
+                            : isDone
+                            ? "text-green-600 bg-green-500/10 cursor-pointer hover:bg-green-500/15"
+                            : "text-muted-foreground/40 bg-muted/20"
+                        }`}
+                      >
+                        {isDone ? (
+                          <Check className="h-3.5 w-3.5" />
+                        ) : (
+                          <StepIcon className="h-3.5 w-3.5" />
+                        )}
+                        <span>{s.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Step Content */}
+            <div className="max-w-3xl mx-auto w-full flex-1 px-6 py-8 overflow-y-auto space-y-6 min-h-[350px]">
+              {/* Step 0: Project Info */}
+              {guidedStep === 0 && (
+                <div className="space-y-5 animate-in fade-in duration-300">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("Project")} Name *</label>
+                    <Input
+                      placeholder="e.g. Oak Street Commercial Build"
+                      value={pName}
+                      onChange={(e) => setPName(e.target.value)}
+                      className="text-lg py-6 font-semibold"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Customer / Client *</label>
+                      <Select value={pCustId} onValueChange={setPCustId}>
+                        <SelectTrigger className="py-6"><SelectValue placeholder="Select client" /></SelectTrigger>
+                        <SelectContent>
+                          {customers.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Ref Number</label>
+                      <Input
+                        placeholder="Auto-generated if blank"
+                        value={pRef}
+                        onChange={(e) => setPRef(e.target.value)}
+                        className="py-6 font-mono"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Description Notes</label>
+                    <Textarea
+                      placeholder="Summarize project scope, deliverables, and key milestones..."
+                      value={pDesc}
+                      onChange={(e) => setPDesc(e.target.value)}
+                      rows={4}
+                      className="resize-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Step 1: Site Location */}
+              {guidedStep === 1 && (
+                <div className="space-y-5 animate-in fade-in duration-300">
+                  <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                    <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-2">
+                      <MapPin className="h-4 w-4 shrink-0 text-blue-500" />
+                      The address is used for GPS navigation. Lat/Lng sets the geofence check-in boundary.
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Job Site Address</label>
+                    <Input
+                      placeholder="e.g. 100 Oak St, San Francisco, CA 94102"
+                      value={pAddress}
+                      onChange={(e) => setPAddress(e.target.value)}
+                      className="py-6"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Latitude</label>
+                      <Input type="number" step="0.000001" placeholder="37.7749" value={pLat} onChange={(e) => setPLat(e.target.value)} className="py-6" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Longitude</label>
+                      <Input type="number" step="0.000001" placeholder="-122.4194" value={pLng} onChange={(e) => setPLng(e.target.value)} className="py-6" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Geofence Radius (meters)</label>
+                      <Input type="number" placeholder="150" value={pRadius} onChange={(e) => setPRadius(e.target.value)} className="py-6" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2: Budget & Timeline */}
+              {guidedStep === 2 && (
+                <div className="space-y-5 animate-in fade-in duration-300">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Contract Value ($)</label>
+                      <Input type="number" placeholder="0.00" value={pContract} onChange={(e) => setPContract(e.target.value)} className="py-6" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Labor Budget ($)</label>
+                      <Input type="number" placeholder="0.00" value={pBudget} onChange={(e) => setPBudget(e.target.value)} className="py-6" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Start Date</label>
+                      <Input type="date" value={pStart} onChange={(e) => setPStart(e.target.value)} className="py-6" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">End Date</label>
+                      <Input type="date" value={pEnd} onChange={(e) => setPEnd(e.target.value)} className="py-6" />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Initial Status</label>
+                    <Select value={pStatus} onValueChange={setPStatus}>
+                      <SelectTrigger className="py-6"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Planning">Planning</SelectItem>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="On Hold">On Hold</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {createdProjectId && (
+                    <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center gap-3">
+                      <div className="p-1 rounded-full bg-green-500 text-white">
+                        <Check className="h-4 w-4" />
+                      </div>
+                      <p className="text-sm text-green-700 dark:text-green-400 font-semibold">Project "{createdProjectName}" saved successfully!</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Step 3: First Work Order */}
+              {guidedStep === 3 && (
+                <div className="space-y-5 animate-in fade-in duration-300">
+                  <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                    <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-2">
+                      <Wrench className="h-4 w-4 shrink-0 text-amber-500" />
+                      Create the first work order to deploy your crew. You can issue more work orders inside this project workspace later.
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Work Order Title *</label>
+                    <Input
+                      placeholder="e.g. Initial Inspection & Foundation Survey"
+                      value={woTitle}
+                      onChange={(e) => setWoTitle(e.target.value)}
+                      className="py-6 text-base font-semibold"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Description of Tasks</label>
+                    <Textarea
+                      placeholder="Detail instructions for the field workers..."
+                      value={woDesc}
+                      onChange={(e) => setWoDesc(e.target.value)}
+                      rows={4}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Scheduled Start</label>
+                      <Input type="datetime-local" value={woStart} onChange={(e) => setWoStart(e.target.value)} className="py-6" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Scheduled End</label>
+                      <Input type="datetime-local" value={woEnd} onChange={(e) => setWoEnd(e.target.value)} className="py-6" />
+                    </div>
+                  </div>
+                  {createdJobId && (
+                    <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center gap-3">
+                      <div className="p-1 rounded-full bg-green-500 text-white">
+                        <Check className="h-4 w-4" />
+                      </div>
+                      <p className="text-sm text-green-700 dark:text-green-400 font-semibold">First job scheduled successfully!</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Step 4: Assign Crew */}
+              {guidedStep === 4 && (
+                <div className="space-y-5 animate-in fade-in duration-300">
+                  <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
+                    <p className="text-xs text-indigo-700 dark:text-indigo-400 font-semibold flex items-center gap-2">
+                      <Users className="h-4 w-4 shrink-0 text-indigo-500" />
+                      Assign crew members to the workspace. This adds them to the project directory and dispatches the task.
+                    </p>
+                  </div>
+                  {staffList.length === 0 ? (
+                    <div className="text-center py-12 border border-dashed rounded-xl p-6">
+                      <Users className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                      <h4 className="font-bold text-sm">No Active Crew Members</h4>
+                      <p className="text-xs text-muted-foreground mt-1">Please add staff members in your main directory tab first.</p>
+                    </div>
+                  ) : (
+                    <div className="grid gap-2.5 max-h-[350px] overflow-y-auto pr-1">
+                      {staffList.map((s: any) => {
+                        const selected = selectedCrewIds.includes(s.id);
+                        return (
+                          <button
+                            key={s.id}
+                            onClick={() => toggleCrewSelection(s.id)}
+                            className={`flex items-center gap-4 p-4 rounded-xl border text-left transition-all w-full ${
+                              selected
+                                ? "border-primary/40 bg-primary/5 ring-1 ring-primary/20"
+                                : "border-border hover:border-border-hover hover:bg-muted/40"
+                            }`}
+                          >
+                            {s.photo_url ? (
+                              <img src={s.photo_url} alt="" className="h-10 w-10 rounded-full object-cover border border-border/40 shrink-0" />
+                            ) : (
+                              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground shrink-0">
+                                {(s.full_name || "?").charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold truncate">{s.full_name}</p>
+                              <p className="text-xs text-muted-foreground">{s.job_title || `@${s.username}`}</p>
+                            </div>
+                            <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                              selected
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-muted-foreground/30"
+                            }`}>
+                              {selected && <Check className="h-3 w-3" />}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Step 5: Launch Summary */}
+              {guidedStep === 5 && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="text-center py-4">
+                    <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500/15 to-emerald-500/15 flex items-center justify-center mb-4 shadow-sm">
+                      <Rocket className="h-8 w-8 text-green-500" />
+                    </div>
+                    <h3 className="text-2xl font-extrabold tracking-tight">Project Ready to Deploy!</h3>
+                    <p className="text-sm text-muted-foreground mt-1">Verify details below before opening the workspace.</p>
+                  </div>
+
+                  <div className="grid gap-3">
+                    <div className="flex gap-4 p-4 rounded-xl border border-border/60 bg-muted/10">
+                      <Briefcase className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Workspace Project</p>
+                        <p className="text-base font-bold text-foreground mt-0.5">{createdProjectName || pName}</p>
+                        {pAddress && <p className="text-xs text-muted-foreground mt-1">{pAddress}</p>}
+                      </div>
+                    </div>
+
+                    {(pContract !== "0" || pBudget !== "0") && (
+                      <div className="flex gap-4 p-4 rounded-xl border border-border/60 bg-muted/10">
+                        <DollarSign className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Financial Allocations</p>
+                          <p className="text-sm font-semibold mt-0.5">
+                            Contract Value: <span className="font-mono">${Number(pContract).toLocaleString()}</span>
+                          </p>
+                          <p className="text-sm font-semibold text-muted-foreground">
+                            Labor Cost Cap: <span className="font-mono">${Number(pBudget).toLocaleString()}</span>
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {woTitle && (
+                      <div className="flex gap-4 p-4 rounded-xl border border-border/60 bg-muted/10">
+                        <Wrench className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Active Dispatched Job</p>
+                          <p className="text-sm font-semibold mt-0.5">{woTitle}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedCrewIds.length > 0 && (
+                      <div className="flex gap-4 p-4 rounded-xl border border-border/60 bg-muted/10">
+                        <Users className="h-5 w-5 text-indigo-500 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Deployed Staff Members</p>
+                          <div className="flex flex-wrap gap-1.5 mt-1.5">
+                            {selectedCrewIds.map((id) => {
+                              const s = staffList.find((x: any) => x.id === id);
+                              return s ? (
+                                <Badge key={id} variant="secondary" className="px-2 py-1 text-xs">
+                                  {s.full_name}
+                                </Badge>
+                              ) : null;
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Navigation */}
+            <div className="sticky bottom-0 bg-card border-t border-border/40 py-5">
+              <div className="max-w-3xl mx-auto w-full px-6 flex items-center justify-between gap-3">
+                {guidedStep > 0 ? (
+                  <Button
+                    variant="ghost"
+                    onClick={() => setGuidedStep(guidedStep - 1)}
+                    className="gap-2 px-5 py-6 font-semibold"
+                  >
+                    <ArrowLeft className="h-4 w-4" /> Back
+                  </Button>
+                ) : (
+                  <Button variant="ghost" onClick={() => setGuidedOpen(false)} className="px-5 py-6 font-semibold">
+                    Cancel
+                  </Button>
+                )}
+
+                {guidedStep < GUIDED_STEPS.length - 1 ? (
+                  <Button
+                    onClick={handleGuidedNext}
+                    disabled={!canAdvanceStep() || guidedSaving}
+                    className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 px-6 py-6 font-bold text-white shadow-md shadow-blue-500/10"
+                  >
+                    {guidedSaving ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        {guidedStep === 2 && !createdProjectId ? "Create & Save" : "Continue"}
+                        <ArrowRight className="h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleGuidedLaunch}
+                    className="gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 px-6 py-6 font-bold text-white shadow-md shadow-green-500/10"
+                  >
+                    <Rocket className="h-4 w-4" />
+                    Open Project Workspace
+                  </Button>
+                )}
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </DashboardLayout>
