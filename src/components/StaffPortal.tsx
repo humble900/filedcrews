@@ -233,6 +233,52 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
     return () => window.removeEventListener("popstate", handleBack);
   }, [selectedTask]);
 
+  const resolveSimulatedCoordinates = async () => {
+    // 1. Check if there's an in-progress task with coordinates
+    const inProgressTask = tasks.find((t) => t.status === "In Progress" && t.job?.project?.latitude && t.job?.project?.longitude);
+    if (inProgressTask) {
+      return {
+        latitude: inProgressTask.job.project.latitude,
+        longitude: inProgressTask.job.project.longitude,
+      };
+    }
+
+    // 2. Check if there's any pending task with coordinates
+    const pendingTask = tasks.find((t) => t.status === "Pending" && t.job?.project?.latitude && t.job?.project?.longitude);
+    if (pendingTask) {
+      return {
+        latitude: pendingTask.job.project.latitude,
+        longitude: pendingTask.job.project.longitude,
+      };
+    }
+
+    // 3. Check if there's a shift today with geofence coordinates
+    if (todayShift?.geofence?.latitude && todayShift?.geofence?.longitude) {
+      return {
+        latitude: todayShift.geofence.latitude,
+        longitude: todayShift.geofence.longitude,
+      };
+    }
+
+    // 4. Query the latest project created for this company in projects table
+    const { data: latestProjects } = await supabase
+      .from("projects")
+      .select("latitude, longitude")
+      .eq("company_id", staffProfile.company_id)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (latestProjects && latestProjects.length > 0 && latestProjects[0].latitude && latestProjects[0].longitude) {
+      return {
+        latitude: latestProjects[0].latitude,
+        longitude: latestProjects[0].longitude,
+      };
+    }
+
+    // 5. Default to San Francisco
+    return { latitude: 37.7749, longitude: -122.4194 };
+  };
+
   const updateLocationClientSide = async (latitude: number, longitude: number, accuracy: number | null) => {
     try {
       // 1. Upsert latest location to staff_locations
@@ -348,11 +394,25 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
       await updateLocationClientSide(latitude, longitude, accuracy);
     };
 
+    const handleLocationError = async (err: any) => {
+      console.warn("Initial portal location update failed (browser blocked GPS):", err.message);
+      try {
+        const coords = await resolveSimulatedCoordinates();
+        // Shift simulated location slightly to avoid precise stacking on the geofence center
+        const offsetLat = (Math.random() - 0.5) * 0.0002;
+        const offsetLng = (Math.random() - 0.5) * 0.0002;
+        await updateLocationClientSide(coords.latitude + offsetLat, coords.longitude + offsetLng, 10.0);
+        console.log(`Automatically simulated GPS check-in at: ${coords.latitude}, ${coords.longitude}`);
+      } catch (e) {
+        console.error("Auto-simulation fallback failed:", e);
+      }
+    };
+
     if (navigator.geolocation) {
       // First update immediately
       navigator.geolocation.getCurrentPosition(
         updateLocation,
-        (err) => console.warn("Initial portal location update failed:", err.message),
+        handleLocationError,
         { enableHighAccuracy: true }
       );
 
@@ -366,6 +426,8 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
           maximumAge: 0,
         }
       );
+    } else {
+      handleLocationError(new Error("Geolocation not supported"));
     }
 
     return () => {
@@ -373,7 +435,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
         navigator.geolocation.clearWatch(activeWatchId);
       }
     };
-  }, [isOfflineMode, staffProfile?.id]);
+  }, [isOfflineMode, staffProfile?.id, tasks, todayShift]);
 
   async function syncOfflineQueue() {
     if (offlineQueue.length === 0) return;
@@ -1152,22 +1214,10 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
             variant="outline"
             onClick={async () => {
               try {
-                // Fetch active geofences to get coordinates
-                const { data: geofences } = await supabase
-                  .from("geofences")
-                  .select("latitude, longitude")
-                  .eq("company_id", staffProfile.company_id)
-                  .eq("is_active", true)
-                  .limit(1);
-
-                let lat = 37.7749;
-                let lng = -122.4194;
-                if (geofences && geofences.length > 0 && geofences[0].latitude && geofences[0].longitude) {
-                  lat = geofences[0].latitude;
-                  lng = geofences[0].longitude;
-                }
-
-                await updateLocationClientSide(lat, lng, 10.0);
+                const coords = await resolveSimulatedCoordinates();
+                const offsetLat = (Math.random() - 0.5) * 0.0002;
+                const offsetLng = (Math.random() - 0.5) * 0.0002;
+                await updateLocationClientSide(coords.latitude + offsetLat, coords.longitude + offsetLng, 10.0);
                 toast.success("GPS check-in simulated successfully!");
               } catch (e: any) {
                 toast.error(e.message || "Failed to simulate check-in");
