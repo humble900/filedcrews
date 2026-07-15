@@ -743,7 +743,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
           </div>
 
           {/* Sheet Body */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
+          <div className="flex-1 overflow-y-auto scrollbar-hidden px-4 py-4 space-y-5">
             {/* Rework Banner */}
             {selectedTask.status === "Completed" && selectedTask.approval_status === "Rejected" && (
               <div className="p-3 bg-rose-500/10 border border-rose-500/25 rounded-xl flex items-start gap-2.5">
@@ -958,7 +958,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
               <X className="h-4 w-4" />
             </button>
           </div>
-          <div className="flex-1 overflow-auto p-4">
+          <div className="flex-1 overflow-auto scrollbar-hidden p-4">
             <InteractiveSpreadsheet
               fileUrl={`${selectedDoc.file_url}?v=${Date.now()}`}
               onSave={handleSaveSpreadsheet}
