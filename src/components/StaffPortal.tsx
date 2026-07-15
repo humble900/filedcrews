@@ -33,6 +33,9 @@ import {
   WifiOff,
   Briefcase,
   Package,
+  Bold,
+  Italic,
+  List,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -72,6 +75,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
   const apkDownloadUrl = "/downloads/Ocrem.apk";
 
   const [activeTab, setActiveTab] = useState<MobileTab>("tasks");
+  const [docSubTab, setDocSubTab] = useState<"files" | "reports">("files");
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
   const [selectedDoc, setSelectedDoc] = useState<any | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -101,12 +105,16 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
     return !!localStorage.getItem("onsite_pin_hash");
   });
 
-  // Incident report state
+  // Incident/Field report state
   const [showIncidentReport, setShowIncidentReport] = useState(false);
   const [incidentTitle, setIncidentTitle] = useState("");
+  const [incidentType, setIncidentType] = useState("Daily Progress Report");
   const [incidentDescription, setIncidentDescription] = useState("");
   const [incidentSeverity, setIncidentSeverity] = useState("medium");
+  const [incidentProject, setIncidentProject] = useState("");
+  const [incidentAttachments, setIncidentAttachments] = useState<string[]>([]);
   const [isSubmittingIncident, setIsSubmittingIncident] = useState(false);
+  const [isUploadingIncidentAttachment, setIsUploadingIncidentAttachment] = useState(false);
 
   // Decline task/shift state
   const [declineTarget, setDeclineTarget] = useState<{ type: "task" | "shift"; id: string; name: string } | null>(null);
@@ -425,6 +433,23 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
     },
   });
 
+  // Fetch incident/field reports submitted by the crew member
+  const { data: incidentReports = [], isLoading: incidentsLoading, refetch: refetchIncidents } = useQuery({
+    queryKey: ["staff_incident_reports", staffProfile.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("incident_reports")
+        .select(`
+          *,
+          project:projects(id, name, ref_number)
+        `)
+        .eq("reported_by", staffProfile.id)
+        .order("created_at", { ascending: false });
+      if (error) return [];
+      return data || [];
+    },
+  });
+
   const timesheetSummary = useMemo(() => {
     let totalMinutes = 0;
     let approvedMinutes = 0;
@@ -634,25 +659,64 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
     toast.success("PIN lock removed");
   };
 
-  // ── Incident Report Handler ──
+  // ── Incident/Field Report Handlers ──
+  const insertFormatting = (tag: string) => {
+    const textarea = document.getElementById("incident-description-textarea") as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selected = text.substring(start, end);
+
+    let replacement = "";
+    if (tag === "bold") {
+      replacement = `**${selected || "bold text"}**`;
+    } else if (tag === "italic") {
+      replacement = `*${selected || "italic text"}*`;
+    } else if (tag === "bullet") {
+      replacement = `\n- ${selected || "list item"}`;
+    } else if (tag === "warning") {
+      replacement = `\n> [!IMPORTANT]\n> ${selected || "important warning text"}\n`;
+    }
+
+    const newValue = text.substring(0, start) + replacement + text.substring(end);
+    setIncidentDescription(newValue);
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + replacement.length, start + replacement.length);
+    }, 0);
+  };
+
   const handleSubmitIncident = async () => {
-    if (!incidentTitle.trim() || !incidentDescription.trim()) return;
+    if (!incidentTitle.trim() || !incidentDescription.trim() || !incidentProject) {
+      toast.error("Please fill in all required fields and select a project.");
+      return;
+    }
     setIsSubmittingIncident(true);
     try {
       const { error } = await supabase.from("incident_reports").insert({
         company_id: staffProfile.company_id,
+        project_id: incidentProject,
         reported_by: staffProfile.id,
         title: incidentTitle.trim(),
+        type: incidentType,
         description: incidentDescription.trim(),
         severity: incidentSeverity,
         status: "Open",
+        attachment_urls: incidentAttachments,
       });
       if (error) throw error;
-      toast.success("Incident report submitted successfully!");
+      toast.success("Field report submitted successfully!");
       setShowIncidentReport(false);
       setIncidentTitle("");
       setIncidentDescription("");
+      setIncidentType("Daily Progress Report");
       setIncidentSeverity("medium");
+      setIncidentProject("");
+      setIncidentAttachments([]);
+      refetchIncidents();
     } catch (err: any) {
       toast.error(err.message || "Failed to submit report");
     } finally {
@@ -1088,96 +1152,217 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
         {/* ─── DOCUMENTS TAB ─── */}
         {activeTab === "docs" && (
           <div className="px-4 py-4 space-y-4 animate-fade-in">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold">Documents</h2>
-              <Button
-                size="sm"
-                className="h-8 text-xs font-semibold gap-1.5"
-                onClick={() => {
-                  if (!selectedProjectId) {
-                    toast.error("Select a project first");
-                    return;
-                  }
-                  setScannerOpen(true);
-                }}
-                disabled={!selectedProjectId}
+            {/* Segmented Sub-tabs */}
+            <div className="flex bg-muted p-1 rounded-xl">
+              <button
+                type="button"
+                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                  docSubTab === "files" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                }`}
+                onClick={() => setDocSubTab("files")}
               >
-                <Plus className="h-3.5 w-3.5" /> Scan
-              </Button>
+                Files Checklist
+              </button>
+              <button
+                type="button"
+                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                  docSubTab === "reports" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                }`}
+                onClick={() => setDocSubTab("reports")}
+              >
+                Field Reports
+              </button>
             </div>
 
-            {assignments.length > 0 ? (
-              <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                <SelectTrigger className="w-full h-11 text-sm font-semibold">
-                  <SelectValue placeholder="Select project..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {assignments.map((a: any) => (
-                    <SelectItem key={a.project_id} value={a.project_id}>
-                      {a.project?.name || "Project"} ({a.project?.ref_number})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 font-semibold text-center">
-                No active project assignments.
-              </div>
-            )}
-
-            {selectedProjectId && (
+            {docSubTab === "files" ? (
               <>
-                {docsLoading ? (
-                  <div className="space-y-3">
-                    {[1, 2].map((i) => <div key={i} className="skeleton h-16 rounded-xl" />)}
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base font-bold">Documents</h2>
+                  <Button
+                    size="sm"
+                    className="h-8 text-xs font-semibold gap-1.5"
+                    onClick={() => {
+                      if (!selectedProjectId) {
+                        toast.error("Select a project first");
+                        return;
+                      }
+                      setScannerOpen(true);
+                    }}
+                    disabled={!selectedProjectId}
+                  >
+                    <Plus className="h-3.5 w-3.5" /> Scan
+                  </Button>
+                </div>
+
+                {assignments.length > 0 ? (
+                  <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                    <SelectTrigger className="w-full h-11 text-sm font-semibold">
+                      <SelectValue placeholder="Select project..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {assignments.map((a: any) => (
+                        <SelectItem key={a.project_id} value={a.project_id}>
+                          {a.project?.name || "Project"} ({a.project?.ref_number})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 font-semibold text-center">
+                    No active project assignments.
                   </div>
-                ) : documents.length === 0 ? (
-                  <div className="flex flex-col items-center py-12 text-center space-y-2">
+                )}
+
+                {selectedProjectId && (
+                  <>
+                    {docsLoading ? (
+                      <div className="space-y-3">
+                        {[1, 2].map((i) => <div key={i} className="skeleton h-16 rounded-xl" />)}
+                      </div>
+                    ) : documents.length === 0 ? (
+                      <div className="flex flex-col items-center py-12 text-center space-y-2">
+                        <FileText className="h-10 w-10 text-muted-foreground/40" />
+                        <p className="text-sm font-semibold text-muted-foreground">No documents yet</p>
+                        <p className="text-xs text-muted-foreground">Use "Scan" to add files.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {documents.map((doc: any) => (
+                          <div
+                            key={doc.id}
+                            className="flex items-center justify-between p-3 rounded-xl border bg-card card-elevated"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              {doc.file_url.includes(".csv") ? (
+                                <FileSpreadsheet className="h-8 w-8 text-emerald-600 shrink-0" />
+                              ) : (
+                                <FileText className="h-8 w-8 text-primary shrink-0" />
+                              )}
+                              <div className="min-w-0">
+                                <p className="font-semibold text-sm truncate">{doc.name}</p>
+                                <p className="text-[10px] text-muted-foreground">
+                                  {doc.uploader?.full_name || "Manager"} · {new Date(doc.created_at).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="shrink-0 ml-2">
+                              {doc.file_url.includes(".csv") ? (
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  className="h-8 text-xs font-bold"
+                                  onClick={() => {
+                                    setSelectedDoc(doc);
+                                    setSheetOpen(true);
+                                  }}
+                                >
+                                  Edit
+                                </Button>
+                              ) : (
+                                <a href={doc.file_url} target="_blank" rel="noreferrer">
+                                  <Button variant="outline" size="sm" className="h-8 text-xs font-bold gap-1">
+                                    View <ExternalLink className="h-3 w-3" />
+                                  </Button>
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base font-bold">Field Reports</h2>
+                  <Button
+                    size="sm"
+                    className="h-8 text-xs font-semibold gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white"
+                    onClick={() => {
+                      setShowIncidentReport(true);
+                      setIncidentTitle("");
+                      setIncidentDescription("");
+                      setIncidentType("Daily Progress Report");
+                      setIncidentSeverity("medium");
+                      setIncidentProject("");
+                      setIncidentAttachments([]);
+                    }}
+                  >
+                    <Plus className="h-3.5 w-3.5" /> File Report
+                  </Button>
+                </div>
+
+                {incidentsLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2].map((i) => <div key={i} className="skeleton h-24 rounded-xl" />)}
+                  </div>
+                ) : incidentReports.length === 0 ? (
+                  <div className="flex flex-col items-center py-16 text-center space-y-2">
                     <FileText className="h-10 w-10 text-muted-foreground/40" />
-                    <p className="text-sm font-semibold text-muted-foreground">No documents yet</p>
-                    <p className="text-xs text-muted-foreground">Use "Scan" to add files.</p>
+                    <p className="text-sm font-semibold text-muted-foreground">No reports filed yet</p>
+                    <p className="text-xs text-muted-foreground">Submit safety logs or progress reports here.</p>
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    {documents.map((doc: any) => (
-                      <div
-                        key={doc.id}
-                        className="flex items-center justify-between p-3 rounded-xl border bg-card card-elevated"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          {doc.file_url.includes(".csv") ? (
-                            <FileSpreadsheet className="h-8 w-8 text-emerald-600 shrink-0" />
-                          ) : (
-                            <FileText className="h-8 w-8 text-primary shrink-0" />
-                          )}
-                          <div className="min-w-0">
-                            <p className="font-semibold text-sm truncate">{doc.name}</p>
+                  <div className="space-y-3">
+                    {incidentReports.map((rep: any) => (
+                      <div key={rep.id} className="p-4 rounded-xl border bg-card card-elevated space-y-3 text-left">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-0.5">
+                            <h3 className="font-bold text-sm text-foreground leading-tight">{rep.title}</h3>
                             <p className="text-[10px] text-muted-foreground">
-                              {doc.uploader?.full_name || "Manager"} · {new Date(doc.created_at).toLocaleDateString()}
+                              {rep.type} · {new Date(rep.created_at).toLocaleDateString()}
                             </p>
                           </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <Badge className={`text-[9px] font-bold px-2 py-0.5 ${
+                              rep.severity === "high" || rep.severity === "critical"
+                                ? "bg-rose-500/15 text-rose-600 border-rose-500/30"
+                                : rep.severity === "medium"
+                                  ? "bg-amber-500/15 text-amber-600 border-amber-500/30"
+                                  : "bg-emerald-500/15 text-emerald-600 border-emerald-500/30"
+                            }`}>
+                              {rep.severity}
+                            </Badge>
+                            <Badge className="bg-blue-500/15 text-blue-600 border-blue-500/30 text-[9px] font-bold px-2 py-0.5">
+                              {rep.status}
+                            </Badge>
+                          </div>
                         </div>
-                        <div className="shrink-0 ml-2">
-                          {doc.file_url.includes(".csv") ? (
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              className="h-8 text-xs font-bold"
-                              onClick={() => {
-                                setSelectedDoc(doc);
-                                setSheetOpen(true);
-                              }}
-                            >
-                              Edit
-                            </Button>
-                          ) : (
-                            <a href={doc.file_url} target="_blank" rel="noreferrer">
-                              <Button variant="outline" size="sm" className="h-8 text-xs font-bold gap-1">
-                                View <ExternalLink className="h-3 w-3" />
-                              </Button>
-                            </a>
-                          )}
-                        </div>
+
+                        {rep.project && (
+                          <p className="text-[11px] font-bold text-indigo-400 flex items-center gap-1">
+                            <MapPin className="h-3 w-3 shrink-0" />
+                            {rep.project.name} ({rep.project.ref_number})
+                          </p>
+                        )}
+
+                        <p className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap font-sans">
+                          {rep.description}
+                        </p>
+
+                        {rep.attachment_urls && rep.attachment_urls.length > 0 && (
+                          <div className="space-y-1.5 pt-1 border-t border-border/40">
+                            <p className="text-[9px] font-bold uppercase text-muted-foreground">Attachments</p>
+                            <div className="grid grid-cols-3 gap-2">
+                              {rep.attachment_urls.map((url: string, idx: number) => (
+                                <a
+                                  key={idx}
+                                  href={url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="relative aspect-[4/3] rounded-lg border overflow-hidden bg-muted flex items-center justify-center group"
+                                >
+                                  <img src={url} alt="Attachment" className="w-full h-full object-cover" />
+                                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <ExternalLink className="h-3.5 w-3.5 text-white" />
+                                  </div>
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -2076,54 +2261,210 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
 
       {/* ═══ INCIDENT REPORT DIALOG ═══ */}
       <Dialog open={showIncidentReport} onOpenChange={setShowIncidentReport}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto bg-background border-border">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-500" />
-              File Incident Report
+              File Field / Incident Report
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Submit a safety incident, equipment issue, or shift report to your back office.
+              Submit progress updates, safety logs, near misses, or tool damage reports directly.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 py-2">
+          <div className="space-y-4 py-2">
+            {/* Project Selection */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase text-muted-foreground">Assigned Project *</label>
+              {assignments.length > 0 ? (
+                <Select value={incidentProject} onValueChange={setIncidentProject}>
+                  <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="Select project..." /></SelectTrigger>
+                  <SelectContent>
+                    {assignments.map((a: any) => (
+                      <SelectItem key={a.project_id} value={a.project_id}>
+                        {a.project?.name || "Project"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-xs text-rose-500 font-medium">You need an assigned project to file reports.</p>
+              )}
+            </div>
+
+            {/* Report Type */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase text-muted-foreground">Report Type</label>
+              <Select value={incidentType} onValueChange={setIncidentType}>
+                <SelectTrigger className="h-10 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Daily Progress Report">Daily Progress Report</SelectItem>
+                  <SelectItem value="Safety Incident / Injury">Safety Incident / Injury</SelectItem>
+                  <SelectItem value="Equipment Damage">Equipment Damage / Issue</SelectItem>
+                  <SelectItem value="Near Miss Log">Near Miss Log</SelectItem>
+                  <SelectItem value="Client Request / Change">Client Request / Change</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Title */}
             <div className="space-y-1">
               <label className="text-[10px] font-bold uppercase text-muted-foreground">Report Title *</label>
               <Input
-                placeholder="e.g. Equipment malfunction on site B"
+                placeholder="e.g. Completed foundation pour B"
                 value={incidentTitle}
                 onChange={(e) => setIncidentTitle(e.target.value)}
                 className="h-10 text-sm"
               />
             </div>
+
+            {/* Severity */}
             <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase text-muted-foreground">Severity</label>
+              <label className="text-[10px] font-bold uppercase text-muted-foreground">Severity Level</label>
               <Select value={incidentSeverity} onValueChange={setIncidentSeverity}>
                 <SelectTrigger className="h-10 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="critical">Critical</SelectItem>
+                  <SelectItem value="low">Low (Standard Report)</SelectItem>
+                  <SelectItem value="medium">Medium (Requires Review)</SelectItem>
+                  <SelectItem value="high">High (Action Required)</SelectItem>
+                  <SelectItem value="critical">Critical (Immediate Stop)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase text-muted-foreground">Description *</label>
+
+            {/* Description Editor Toolbar & Textarea */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-bold uppercase text-muted-foreground">Description *</label>
+                {/* Basic Customization Toolbar */}
+                <div className="flex items-center gap-1 bg-muted p-0.5 rounded-md border">
+                  <button
+                    type="button"
+                    title="Bold"
+                    className="p-1 rounded hover:bg-background text-muted-foreground hover:text-foreground text-xs"
+                    onClick={() => insertFormatting("bold")}
+                  >
+                    <Bold className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    title="Italic"
+                    className="p-1 rounded hover:bg-background text-muted-foreground hover:text-foreground text-xs"
+                    onClick={() => insertFormatting("italic")}
+                  >
+                    <Italic className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    title="Bullet List"
+                    className="p-1 rounded hover:bg-background text-muted-foreground hover:text-foreground text-xs"
+                    onClick={() => insertFormatting("bullet")}
+                  >
+                    <List className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    title="Alert Callout"
+                    className="p-1 rounded hover:bg-background text-muted-foreground hover:text-foreground text-xs"
+                    onClick={() => insertFormatting("warning")}
+                  >
+                    <AlertTriangle className="h-3 w-3 text-amber-500" />
+                  </button>
+                </div>
+              </div>
               <Textarea
-                placeholder="Describe the incident in detail..."
+                id="incident-description-textarea"
+                placeholder="Write your details here... Use toolbar to add styling blocks."
                 value={incidentDescription}
                 onChange={(e) => setIncidentDescription(e.target.value)}
-                className="min-h-[100px] text-sm"
+                className="min-h-[120px] text-sm font-sans"
               />
             </div>
+
+            {/* Snap & Upload Attachments */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase text-muted-foreground">Snap / Upload Files (Up to 3)</label>
+              
+              {/* Preview thumbnails */}
+              {incidentAttachments.length > 0 && (
+                <div className="grid grid-cols-3 gap-2 mb-2">
+                  {incidentAttachments.map((url, index) => (
+                    <div key={index} className="relative rounded-lg overflow-hidden border aspect-[4/3] bg-muted">
+                      <img src={url} alt="Incident preview" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setIncidentAttachments(prev => prev.filter((_, idx) => idx !== index))}
+                        className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white hover:bg-black/80"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Upload trigger button */}
+              {incidentAttachments.length < 3 && (
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    id="incident-file-input"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setIsUploadingIncidentAttachment(true);
+                      try {
+                        const filePath = `incidents/${staffProfile.id}_${Date.now()}.webp`;
+                        const { error: uploadErr } = await supabase.storage
+                          .from("task-attachments")
+                          .upload(filePath, file, { upsert: true, contentType: file.type });
+                        if (uploadErr) throw uploadErr;
+
+                        const { data: urlData } = supabase.storage
+                          .from("task-attachments")
+                          .getPublicUrl(filePath);
+
+                        setIncidentAttachments(prev => [...prev, urlData.publicUrl]);
+                        toast.success("Attachment file added.");
+                      } catch (err: any) {
+                        toast.error(err.message || "Failed to upload file");
+                      } finally {
+                        setIsUploadingIncidentAttachment(false);
+                      }
+                    }}
+                    disabled={isUploadingIncidentAttachment}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full border-dashed h-10 text-xs font-semibold gap-1.5 flex items-center justify-center"
+                    onClick={() => document.getElementById("incident-file-input")?.click()}
+                    disabled={isUploadingIncidentAttachment}
+                  >
+                    {isUploadingIncidentAttachment ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" /> Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="h-4 w-4 text-indigo-500" />
+                        Snap Photo / Choose File
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+
             <Button
-              className="w-full h-11 font-bold bg-amber-600 hover:bg-amber-700 text-white"
+              className="w-full h-11 font-bold bg-indigo-600 hover:bg-indigo-700 text-white mt-2"
               onClick={handleSubmitIncident}
-              disabled={isSubmittingIncident || !incidentTitle.trim() || !incidentDescription.trim()}
+              disabled={isSubmittingIncident || isUploadingIncidentAttachment || !incidentTitle.trim() || !incidentDescription.trim() || !incidentProject}
             >
               {isSubmittingIncident ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Submit Report
+              Submit Field Report
             </Button>
           </div>
         </DialogContent>
