@@ -9,6 +9,6 @@
 export const SITE_URL =
   import.meta.env.VITE_SITE_URL || "https://staff-tracker-buddy.lovable.app";
 
-export const SITE_NAME = "Staff Tracker";
+export const SITE_NAME = "OnSite Crew Manager";
 
 export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png?v=3`;

@@ -3,19 +3,33 @@ import LandingPage from "./LandingPage";
 import CompanySetup from "./CompanySetup";
 import StaffManagement from "@/components/StaffManagement";
 import LiveMap from "@/components/LiveMap";
-import GeofenceManagement from "@/components/GeofenceManagement";
 import DashboardLayout from "@/components/DashboardLayout";
 import TrackerDownload from "@/components/TrackerDownload";
+import DashboardOverview from "@/components/DashboardOverview";
+import StaffPortal from "@/components/StaffPortal";
+import CrewManagement from "@/components/CrewManagement";
+import { useTerminology } from "@/hooks/useTerminology";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SEO from "@/components/SEO";
 import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useLocation, Navigate } from "react-router-dom";
+import { APIProvider } from "@vis.gl/react-google-maps";
 
 const HomePage = () => {
-  const { user, company, loading, signOut, createCompany } = useAuth();
+  const { user, company, staffProfile, loading, signOut } = useAuth();
+  const { t } = useTerminology();
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [geofenceEditing, setGeofenceEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState("map");
+  const [activeTab, setActiveTab] = useState("overview");
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.tab) {
+      setActiveTab(location.state.tab);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     if (!user) return;
@@ -50,8 +64,34 @@ const HomePage = () => {
     return <LandingPage />;
   }
 
+  // Logged in as staff member
+  if (staffProfile) {
+    // Staff with elevated roles see the admin dashboard (filtered by permissions)
+    const elevatedRoles = ['Admin', 'Finance', 'Dispatcher'];
+    if (elevatedRoles.includes(staffProfile.global_role)) {
+      // Fall through to the dashboard render below — they'll see the filtered sidebar
+    } else {
+      // Default Field Crew role → StaffPortal only
+      return (
+        <>
+          <SEO
+            title="Staff Portal — Download App"
+            description="Download the OnSite Crew Manager mobile application to check in and record shift updates."
+            path="/"
+            noIndex
+          />
+          <StaffPortal
+            staffProfile={staffProfile}
+            company={company}
+            onSignOut={signOut}
+          />
+        </>
+      );
+    }
+  }
+
   if (!company) {
-    return <CompanySetup onCreate={createCompany} onSignOut={signOut} />;
+    return <Navigate to="/wizard" replace />;
   }
 
   return (
@@ -67,23 +107,42 @@ const HomePage = () => {
         onTabChange={handleTabChange}
         companyName={company.name}
         companyPrefix={company.prefix}
+        companyId={company.id}
         geofenceEditing={geofenceEditing}
       >
-        <div className="p-4 md:p-8">
-          {activeTab === "map" && <LiveMap />}
-          {activeTab === "geofences" && (
+        <div className={activeTab === "overview" ? "p-0" : "p-3 sm:p-4 md:p-8"}>
+          {activeTab === "overview" && <DashboardOverview companyId={company.id} />}
+          {activeTab === "map" && (
             apiKey ? (
-              <GeofenceManagement
-                apiKey={apiKey}
-                onEditModeChange={setGeofenceEditing}
-                companyId={company.id}
-              />
+              <APIProvider apiKey={apiKey} libraries={["places"]}>
+                <LiveMap
+                  apiKey={apiKey}
+                  onEditModeChange={setGeofenceEditing}
+                  companyId={company.id}
+                />
+              </APIProvider>
             ) : (
               <p className="text-muted-foreground">Loading map…</p>
             )
           )}
+
           {activeTab === "staff" && (
-            <StaffManagement companyId={company.id} prefix={company.prefix} />
+            <Tabs defaultValue="profiles" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
+                <TabsTrigger value="profiles">
+                  {t("CrewMembers").split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")} Profiles
+                </TabsTrigger>
+                <TabsTrigger value="groups">
+                  {t("Crew").split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")} Groups
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="profiles" className="space-y-4">
+                <StaffManagement companyId={company.id} prefix={company.prefix} />
+              </TabsContent>
+              <TabsContent value="groups" className="space-y-4">
+                <CrewManagement companyId={company.id} />
+              </TabsContent>
+            </Tabs>
           )}
           {activeTab === "tracker" && <TrackerDownload />}
         </div>

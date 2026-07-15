@@ -3,23 +3,23 @@ import SEO from "@/components/SEO";
 
 const EFFECTIVE_DATE = "March 20, 2026";
 const CONTACT_EMAIL = "eusoulegal6@gmail.com";
-const WEBSITE_URL = "https://livestafftracker.com";
+const WEBSITE_URL = "https://ocrem.com";
 
 export default function PrivacyPolicy() {
   return (
     <PublicPageLayout>
       <SEO
         title="Privacy Policy"
-        description="Privacy Policy for Live Staff Tracker — mobile app and admin dashboard."
+        description="Privacy Policy for OnSite Crew Manager — mobile app and admin dashboard."
         path="/privacy"
       />
       <article className="prose prose-sm sm:prose max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground/90 prose-li:text-foreground/90 prose-strong:text-foreground prose-a:text-primary">
         <h1>Privacy Policy</h1>
         <p className="text-muted-foreground text-sm">Effective date: {EFFECTIVE_DATE}</p>
         <p>
-          This Privacy Policy describes how Live Staff Tracker ("we", "us", or "our") collects, uses, and shares information
-          in connection with the <strong>Staff Tracker mobile application</strong> (the "App") and the
-          <strong> Staff Tracker admin dashboard</strong> (the "Dashboard"), collectively the "Service," accessible at{" "}
+          This Privacy Policy describes how OnSite Crew Manager ("we", "us", or "our") collects, uses, and shares information
+          in connection with the <strong>OnSite Crew Manager mobile application</strong> (the "App") and the
+          <strong> OnSite Crew Manager admin dashboard</strong> (the "Dashboard"), collectively the "Service," accessible at{" "}
           <a href={WEBSITE_URL} target="_blank" rel="noopener noreferrer">{WEBSITE_URL}</a>.
         </p>
 
@@ -134,7 +134,7 @@ export default function PrivacyPolicy() {
 
         <hr />
         <p className="text-sm text-muted-foreground">
-          This Privacy Policy applies to the Staff Tracker mobile application and the Staff Tracker admin
+          This Privacy Policy applies to the OnSite Crew Manager mobile application and the OnSite Crew Manager admin
           dashboard at <a href={WEBSITE_URL}>{WEBSITE_URL}</a>.
         </p>
       </article>

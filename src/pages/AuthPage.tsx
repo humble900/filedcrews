@@ -1,28 +1,37 @@
-import { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Users, Circle, Eye, EyeOff, Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, Mail, ArrowLeft, CheckCircle2, Lock, Shield, User, MapPin, Users } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
-import { Separator } from "@/components/ui/separator";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface AuthPageProps {
   onSignIn: (email: string, password: string) => Promise<{ error: any }>;
   onSignUp: (email: string, password: string) => Promise<{ error: any }>;
 }
 
+type Mode = "signin" | "signup";
 type ViewState = "auth" | "forgot" | "email-sent" | "signup-success";
 
 const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [mode, setMode] = useState<Mode>(
+    searchParams.get("tab") === "signup" ? "signup" : "signin"
+  );
+
+  useEffect(() => {
+    if (mode === "signup") {
+      navigate("/wizard");
+    }
+  }, [mode, navigate]);
+
   const [isLoading, setIsLoading] = useState(false);
-  const [showSignInPassword, setShowSignInPassword] = useState(false);
-  const [showSignUpPassword, setShowSignUpPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [view, setView] = useState<ViewState>("auth");
   const [forgotEmail, setForgotEmail] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
@@ -33,10 +42,28 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
     e.preventDefault();
     setIsLoading(true);
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
+    const rawEmailOrUsername = formData.get("email") as string;
     const password = formData.get("password") as string;
-    const { error } = await onSignIn(email, password);
-    if (error) toast.error(error.message || "Authentication failed");
+
+    // Automatically convert plain usernames or @usernames to staff emails
+    let formattedEmail = rawEmailOrUsername.trim();
+    if (formattedEmail.toLowerCase().endsWith("@internal.local")) {
+      const usernamePart = formattedEmail.split("@")[0];
+      formattedEmail = `${usernamePart.toUpperCase()}@internal.local`;
+    } else if (!formattedEmail.includes("@")) {
+      formattedEmail = `${formattedEmail.toUpperCase()}@internal.local`;
+    } else if (formattedEmail.startsWith("@")) {
+      formattedEmail = `${formattedEmail.slice(1).toUpperCase()}@internal.local`;
+    }
+
+    const { error } = await onSignIn(formattedEmail, password);
+    if (error) {
+      let friendlyMessage = error.message;
+      if (error.message === "Invalid login credentials") {
+        friendlyMessage = "Invalid username/email or password. Please try again.";
+      }
+      toast.error(friendlyMessage || "Authentication failed");
+    }
     setIsLoading(false);
   };
 
@@ -69,15 +96,6 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
     }, 1000);
   };
 
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    const { error } = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (error) toast.error(error.message || "Google sign-in failed");
-    setIsLoading(false);
-  };
-
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!forgotEmail) {
@@ -97,43 +115,40 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
   };
 
   const renderForgotPassword = () => (
-    <Card className="card-shadow-lg border-border/50">
+    <Card className="border-[#233558]/80 bg-[#14223c]/80 backdrop-blur-md shadow-2xl">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold">Reset Password</CardTitle>
-        <CardDescription>
-          Enter your email and we'll send you a link to reset your password
+        <CardTitle className="text-2xl font-bold text-slate-100 flex items-center gap-2">
+          <Shield className="h-6 w-6 text-primary" />
+          Reset Password
+        </CardTitle>
+        <CardDescription className="text-slate-400">
+          Enter your email to receive a password reset link
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleForgotPassword} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="forgot-email">Email</Label>
-            <Input
-              id="forgot-email"
-              type="email"
-              placeholder="you@company.com"
-              value={forgotEmail}
-              onChange={(e) => setForgotEmail(e.target.value)}
-              required
-            />
+            <Label htmlFor="forgot-email" className="text-slate-300">Email Address</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <Input
+                id="forgot-email"
+                type="email"
+                placeholder="name@company.com"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                className="pl-10 bg-[#0c121f]/40 border-[#233558]/60 text-slate-100 focus-visible:ring-primary placeholder:text-slate-600"
+                required
+              />
+            </div>
           </div>
-          <Button type="submit" className="w-full" disabled={resetLoading}>
-            {resetLoading ? (
-              <>
-                <Mail className="mr-2 h-4 w-4 animate-pulse" />
-                Sending...
-              </>
-            ) : (
-              <>
-                <Mail className="mr-2 h-4 w-4" />
-                Send Reset Link
-              </>
-            )}
+          <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium" disabled={resetLoading}>
+            {resetLoading ? "Sending Link..." : "Send Reset Link"}
           </Button>
           <Button
             type="button"
             variant="ghost"
-            className="w-full text-sm text-muted-foreground"
+            className="w-full text-sm text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
             onClick={() => setView("auth")}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -145,25 +160,25 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
   );
 
   const renderEmailSent = () => (
-    <Card className="card-shadow-lg border-border/50">
-      <CardHeader className="space-y-3 text-center">
+    <Card className="border-[#233558]/80 bg-[#14223c]/80 backdrop-blur-md shadow-2xl text-center">
+      <CardHeader className="space-y-3">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-          <CheckCircle2 className="h-7 w-7 text-primary" />
+          <CheckCircle2 className="h-8 w-8 text-primary animate-bounce" />
         </div>
-        <CardTitle className="text-2xl font-bold">Check Your Email</CardTitle>
-        <CardDescription className="text-base">
-          We've sent a password reset link to <span className="font-medium text-foreground">{forgotEmail}</span>
+        <CardTitle className="text-2xl font-bold text-slate-100">Check Your Email</CardTitle>
+        <CardDescription className="text-slate-400">
+          We've sent a password reset link to <span className="font-medium text-slate-200">{forgotEmail}</span>
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground space-y-2">
-          <p>Click the link in the email to set a new password.</p>
-          <p>If you don't see it, check your spam folder.</p>
-          <p>The link expires in 1 hour.</p>
+        <div className="rounded-lg bg-[#0c121f]/40 border border-[#233558]/60 p-4 text-sm text-slate-400 space-y-2 text-left">
+          <p>• Click the link in the email to set a new password.</p>
+          <p>• Check your spam folder if you do not receive it.</p>
+          <p>• The link will expire in 1 hour.</p>
         </div>
         <Button
           variant="outline"
-          className="w-full"
+          className="w-full border-[#233558]/60 text-slate-300 hover:bg-[#233558]/20 hover:text-slate-100"
           onClick={() => {
             setView("auth");
             setForgotEmail("");
@@ -174,7 +189,7 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
         </Button>
         <Button
           variant="ghost"
-          className="w-full text-sm text-muted-foreground"
+          className="w-full text-xs text-slate-400 hover:text-slate-200"
           onClick={async () => {
             setResetLoading(true);
             const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
@@ -184,15 +199,13 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
             if (error) {
               toast.error(error.message);
             } else {
-              toast.success("Reset email sent again. Check your inbox.");
+              toast.success("Reset email sent again.");
               startResendCooldown();
             }
           }}
           disabled={resetLoading || resendCooldown > 0}
         >
-          {resetLoading
-            ? "Sending..."
-            : resendCooldown > 0
+          {resendCooldown > 0
             ? `Resend available in ${resendCooldown}s`
             : "Didn't receive it? Send again"}
         </Button>
@@ -201,27 +214,27 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
   );
 
   const renderSignupSuccess = () => (
-    <Card className="card-shadow-lg border-border/50">
-      <CardHeader className="space-y-3 text-center">
+    <Card className="border-[#233558]/80 bg-[#14223c]/80 backdrop-blur-md shadow-2xl text-center">
+      <CardHeader className="space-y-3">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-          <CheckCircle2 className="h-7 w-7 text-primary" />
+          <CheckCircle2 className="h-8 w-8 text-primary animate-bounce" />
         </div>
-        <CardTitle className="text-2xl font-bold">Check Your Email</CardTitle>
-        <CardDescription className="text-base">
-          We've sent a confirmation link to <span className="font-medium text-foreground">{signupEmail}</span>
+        <CardTitle className="text-2xl font-bold text-slate-100">Check Your Email</CardTitle>
+        <CardDescription className="text-slate-400">
+          Verification link sent to <span className="font-medium text-slate-200">{signupEmail}</span>
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground space-y-2">
-          <p>Click the link in the email to activate your account.</p>
-          <p>If you don't see it, check your spam folder.</p>
+        <div className="rounded-lg bg-[#0c121f]/40 border border-[#233558]/60 p-4 text-sm text-slate-400 text-left">
+          Please click the confirmation link inside the verification email to activate your account.
         </div>
         <Button
           variant="outline"
-          className="w-full"
+          className="w-full border-[#233558]/60 text-slate-300 hover:bg-[#233558]/20 hover:text-slate-100"
           onClick={() => {
             setView("auth");
             setSignupEmail("");
+            setMode("signin");
           }}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -232,158 +245,235 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
   );
 
   const renderAuthCard = () => (
-    <Card className="card-shadow-lg border-border/50">
+    <Card className="border-[#233558]/80 bg-[#14223c]/80 backdrop-blur-md shadow-2xl w-full">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold">Get Started</CardTitle>
-        <CardDescription>
-          Sign in to your account or create a new one
+        <CardTitle className="text-2xl font-bold text-slate-100">
+          {mode === "signin" ? "Sign In" : "Create Account"}
+        </CardTitle>
+        <CardDescription className="text-slate-400">
+          {mode === "signin"
+            ? "Access your field management dashboard"
+            : "Register your company on OnSite Crew Manager"}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue={searchParams.get("tab") === "signup" ? "signup" : "signin"} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="signin">Sign In</TabsTrigger>
-            <TabsTrigger value="signup">Sign Up</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="signin">
-            <form onSubmit={handleSignIn} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="signin-email">Email</Label>
-                <Input id="signin-email" name="email" type="email" placeholder="you@company.com" required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="signin-password">Password</Label>
-                <div className="relative">
-                  <Input id="signin-password" name="password" type={showSignInPassword ? "text" : "password"} placeholder="••••••••" required />
-                  <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowSignInPassword(!showSignInPassword)}>
-                    {showSignInPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
-                  </Button>
+        <AnimatePresence mode="wait">
+          {mode === "signin" ? (
+            <motion.div
+              key="signin"
+              initial={{ opacity: 0, x: -15 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 15 }}
+              transition={{ duration: 0.2 }}
+            >
+              <form onSubmit={handleSignIn} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signin-email" className="text-slate-300">Username or Email</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                    <Input
+                      id="signin-email"
+                      name="email"
+                      type="text"
+                      placeholder="Enter username or email"
+                      className="pl-10 bg-[#0c121f]/40 border-[#233558]/60 text-slate-100 focus-visible:ring-primary placeholder:text-slate-600"
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Signing in..." : "Sign In"}
-              </Button>
-              <div className="flex items-center gap-3 my-2">
-                <Separator className="flex-1" />
-                <span className="text-xs text-muted-foreground">or</span>
-                <Separator className="flex-1" />
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={handleGoogleSignIn}
-                disabled={isLoading}
-              >
-                <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-                Continue with Google
-              </Button>
-              <Button
-                type="button"
-                variant="link"
-                className="w-full text-sm text-muted-foreground"
-                onClick={() => {
-                  const form = document.getElementById("signin-email") as HTMLInputElement;
-                  setForgotEmail(form?.value || "");
-                  setView("forgot");
-                }}
-              >
-                Forgot password?
-              </Button>
-            </form>
-          </TabsContent>
-
-          <TabsContent value="signup">
-            <form onSubmit={handleSignUp} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="signup-email">Email</Label>
-                <Input id="signup-email" name="email" type="email" placeholder="you@company.com" required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="signup-password">Password</Label>
-                <div className="relative">
-                  <Input id="signup-password" name="password" type={showSignUpPassword ? "text" : "password"} placeholder="••••••••" minLength={6} required />
-                  <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowSignUpPassword(!showSignUpPassword)}>
-                    {showSignUpPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
-                  </Button>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="signin-password" className="text-slate-300">Password</Label>
+                    <button
+                      type="button"
+                      className="text-xs text-primary hover:underline bg-transparent border-none p-0 cursor-pointer text-blue-400"
+                      onClick={() => {
+                        const form = document.getElementById("signin-email") as HTMLInputElement;
+                        setForgotEmail(form?.value || "");
+                        setView("forgot");
+                      }}
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                    <Input
+                      id="signin-password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="pl-10 pr-10 bg-[#0c121f]/40 border-[#233558]/60 text-slate-100 focus-visible:ring-primary placeholder:text-slate-600"
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3 text-slate-400 hover:text-slate-200 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creating account..." : "Create Account"}
-              </Button>
-              <div className="flex items-center gap-3 my-2">
-                <Separator className="flex-1" />
-                <span className="text-xs text-muted-foreground">or</span>
-                <Separator className="flex-1" />
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={handleGoogleSignIn}
-                disabled={isLoading}
-              >
-                <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-                Continue with Google
-              </Button>
-            </form>
-          </TabsContent>
-        </Tabs>
+                <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold mt-2 shadow-lg shadow-indigo-500/10" disabled={isLoading}>
+                  {isLoading ? "Signing In..." : "Sign In"}
+                </Button>
+                <div className="text-center text-sm text-slate-400 mt-4">
+                  Don't have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("signup");
+                      setShowPassword(false);
+                    }}
+                    className="text-primary font-medium hover:underline bg-transparent border-none cursor-pointer p-0 text-blue-400"
+                  >
+                    Sign Up
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="signup"
+              initial={{ opacity: 0, x: 15 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -15 }}
+              transition={{ duration: 0.2 }}
+            >
+              <form onSubmit={handleSignUp} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email" className="text-slate-300">Email Address</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                    <Input
+                      id="signup-email"
+                      name="email"
+                      type="email"
+                      placeholder="name@company.com"
+                      className="pl-10 bg-[#0c121f]/40 border-[#233558]/60 text-slate-100 focus-visible:ring-primary placeholder:text-slate-600"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password" className="text-slate-300">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                    <Input
+                      id="signup-password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="pl-10 pr-10 bg-[#0c121f]/40 border-[#233558]/60 text-slate-100 focus-visible:ring-primary placeholder:text-slate-600"
+                      minLength={6}
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3 text-slate-400 hover:text-slate-200 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+                <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold mt-2 shadow-lg shadow-indigo-500/10" disabled={isLoading}>
+                  {isLoading ? "Creating Account..." : "Create Account"}
+                </Button>
+                <div className="text-center text-sm text-slate-400 mt-4">
+                  Already have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("signin");
+                      setShowPassword(false);
+                    }}
+                    className="text-primary font-medium hover:underline bg-transparent border-none cursor-pointer p-0 text-blue-400"
+                  >
+                    Sign In
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </CardContent>
     </Card>
   );
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Top bar */}
-      <header className="w-full flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/40 bg-background/80 backdrop-blur-sm z-10">
-        <Link to="/" className="flex items-center gap-2 text-primary hover:opacity-80 transition-opacity">
-          <MapPin className="h-5 w-5" />
-          <span className="font-bold text-lg">Staff Tracker</span>
-        </Link>
-        <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-          ← Home
+    <div className="min-h-screen bg-[#0c121f] flex flex-col font-sans relative overflow-hidden">
+      {/* Background Glowing Orbs */}
+      <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none" />
+
+      {/* Header */}
+      <header className="w-full flex items-center justify-between px-6 py-4 border-b border-slate-900 bg-[#0c121f]/80 backdrop-blur-sm z-10">
+        <Link to="/" className="flex items-center gap-2 text-primary hover:opacity-85 transition-opacity">
+          <img src="/favicon.png" alt="Ocrem" className="h-8 w-8 rounded-lg shadow-md" />
+          <span className="font-bold text-lg text-slate-100 tracking-tight">OnSite Crew Manager</span>
         </Link>
       </header>
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col lg:flex-row">
-        {/* Left side - Branding (desktop only) */}
-        <div className="hidden lg:flex lg:w-1/2 bg-primary flex-col justify-center items-center p-12 text-primary-foreground">
-          <div className="max-w-md space-y-8">
-            <div className="flex items-center gap-3">
-              <MapPin className="h-12 w-12" />
-              <h1 className="text-3xl font-bold">Staff Tracker</h1>
+      {/* Core Body Container */}
+      <div className="flex-1 flex flex-col lg:flex-row z-10">
+        {/* Left side - Platform branding and explanation */}
+        <div className="hidden lg:flex lg:w-1/2 flex-col justify-center p-12 text-slate-100 bg-[#14274e] relative border-r border-[#233558]/40">
+          {/* Subtle decoration for visual depth */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.06),transparent_60%)] pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0c121f]/40 pointer-events-none" />
+          <div className="max-w-md mx-auto space-y-8 relative z-10">
+            <div className="space-y-3">
+              <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl drop-shadow-sm">
+                OnSite Crew Manager
+              </h1>
+              <p className="text-lg text-blue-100/90 leading-relaxed">
+                Real-time location tracking and coordination for your field staff.
+              </p>
             </div>
-            <p className="text-xl opacity-90">Real-time location tracking for your field staff</p>
-            <div className="space-y-4 pt-8">
-              <div className="flex items-center gap-4">
-                <Users className="h-8 w-8 opacity-80" />
+
+            <div className="space-y-6 pt-6">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 border border-white/20 text-white shadow-md shrink-0">
+                  <Users className="h-5 w-5" />
+                </div>
                 <div>
-                  <h3 className="font-semibold">Manage Your Team</h3>
-                  <p className="text-sm opacity-80">Add and organise your staff members</p>
+                  <h3 className="font-semibold text-white text-base">Staff Coordination</h3>
+                  <p className="text-sm text-blue-100/80 mt-1 leading-relaxed">Manage directory records, certifications, and shift scheduling in one place.</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <Circle className="h-8 w-8 opacity-80" />
+              
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 border border-white/20 text-white shadow-md shrink-0">
+                  <MapPin className="h-5 w-5" />
+                </div>
                 <div>
-                  <h3 className="font-semibold">Geofence Zones</h3>
-                  <p className="text-sm opacity-80">Set up location boundaries and get alerts</p>
+                  <h3 className="font-semibold text-white text-base">Geofence Boundaries</h3>
+                  <p className="text-sm text-blue-100/80 mt-1 leading-relaxed">Set virtual boundaries to log shift presence and prevent ghost visits.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 border border-white/20 text-white shadow-md shrink-0">
+                  <Shield className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-white text-base">Biometric Face Audits</h3>
+                  <p className="text-sm text-blue-100/80 mt-1 leading-relaxed">Secure face-verified clock-in gates to eliminate buddy punching.</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right side - Auth forms */}
-        <div className="flex-1 flex items-center justify-center px-4 py-6 sm:p-8">
-          <div className="w-full max-w-md">
-            <div className="lg:hidden flex items-center gap-2 mb-6 justify-center">
-              <MapPin className="h-7 w-7 text-primary" />
-              <h1 className="text-xl font-bold text-primary">Staff Tracker</h1>
-            </div>
-
+        {/* Right side - Forms */}
+        <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
+          <div className="w-full max-w-[440px]">
             {view === "auth" && renderAuthCard()}
             {view === "forgot" && renderForgotPassword()}
             {view === "email-sent" && renderEmailSent()}
@@ -392,15 +482,13 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
         </div>
       </div>
 
-      {/* Legal/help footer */}
-      <footer className="py-3 px-4 text-center text-xs sm:text-sm text-muted-foreground border-t border-border/40">
-        <nav className="flex items-center justify-center flex-wrap gap-x-4 gap-y-1 sm:gap-x-6">
-          <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
-          <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
-          <Link to="/support" className="hover:text-foreground transition-colors">Support</Link>
-          <Link to="/about" className="hover:text-foreground transition-colors">About</Link>
-          <Link to="/account-deletion" className="hover:text-foreground transition-colors">Delete Account</Link>
-        </nav>
+      {/* Simplified Footer */}
+      <footer className="py-4 border-t border-slate-950 bg-[#060a12]/50 text-center text-xs text-slate-500 z-10">
+        <div className="flex items-center justify-center gap-6">
+          <Link to="/privacy" className="hover:text-slate-300 transition-colors">Privacy Policy</Link>
+          <Link to="/terms" className="hover:text-slate-300 transition-colors">Terms of Service</Link>
+          <Link to="/support" className="hover:text-slate-300 transition-colors">Support Portal</Link>
+        </div>
       </footer>
     </div>
   );

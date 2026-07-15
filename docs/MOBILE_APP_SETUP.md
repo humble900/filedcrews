@@ -8,8 +8,8 @@
 ## Create the project
 
 ```bash
-npx create-expo-app StaffTracker --template blank-typescript
-cd StaffTracker
+npx create-expo-app Ocrem --template blank-typescript
+cd Ocrem
 npx expo install expo-location expo-task-manager @supabase/supabase-js react-native-url-polyfill
 ```
 
@@ -19,14 +19,14 @@ Add to `app.json`:
 ```json
 {
   "expo": {
-    "name": "StaffTracker",
+    "name": "Ocrem",
     "plugins": [
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow StaffTracker to access your location for tracking.",
-          "locationAlwaysPermission": "Allow StaffTracker to access your location in the background.",
-          "locationWhenInUsePermission": "Allow StaffTracker to access your location.",
+          "locationAlwaysAndWhenInUsePermission": "Allow Ocrem to access your location for tracking.",
+          "locationAlwaysPermission": "Allow Ocrem to access your location in the background.",
+          "locationWhenInUsePermission": "Allow Ocrem to access your location.",
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
         }
@@ -83,7 +83,7 @@ export default function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>StaffTracker</Text>
+      <Text style={styles.title}>Ocrem</Text>
       <TextInput
         style={styles.input}
         placeholder="Username"
@@ -178,7 +178,7 @@ export default function TrackingScreen() {
       distanceInterval: 10,
       showsBackgroundLocationIndicator: true,
       foregroundService: {
-        notificationTitle: 'StaffTracker',
+        notificationTitle: 'Ocrem',
         notificationBody: 'Tracking your location',
         notificationColor: '#3366cc',
       },

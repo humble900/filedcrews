@@ -12,12 +12,30 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { username: rawUsername, password, full_name, company_id } = await req.json();
+    const {
+      username: rawUsername,
+      password,
+      full_name,
+      first_name,
+      last_name,
+      email: staffEmail,
+      phone,
+      address,
+      job_title,
+      company_id,
+      global_role: rawRole,
+    } = await req.json();
     const username = rawUsername?.toUpperCase();
+    const VALID_ROLES = ["Admin", "Finance", "Dispatcher", "Field Crew"];
+    // Default to Field Crew if not provided or invalid
+    const global_role = VALID_ROLES.includes(rawRole) ? rawRole : "Field Crew";
 
-    if (!username || !password || !full_name || !company_id) {
+    // Build full_name from first/last if not explicitly provided
+    const computedFullName = full_name || [first_name, last_name].filter(Boolean).join(" ") || "";
+
+    if (!username || !password || !computedFullName || !company_id) {
       return new Response(
-        JSON.stringify({ error: "username, password, full_name, and company_id are required" }),
+        JSON.stringify({ error: "username, password, name, and company_id are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -49,12 +67,55 @@ Deno.serve(async (req) => {
       );
     }
 
-    const email = `${username}@internal.local`;
+    // ── Authorization check ────────────────────────────────────────────────
+    // Only the company owner OR a staff member with can_manage_roles=true
+    // may create staff with elevated roles (non-Field Crew).
+    // We verify the JWT caller identity against the company record.
+    if (global_role !== "Field Crew") {
+      const authHeader = req.headers.get("authorization") ?? "";
+      const callerClient = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { authorization: authHeader } } }
+      );
+      const { data: { user: callerUser } } = await callerClient.auth.getUser();
+      if (!callerUser) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      // Check if caller is the company owner
+      const { data: ownerCheck } = await supabaseAdmin
+        .from("companies")
+        .select("id")
+        .eq("id", company_id)
+        .eq("auth_user_id", callerUser.id)
+        .maybeSingle();
+      if (!ownerCheck) {
+        // Check if caller is a delegated role manager in this company
+        const { data: delegateCheck } = await supabaseAdmin
+          .from("staff_profiles")
+          .select("id")
+          .eq("auth_user_id", callerUser.id)
+          .eq("company_id", company_id)
+          .eq("can_manage_roles", true)
+          .maybeSingle();
+        if (!delegateCheck) {
+          return new Response(
+            JSON.stringify({ error: "Only the business owner or a delegated role manager can create staff with elevated roles" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+    }
+
+    const authEmail = `${username}@internal.local`;
 
     // Create auth user
     const { data: authData, error: authError } =
       await supabaseAdmin.auth.admin.createUser({
-        email,
+        email: authEmail,
         password,
         email_confirm: true,
       });
@@ -66,16 +127,26 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Insert staff profile with company_id
+    // Insert staff profile with all fields
+    const profilePayload: Record<string, unknown> = {
+      username,
+      full_name: computedFullName,
+      auth_user_id: authData.user.id,
+      company_id,
+      global_role,
+    };
+    // Optional fields
+    if (first_name) profilePayload.first_name = first_name;
+    if (last_name) profilePayload.last_name = last_name;
+    if (staffEmail) profilePayload.email = staffEmail;
+    if (phone) profilePayload.phone = phone;
+    if (address) profilePayload.address = address;
+    if (job_title) profilePayload.job_title = job_title;
+
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("staff_profiles")
-      .insert({
-        username,
-        full_name,
-        auth_user_id: authData.user.id,
-        company_id,
-      })
-      .select("id, username, full_name")
+      .insert(profilePayload)
+      .select("id, username, full_name, global_role, job_title")
       .single();
 
     if (profileError) {
@@ -88,7 +159,13 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ staff_id: profile.id, username: profile.username, full_name: profile.full_name }),
+      JSON.stringify({
+        staff_id: profile.id,
+        username: profile.username,
+        full_name: profile.full_name,
+        global_role: profile.global_role,
+        job_title: profile.job_title,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {

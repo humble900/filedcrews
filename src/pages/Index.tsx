@@ -23,8 +23,8 @@ const Index = () => {
   return (
     <>
       <SEO
-        title="Staff Tracker — Sign In or Create Account"
-        description="Sign in to your Staff Tracker dashboard or create a new account."
+        title="OnSite Crew Manager — Sign In or Create Account"
+        description="Sign in to your OnSite Crew Manager dashboard or create a new account."
         path="/auth"
       />
       <AuthPage onSignIn={signIn} onSignUp={signUp} />
