@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ClipboardList, TrendingUp, DollarSign, UserCheck, AlertTriangle, AlertCircle, ShieldAlert, CheckCircle, ArrowRight, RefreshCcw, Landmark, Percent, Wrench, FileText, LineChart as LucideLineChart } from "lucide-react";
+import { Loader2, ClipboardList, TrendingUp, DollarSign, UserCheck, AlertTriangle, AlertCircle, ShieldAlert, CheckCircle, ArrowRight, RefreshCcw, Landmark, Percent, Wrench, FileText, LineChart as LucideLineChart, Plus } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import {
@@ -539,6 +539,22 @@ export default function DashboardOverview({ companyId }: DashboardOverviewProps)
   return (
     <div className="space-y-6">
       
+      {/* Overview Header & Add Project Button */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Office Overview & Action Feed</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Real-time dispatches, operational status trackers, and pipeline metrics.</p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate("/projects?create=true")}
+          className="gap-1.5 h-8 font-semibold text-xs border border-border/50 bg-background/50 hover:bg-muted text-muted-foreground hover:text-foreground shrink-0 shadow-sm transition-all"
+        >
+          <Plus className="h-3.5 w-3.5" /> Add Project
+        </Button>
+      </div>
+
       {/* 1. Interactive Visual Pipeline Horizontal Bar */}
       <Card className="border-border/50 bg-card/60 backdrop-blur card-shadow-md">
         <CardContent className="p-4 md:p-6">

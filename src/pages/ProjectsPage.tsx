@@ -310,6 +310,14 @@ export default function ProjectsPage() {
     );
   };
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("create") === "true") {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      openGuidedFlow();
+    }
+  }, [customers]);
+
   // 1. Fetch Customers (for selection dropdown)
   const { data: customers = [] } = useQuery({
     queryKey: ["project_customers", company?.id],
@@ -542,7 +550,7 @@ export default function ProjectsPage() {
                 Establish client contract limits, geofence radius sites, and launch isolated workspaces for your {t("projects").toLowerCase()}.
               </p>
             </div>
-            <Button onClick={openGuidedFlow} className="gap-2 shrink-0 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500">
+            <Button onClick={openGuidedFlow} className="gap-2 shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm">
               <Sparkles className="h-4 w-4" /> New {t("Project")}
             </Button>
           </div>
@@ -1269,7 +1277,7 @@ export default function ProjectsPage() {
                   <Button
                     onClick={handleGuidedNext}
                     disabled={!canAdvanceStep() || guidedSaving}
-                    className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 px-6 py-6 font-bold text-white shadow-md shadow-blue-500/10"
+                    className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-6 font-bold shadow-md shadow-primary/10"
                   >
                     {guidedSaving ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
