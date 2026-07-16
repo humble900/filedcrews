@@ -39,11 +39,11 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import SEO from "@/components/SEO";
 
-import heroDashboard from "@/assets/hero-dashboard.jpg";
-import heroMobile from "@/assets/hero-mobile.jpg";
-import featureStaffList from "@/assets/feature-staff-list.jpg";
-import featureGeofence from "@/assets/feature-geofence.jpg";
-import playStoreListing from "@/assets/play-store-app-listing.jpeg";
+import heroDashboard from "@/assets/hero-dashboard.webp";
+import heroMobile from "@/assets/hero-mobile.webp";
+import featureStaffList from "@/assets/feature-staff-list.webp";
+import featureGeofence from "@/assets/feature-geofence.webp";
+import playStoreListing from "@/assets/play-store-app-listing.webp";
 
 /* ── Animation ── */
 const fadeUp = {
@@ -284,7 +284,7 @@ export default function LandingPage() {
             <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
               <motion.div initial="hidden" animate="visible" className="space-y-7">
                 <motion.div variants={fadeUp} custom={0} className="space-y-4">
-                  <p className="text-sm font-semibold uppercase tracking-widest text-teal-600">Founder Partner Program · Field Service Management</p>
+
                   <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.1] text-slate-900">
                     Run the field and the<br />
                     <span className="text-teal-600" style={{ textShadow: "0 0 40px rgba(13,148,136,0.25)" }}>office from one place.</span>
