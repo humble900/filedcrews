@@ -189,7 +189,7 @@ export default function DashboardOverview({ companyId }: DashboardOverviewProps)
           staffStatusMap.set(ev.staff_id, ev.event_type);
         }
       });
-      const activeCrewCount = Array.from(staffStatusMap.values()).filter(status => status === "check_in").length;
+      const activeCrewCount = Array.from(staffStatusMap.values()).filter(status => ['entered', 'logged_in_inside', 'inside'].includes(status)).length;
 
       // g. Unresolved Incident Reports count
       const { data: openIncidentsData } = await supabase
@@ -238,7 +238,7 @@ export default function DashboardOverview({ companyId }: DashboardOverviewProps)
         .from("geofence_events")
         .select("created_at, staff_profiles!inner(company_id)")
         .eq("staff_profiles.company_id", companyId)
-        .eq("event_type", "check_in")
+        .in("event_type", ["entered", "logged_in_inside", "inside"])
         .gte("created_at", sevenDaysAgo.toISOString());
 
       // Generate 7-day array
