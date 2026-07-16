@@ -30,6 +30,11 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Only handle GET requests for same-origin (local) assets
+  if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
+    return; // Bypass and let the browser fetch naturally
+  }
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
