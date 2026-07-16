@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fieldcrews-pwa-cache-v1';
+const CACHE_NAME = 'fieldcrews-pwa-cache-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -8,6 +8,7 @@ const ASSETS_TO_CACHE = [
 ];
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE);
@@ -25,7 +26,7 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
@@ -40,11 +41,12 @@ self.addEventListener('fetch', (event) => {
       if (cachedResponse) {
         return cachedResponse;
       }
-      return fetch(event.request).catch(() => {
+      return fetch(event.request).catch((err) => {
         // Return index.html for SPA page navigations offline
         if (event.request.mode === 'navigate') {
           return caches.match('/index.html');
         }
+        throw err;
       });
     })
   );
