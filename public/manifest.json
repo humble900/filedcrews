@@ -1,0 +1,16 @@
+{
+  "short_name": "FiledCrews",
+  "name": "FiledCrews Coordinator & Mobile Dispatch",
+  "icons": [
+    {
+      "src": "favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": ".",
+  "background_color": "#090d16",
+  "theme_color": "#4f46e5",
+  "display": "standalone",
+  "orientation": "portrait"
+}

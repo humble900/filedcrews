@@ -502,7 +502,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
             title,
             description,
             project_id,
-            project:projects(id, name, address),
+            project:projects(id, name, address, latitude, longitude),
             job_equipment(
               id,
               notes,
@@ -600,6 +600,29 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
       return data || [];
     },
   });
+
+  // Fetch payment details on demand (only when on settings tab)
+  const { data: paymentDetails } = useQuery({
+    queryKey: ["staff_payment_details", staffProfile.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("staff_profiles")
+        .select("bank_name, routing_number, account_number")
+        .eq("id", staffProfile.id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: activeTab === "settings",
+  });
+
+  useEffect(() => {
+    if (paymentDetails) {
+      setBankName(paymentDetails.bank_name || "");
+      setRoutingNumber(paymentDetails.routing_number || "");
+      setAccountNumber(paymentDetails.account_number || "");
+    }
+  }, [paymentDetails]);
 
   // Fetch incident/field reports submitted by the crew member
   const { data: incidentReports = [], isLoading: incidentsLoading, refetch: refetchIncidents } = useQuery({
@@ -954,6 +977,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
         })
         .eq("id", staffProfile.id);
       if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["staff_payment_details", staffProfile.id] });
       toast.success("Payment details saved!");
     } catch (err: any) {
       toast.error(err.message || "Failed to save payment details");

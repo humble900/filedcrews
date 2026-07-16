@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Not a company owner — check if they're a staff member
       const { data: staffProfile, error: staffErr } = await supabase
         .from('staff_profiles')
-        .select('id, username, full_name, company_id, is_active, global_role, can_manage_roles, first_name, last_name, email, phone, address, job_title, photo_url, bank_name, routing_number, account_number')
+        .select('id, username, full_name, company_id, is_active, global_role, can_manage_roles, first_name, last_name, email, phone, address, job_title, photo_url')
         .eq('auth_user_id', session.user.id)
         .maybeSingle();
 
