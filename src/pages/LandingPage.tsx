@@ -121,6 +121,12 @@ const features = [
   { icon: ShieldAlert, title: "Safety & Compliance", desc: "Digital safety audits, incident logs, and compliance checklists to keep your crew and operations protected." },
 ];
 
+const outcomes = [
+  { icon: Target, title: "Dispatch with confidence", desc: "See the jobs, crews, and sites that need attention before delays turn into missed appointments." },
+  { icon: ClipboardList, title: "Verify work on site", desc: "Connect shifts, worksite boundaries, and task updates so your office has an accurate record of the day." },
+  { icon: Receipt, title: "Bill from completed work", desc: "Move from completed jobs to estimates, invoices, and payment tracking in the same workspace." },
+];
+
 const steps = [
   { num: "01", title: "Create your company", desc: "Sign up and set your company name and unique prefix in under 60 seconds." },
   { num: "02", title: "Onboard your crew", desc: "Add staff with profile photos. They receive instant mobile app credentials." },
@@ -175,6 +181,10 @@ const marqueeCSS = `
 }
 .marquee-track { will-change: transform; }
 .marquee-wrap:hover .marquee-track { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+  .marquee-track { animation: none !important; transform: none !important; }
+}
 `;
 
 /* ══════════════════════════════════════════════════════════ */
@@ -234,7 +244,7 @@ export default function LandingPage() {
               </Link>
               <Link to="/wizard" className="hidden md:inline-flex">
                 <Button size="sm" className="text-sm px-4 bg-teal-600 hover:bg-teal-700 text-white">
-                  Get Started <ChevronRight className="ml-1 h-4 w-4" />
+                  Apply as a Founder Partner <ChevronRight className="ml-1 h-4 w-4" />
                 </Button>
               </Link>
               <Button variant="ghost" size="icon" className="md:hidden text-slate-600" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle menu">
@@ -255,7 +265,7 @@ export default function LandingPage() {
                       <Button variant="outline" size="sm" className="w-full text-sm border-stone-200 text-slate-700">Log In</Button>
                     </Link>
                     <Link to="/wizard" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
-                      <Button size="sm" className="w-full text-sm bg-teal-600 hover:bg-teal-700 text-white">Get Started</Button>
+                      <Button size="sm" className="w-full text-sm bg-teal-600 hover:bg-teal-700 text-white">Apply for Access</Button>
                     </Link>
                   </div>
                 </nav>
@@ -274,23 +284,24 @@ export default function LandingPage() {
             <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
               <motion.div initial="hidden" animate="visible" className="space-y-7">
                 <motion.div variants={fadeUp} custom={0} className="space-y-4">
-                  <p className="text-sm font-semibold uppercase tracking-widest text-teal-600">Field Service Management Platform</p>
+                  <p className="text-sm font-semibold uppercase tracking-widest text-teal-600">Founder Partner Program · Field Service Management</p>
                   <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.1] text-slate-900">
-                    Know where your<br />
-                    <span className="text-teal-600" style={{ textShadow: "0 0 40px rgba(13,148,136,0.25)" }}>team is. Always.</span>
+                    Run the field and the<br />
+                    <span className="text-teal-600" style={{ textShadow: "0 0 40px rgba(13,148,136,0.25)" }}>office from one place.</span>
                   </h1>
                   <p className="text-lg md:text-xl text-slate-500 max-w-lg leading-relaxed">
                     Real-time crew location tracking with geofencing, face verification, and instant alerts — built for HVAC, plumbing, electrical, cleaning, and construction teams.
                   </p>
+                  <p className="text-sm font-medium text-slate-600 max-w-lg">Founder Partners receive guided setup. Access is reviewed and activated manually for each company.</p>
                 </motion.div>
                 <motion.div variants={fadeUp} custom={2} className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <Link to="/wizard" className="w-full sm:w-auto">
                     <Button size="lg" className="w-full sm:w-auto text-base px-8 bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-600/20">
-                      Start Tracking <ArrowRight className="ml-2 h-5 w-5" />
+                      Apply for Founder Partner Access <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </Link>
                   <Button size="lg" variant="outline" className="w-full sm:w-auto text-base px-8 group border-stone-200 text-slate-700 hover:bg-stone-50" onClick={() => setDemoOpen(true)}>
-                    <PlayCircle className="mr-2 h-5 w-5 text-teal-600 transition-transform group-hover:scale-110" /> See Demo
+                    <PlayCircle className="mr-2 h-5 w-5 text-teal-600 transition-transform group-hover:scale-110" /> Watch the 2-minute demo
                   </Button>
                 </motion.div>
               </motion.div>
@@ -308,13 +319,34 @@ export default function LandingPage() {
         </section>
 
         {/* ──── TRUST STRIP ──── */}
+        <section className="bg-white py-12 md:py-16">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+            <div className="max-w-2xl space-y-3">
+              <p className="text-sm font-semibold uppercase tracking-widest text-teal-600">Built for the work that matters</p>
+              <h2 className="text-2xl md:text-4xl font-extrabold text-slate-900">One operating view for your entire service business</h2>
+              <p className="text-slate-500 text-lg leading-relaxed">Keep the office and the field connected without stitching together separate dispatch, time, and billing tools.</p>
+            </div>
+            <div className="mt-8 grid gap-5 md:grid-cols-3">
+              {outcomes.map((outcome) => (
+                <Card key={outcome.title} className="border-stone-200 bg-stone-50/50 shadow-sm">
+                  <CardContent className="p-6 space-y-3">
+                    <outcome.icon className="h-6 w-6 text-teal-600" />
+                    <h3 className="text-lg font-bold text-slate-900">{outcome.title}</h3>
+                    <p className="text-sm leading-relaxed text-slate-600">{outcome.desc}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="border-y border-stone-100 bg-stone-50/60">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 py-5 flex flex-wrap items-center justify-center gap-8 md:gap-16 text-center">
             {[
-              { val: "Real-Time", label: "GPS Tracking" },
-              { val: "AI-Powered", label: "Face Verification" },
-              { val: "Unlimited", label: "Geofence Zones" },
-              { val: "Instant", label: "Push Notifications" },
+              { val: "Guided", label: "Founder Partner Setup" },
+              { val: "Connected", label: "Office + Field Workflows" },
+              { val: "Configurable", label: "Worksite Boundaries" },
+              { val: "Mobile", label: "Crew Updates" },
             ].map((s) => (
               <div key={s.label}>
                 <p className="text-xl font-bold text-teal-600">{s.val}</p>
@@ -489,6 +521,23 @@ export default function LandingPage() {
         </section>
 
         {/* ──── MOBILE APP ──── */}
+        <section className="bg-slate-950 py-12 text-white md:py-16">
+          <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:items-center">
+            <div className="space-y-4">
+              <p className="text-sm font-semibold uppercase tracking-widest text-teal-300">Built for accountable operations</p>
+              <h2 className="text-2xl font-extrabold md:text-4xl">Your company controls how field workflows are configured.</h2>
+              <p className="text-slate-300 leading-relaxed">Use worksite boundaries, shift workflows, and optional verification features according to your company policies and local requirements. Give your team clear notice and review exceptions before taking action.</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {["Company-managed worksite settings", "Role-based office and crew access", "Configurable attendance workflows", "Privacy and account controls"].map((item) => (
+                <div key={item} className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 p-4 text-sm font-medium text-slate-100">
+                  <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-teal-300" /> {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section id="mobile" className="py-12 md:py-18 bg-teal-600 text-white">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div className="grid lg:grid-cols-2 gap-10 items-center">
@@ -501,7 +550,7 @@ export default function LandingPage() {
                 </motion.p>
                 <motion.div variants={fadeUp} custom={2} className="space-y-2">
                   {[
-                    "Search \"OnSite Crew Manager\" on Google Play (coming soon)",
+                    "Android APK available now; Google Play listing planned",
                     "Works on any Android phone or tablet",
                     "Free, secure install",
                     "Background GPS, face verification & push notifications",
@@ -537,16 +586,13 @@ export default function LandingPage() {
                       <span className="ml-auto inline-block h-4 w-px bg-stone-200" />
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-teal-50 text-teal-600 text-[10px] font-bold">O</div>
                     </div>
-                    <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Top result on Google Play (Coming Soon)</div>
+                    <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Android mobile app preview</div>
                     <div className="rounded-xl overflow-hidden border border-stone-200 bg-white">
                       <img src={playStoreListing} alt="OnSite Crew Manager on Google Play" className="w-full h-auto block" loading="lazy" />
                     </div>
                     <div className="mt-3 flex items-center justify-between text-xs">
                       <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1 font-semibold text-slate-700">
-                          <span>4.8</span>
-                          <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 text-amber-500" aria-hidden><path d="M10 1.5l2.6 5.3 5.9.9-4.3 4.2 1 5.9L10 15l-5.3 2.8 1-5.9L1.5 7.7l5.9-.9z" /></svg>
-                        </div>
+                        <div className="font-semibold text-slate-700">Direct download</div>
                         <div className="text-slate-400">Free</div>
                         <div className="text-slate-400">Android</div>
                       </div>
@@ -561,8 +607,8 @@ export default function LandingPage() {
                       <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-amber-500" aria-hidden><path d="M10 1.5l2.6 5.3 5.9.9-4.3 4.2 1 5.9L10 15l-5.3 2.8 1-5.9L1.5 7.7l5.9-.9z" /></svg>
                     </div>
                     <div>
-                      <div className="text-sm font-bold leading-tight">Trusted</div>
-                      <div className="text-xs text-slate-400">Verified publisher</div>
+                      <div className="text-sm font-bold leading-tight">Founder Partner</div>
+                      <div className="text-xs text-slate-400">Guided setup included</div>
                     </div>
                   </motion.div>
 
@@ -613,14 +659,14 @@ export default function LandingPage() {
 
           <div className="mx-auto max-w-3xl px-4 sm:px-6 text-center space-y-5 relative z-10">
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }}>
-              <motion.h2 variants={fadeUp} custom={0} className="text-2xl md:text-4xl font-extrabold text-slate-900">Ready to know where your team is?</motion.h2>
+              <motion.h2 variants={fadeUp} custom={0} className="text-2xl md:text-4xl font-extrabold text-slate-900">Ready to bring your field and office together?</motion.h2>
               <motion.p variants={fadeUp} custom={1} className="text-base text-slate-500 mt-3 max-w-xl mx-auto leading-relaxed">
-                Set up your account in under 2 minutes. Add your staff, draw your zones, and start tracking. No credit card required.
+                Apply for Founder Partner access, then we will help configure your company, crew, and first worksite workflows.
               </motion.p>
               <motion.div variants={fadeUp} custom={2} className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mt-6">
                 <Link to="/wizard" className="w-full sm:w-auto">
                   <Button size="lg" className="w-full sm:w-auto text-base px-10 bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-600/20">
-                    Create Your Account <ArrowRight className="ml-2 h-5 w-5" />
+                    Apply for Founder Partner Access <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
                 <Link to="/auth" className="w-full sm:w-auto">

@@ -164,6 +164,176 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
   });
 
   // Sync offline queue to localStorage
+  // ── Data Queries ──────────────────────────────────────────────────
+
+  // Fetch active form templates
+  const { data: formTemplates = [] } = useQuery({
+    queryKey: ["active_form_templates", staffProfile.company_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("form_templates")
+        .select("*")
+        .eq("company_id", staffProfile.company_id);
+      if (error) throw error;
+      return (data || []).map((t: any) => ({
+        ...t,
+        schema: Array.isArray(t.schema) ? t.schema : []
+      }));
+    }
+  });
+
+  const { data: tasks = [], isLoading: tasksLoading } = useQuery({
+    queryKey: ["staff_tasks", staffProfile.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select(`
+          *,
+          job:jobs(
+            id,
+            title,
+            description,
+            project_id,
+            project:projects(id, name, address, latitude, longitude),
+            job_equipment(
+              id,
+              notes,
+              asset:assets(id, name, serial_number, make, model, equipment_type)
+            )
+          )
+        `)
+        .eq("assignee_id", staffProfile.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { data: assignments = [] } = useQuery({
+    queryKey: ["staff_assignments", staffProfile.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("project_assignments")
+        .select(`id, project_id, project:projects(id, name, ref_number)`)
+        .eq("staff_id", staffProfile.id);
+      if (error) throw error;
+      const list = data || [];
+      if (list.length > 0 && !selectedProjectId) {
+        setSelectedProjectId(list[0].project_id);
+      }
+      return list;
+    },
+  });
+
+  const { data: latestCheckIn } = useQuery({
+    queryKey: ["staff_latest_checkin", staffProfile.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("geofence_events")
+        .select(`id, event_type, created_at, geofence:geofences(name)`)
+        .eq("staff_id", staffProfile.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: documents = [], isLoading: docsLoading, refetch: refetchDocs } = useQuery({
+    queryKey: ["staff_project_docs", selectedProjectId],
+    queryFn: async () => {
+      if (!selectedProjectId) return [];
+      const { data, error } = await supabase
+        .from("project_documents")
+        .select(`*, uploader:staff_profiles(full_name)`)
+        .eq("project_id", selectedProjectId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedProjectId,
+  });
+
+  // Fetch field crew's shifts
+  const { data: myShifts = [], isLoading: shiftsLoading } = useQuery({
+    queryKey: ["staff_shifts", staffProfile.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("staff_shifts")
+        .select(`
+          *,
+          geofence:geofences(id, name, latitude, longitude, radius_meters),
+          job:jobs(
+            id,
+            title,
+            project:projects(id, name, address)
+          )
+        `)
+        .eq("staff_id", staffProfile.id)
+        .gte("shift_date", new Date().toISOString().split("T")[0])
+        .order("shift_date", { ascending: true })
+        .limit(14);
+      if (error) return [];
+      return data || [];
+    },
+  });
+
+  const todayShift = myShifts.find((shift: any) => {
+    const shiftDate = new Date((shift.shift_date || "") + "T00:00:00");
+    return new Date().toDateString() === shiftDate.toDateString();
+  });
+
+  // Fetch timesheet entries for payroll calculations
+  const { data: timesheets = [], isLoading: timesheetsLoading } = useQuery({
+    queryKey: ["staff_timesheets", staffProfile.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("timesheet_entries")
+        .select("*")
+        .eq("staff_id", staffProfile.id)
+        .order("start_time", { ascending: false });
+      if (error) return [];
+      return data || [];
+    },
+  });
+
+  // Fetch payment details on demand (only when on settings tab)
+  const { data: paymentDetails } = useQuery({
+    queryKey: ["staff_payment_details", staffProfile.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("staff_profiles")
+        .select("bank_name, routing_number, account_number")
+        .eq("id", staffProfile.id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: activeTab === "settings",
+  });
+
+  useEffect(() => {
+    if (paymentDetails) {
+      setBankName(paymentDetails.bank_name || "");
+      setRoutingNumber(paymentDetails.routing_number || "");
+      setAccountNumber(paymentDetails.account_number || "");
+    }
+  }, [paymentDetails]);
+
+  // Fetch incident/field reports submitted by the crew member
+  const { data: incidentReports = [], isLoading: incidentsLoading, refetch: refetchIncidents } = useQuery({
+    queryKey: ["staff_incident_reports", staffProfile.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("incident_reports")
+        .select("*, project:projects(id, name, ref_number)")
+        .eq("reporter_id", staffProfile.id)
+        .order("created_at", { ascending: false });
+      if (error) return [];
+      return data || [];
+    },
+  });
   useEffect(() => {
     try {
       localStorage.setItem("onsite_offline_queue", JSON.stringify(offlineQueue));
@@ -472,171 +642,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
     }
   };
 
-  // ── Data Queries ──────────────────────────────────────────────────
 
-  // Fetch active form templates
-  const { data: formTemplates = [] } = useQuery({
-    queryKey: ["active_form_templates", staffProfile.company_id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("form_templates")
-        .select("*")
-        .eq("company_id", staffProfile.company_id);
-      if (error) throw error;
-      return (data || []).map((t: any) => ({
-        ...t,
-        schema: Array.isArray(t.schema) ? t.schema : []
-      }));
-    }
-  });
-
-  const { data: tasks = [], isLoading: tasksLoading } = useQuery({
-    queryKey: ["staff_tasks", staffProfile.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tasks")
-        .select(`
-          *,
-          job:jobs(
-            id,
-            title,
-            description,
-            project_id,
-            project:projects(id, name, address, latitude, longitude),
-            job_equipment(
-              id,
-              notes,
-              asset:assets(id, name, serial_number, make, model, equipment_type)
-            )
-          )
-        `)
-        .eq("assignee_id", staffProfile.id)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  const { data: assignments = [] } = useQuery({
-    queryKey: ["staff_assignments", staffProfile.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("project_assignments")
-        .select(`id, project_id, project:projects(id, name, ref_number)`)
-        .eq("staff_id", staffProfile.id);
-      if (error) throw error;
-      const list = data || [];
-      if (list.length > 0 && !selectedProjectId) {
-        setSelectedProjectId(list[0].project_id);
-      }
-      return list;
-    },
-  });
-
-  const { data: latestCheckIn } = useQuery({
-    queryKey: ["staff_latest_checkin", staffProfile.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("geofence_events")
-        .select(`id, event_type, created_at, geofence:geofences(name)`)
-        .eq("staff_id", staffProfile.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const { data: documents = [], isLoading: docsLoading, refetch: refetchDocs } = useQuery({
-    queryKey: ["staff_project_docs", selectedProjectId],
-    queryFn: async () => {
-      if (!selectedProjectId) return [];
-      const { data, error } = await supabase
-        .from("project_documents")
-        .select(`*, uploader:staff_profiles(full_name)`)
-        .eq("project_id", selectedProjectId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!selectedProjectId,
-  });
-
-  // Fetch field crew's shifts
-  const { data: myShifts = [], isLoading: shiftsLoading } = useQuery({
-    queryKey: ["staff_shifts", staffProfile.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("staff_shifts")
-        .select(`
-          *,
-          geofence:geofences(id, name, latitude, longitude, radius_meters),
-          job:jobs(
-            id,
-            title,
-            project:projects(id, name, address)
-          )
-        `)
-        .eq("staff_id", staffProfile.id)
-        .gte("shift_date", new Date().toISOString().split("T")[0])
-        .order("shift_date", { ascending: true })
-        .limit(14);
-      if (error) return [];
-      return data || [];
-    },
-  });
-
-  // Fetch timesheet entries for payroll calculations
-  const { data: timesheets = [], isLoading: timesheetsLoading } = useQuery({
-    queryKey: ["staff_timesheets", staffProfile.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("timesheet_entries")
-        .select("*")
-        .eq("staff_id", staffProfile.id)
-        .order("start_time", { ascending: false });
-      if (error) return [];
-      return data || [];
-    },
-  });
-
-  // Fetch payment details on demand (only when on settings tab)
-  const { data: paymentDetails } = useQuery({
-    queryKey: ["staff_payment_details", staffProfile.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("staff_profiles")
-        .select("bank_name, routing_number, account_number")
-        .eq("id", staffProfile.id)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: activeTab === "settings",
-  });
-
-  useEffect(() => {
-    if (paymentDetails) {
-      setBankName(paymentDetails.bank_name || "");
-      setRoutingNumber(paymentDetails.routing_number || "");
-      setAccountNumber(paymentDetails.account_number || "");
-    }
-  }, [paymentDetails]);
-
-  // Fetch incident/field reports submitted by the crew member
-  const { data: incidentReports = [], isLoading: incidentsLoading, refetch: refetchIncidents } = useQuery({
-    queryKey: ["staff_incident_reports", staffProfile.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("incident_reports")
-        .select("*, project:projects(id, name, ref_number)")
-        .eq("reporter_id", staffProfile.id)
-        .order("created_at", { ascending: false });
-      if (error) return [];
-      return data || [];
-    },
-  });
 
   const timesheetSummary = useMemo(() => {
     let totalMinutes = 0;
@@ -1045,10 +1051,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
     latestCheckIn &&
     (latestCheckIn.event_type.includes("inside") || latestCheckIn.event_type === "entered");
 
-  const todayShift = myShifts.find((shift: any) => {
-    const shiftDate = new Date((shift.shift_date || "") + "T00:00:00");
-    return new Date().toDateString() === shiftDate.toDateString();
-  });
+
 
   const getPriorityBorder = (priority: string) => {
     switch (priority) {

@@ -20,6 +20,20 @@ Deno.serve(async (req) => {
       });
     }
 
+    const authHeader = req.headers.get("authorization") ?? "";
+    const callerClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { authorization: authHeader } } }
+    );
+    const { data: { user: callerUser } } = await callerClient.auth.getUser();
+    if (!callerUser) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -28,7 +42,7 @@ Deno.serve(async (req) => {
     // 1. Get staff profile to find auth_user_id
     const { data: profile, error: profileErr } = await supabaseAdmin
       .from("staff_profiles")
-      .select("auth_user_id")
+      .select("auth_user_id, company_id")
       .eq("id", staff_id)
       .single();
 
@@ -37,6 +51,28 @@ Deno.serve(async (req) => {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    const { data: ownerCheck } = await supabaseAdmin
+      .from("companies")
+      .select("id")
+      .eq("id", profile.company_id)
+      .eq("auth_user_id", callerUser.id)
+      .maybeSingle();
+    if (!ownerCheck) {
+      const { data: adminCheck } = await supabaseAdmin
+        .from("staff_profiles")
+        .select("id")
+        .eq("auth_user_id", callerUser.id)
+        .eq("company_id", profile.company_id)
+        .eq("global_role", "Admin")
+        .maybeSingle();
+      if (!adminCheck) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // 2. Delete related data (order matters for FK constraints)

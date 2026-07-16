@@ -74,9 +74,15 @@ Deno.serve(async (req) => {
     const userId = claimsData.claims.sub;
     const { latitude, longitude, accuracy } = await req.json();
 
-    if (latitude == null || longitude == null) {
+    if (
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude) ||
+      latitude < -90 || latitude > 90 ||
+      longitude < -180 || longitude > 180 ||
+      (accuracy != null && (!Number.isFinite(accuracy) || accuracy < 0 || accuracy > 100000))
+    ) {
       return new Response(
-        JSON.stringify({ error: "latitude and longitude are required" }),
+        JSON.stringify({ error: "Valid latitude, longitude, and optional accuracy are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

@@ -300,8 +300,8 @@ Deno.serve(async (req) => {
                   <ul>
                     <li><strong>Time:</strong> ${new Date().toLocaleString()}</li>
                     <li><strong>AI Status:</strong> Mismatch</li>
-                    <li><strong>Confidence:</strong> ${result.confidence}</li>
-                    <li><strong>Reasoning:</strong> ${result.explanation}</li>
+                    <li><strong>Confidence:</strong> ${confidence}</li>
+                    <li><strong>Reasoning:</strong> ${explanation}</li>
                   </ul>
                   <p>Please log in to the OnSite Crew Manager dashboard and inspect the selfie comparison in the Face Audit section.</p>
                 `,
@@ -314,7 +314,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return json({ ok: true, status, confidence: result.confidence });
+    return json({ ok: true, status, confidence });
   } catch (e) {
     console.error("staff_submit_face_for_event error:", e);
     return json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);

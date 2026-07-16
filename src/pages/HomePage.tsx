@@ -1,4 +1,5 @@
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
 import StaffManagement from "@/components/StaffManagement";
 import LiveMap from "@/components/LiveMap";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -24,6 +25,22 @@ const HomePage = () => {
   const [geofenceEditing, setGeofenceEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const location = useLocation();
+
+  // Check if current user is listed in platform_admins
+  const { data: isSuperadmin = false, isLoading: loadingAdmin } = useQuery({
+    queryKey: ["is_superadmin_home", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return false;
+      const { data, error } = await supabase
+        .from("platform_admins")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (error) return false;
+      return !!data;
+    },
+    enabled: !!user?.id
+  });
 
   useEffect(() => {
     if (location.state?.tab) {
@@ -51,7 +68,7 @@ const HomePage = () => {
     [geofenceEditing]
   );
 
-  if (loading) {
+  if (loading || (user && loadingAdmin)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -98,7 +115,11 @@ const HomePage = () => {
     }
   }
 
-  if (!company) {
+  if (isSuperadmin) {
+    return <Navigate to="/superadmin" replace />;
+  }
+
+  if (!company || company.subscription_status === 'pending_approval') {
     return <Navigate to="/wizard" replace />;
   }
 

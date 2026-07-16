@@ -71,7 +71,9 @@ Deno.serve(async (req) => {
     // Only the company owner OR a staff member with can_manage_roles=true
     // may create staff with elevated roles (non-Field Crew).
     // We verify the JWT caller identity against the company record.
-    if (global_role !== "Field Crew") {
+    // Every account creation is privileged. Do not trust a caller-supplied
+    // company_id: authenticate and authorize the caller for every role.
+    {
       const authHeader = req.headers.get("authorization") ?? "";
       const callerClient = createClient(
         Deno.env.get("SUPABASE_URL")!,
@@ -93,17 +95,17 @@ Deno.serve(async (req) => {
         .eq("auth_user_id", callerUser.id)
         .maybeSingle();
       if (!ownerCheck) {
-        // Check if caller is a delegated role manager in this company
+        // Company admins and delegated role managers may create staff.
         const { data: delegateCheck } = await supabaseAdmin
           .from("staff_profiles")
           .select("id")
           .eq("auth_user_id", callerUser.id)
           .eq("company_id", company_id)
-          .eq("can_manage_roles", true)
+          .or("global_role.eq.Admin,can_manage_roles.eq.true")
           .maybeSingle();
         if (!delegateCheck) {
           return new Response(
-            JSON.stringify({ error: "Only the business owner or a delegated role manager can create staff with elevated roles" }),
+            JSON.stringify({ error: "Only a company owner, admin, or delegated role manager can create staff" }),
             { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }

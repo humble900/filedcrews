@@ -23,6 +23,7 @@ const Support = lazy(() => import("./pages/Support"));
 const About = lazy(() => import("./pages/About"));
 const AccountDeletion = lazy(() => import("./pages/AccountDeletion"));
 const SuperadminDashboard = lazy(() => import("./pages/SuperadminDashboard"));
+const SuperadminLogin = lazy(() => import("./pages/SuperadminLogin"));
 const CRMPage = lazy(() => import("./pages/CRMPage"));
 const ProjectsPage = lazy(() => import("./pages/ProjectsPage"));
 const WorkOrdersPage = lazy(() => import("./pages/WorkOrdersPage"));
@@ -119,6 +120,7 @@ const App = () => (
               <Route path="/support" element={<Support />} />
               <Route path="/about" element={<About />} />
               <Route path="/account-deletion" element={<AccountDeletion />} />
+              <Route path="/superadmin/login" element={<SuperadminLogin />} />
               <Route path="/superadmin" element={<SuperadminDashboard />} />
               
               {/* Protected Dashboard Routes */}

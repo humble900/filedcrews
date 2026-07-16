@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -193,8 +194,75 @@ function MapHandler({ center }: MapHandlerProps) {
 }
 
 function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
-  const { user, company, loading, createCompany } = useAuth();
+  const { user, company, loading, createCompany, signOut } = useAuth();
   const navigate = useNavigate();
+
+  // Fetch signup_mode platform setting
+  const { data: signupMode = "founders_partner" } = useQuery({
+    queryKey: ["platform_signup_mode_wizard"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("platform_settings")
+        .select("value")
+        .eq("key", "signup_mode")
+        .maybeSingle();
+      if (error) throw error;
+      return data?.value || "founders_partner";
+    }
+  });
+
+  // Fetch if user is a platform superadmin
+  const { data: isSuperadmin = false, isLoading: loadingAdmin } = useQuery({
+    queryKey: ["is_superadmin_wizard", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return false;
+      const { data, error } = await supabase
+        .from("platform_admins")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (error) return false;
+      return !!data;
+    },
+    enabled: !!user?.id
+  });
+
+  const [submittingApp, setSubmittingApp] = useState(false);
+  const [appNotes, setAppNotes] = useState("");
+
+  const handleApply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!companyName.trim()) {
+      toast.error("Please enter your company name");
+      return;
+    }
+    setSubmittingApp(true);
+    try {
+      const generatedPrefix = computePrefix(companyName);
+      const { error } = await supabase
+        .from("companies")
+        .insert({
+          name: companyName.trim(),
+          prefix: generatedPrefix,
+          auth_user_id: user?.id,
+          currency: "USD",
+          industry: companyVertical,
+          address: companyAddress.trim() || null,
+          website: companyWebsite.trim() || null,
+          staff_count: companyStaffCount.trim() || null,
+          annual_revenue: companyAnnualRevenue.trim() || null,
+          subscription_status: 'pending_approval'
+        });
+      
+      if (error) throw error;
+      toast.success("Application submitted successfully!");
+      window.location.reload();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit application");
+    } finally {
+      setSubmittingApp(false);
+    }
+  };
 
   const computePrefix = (name: string) => {
     const clean = name.toUpperCase().replace(/[^A-Z]/g, "");
@@ -1021,10 +1089,164 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
   // Adjust steps listing for all modes
   const activeStepsList = stepsList;
 
-  if (loading || !apiKey) {
+  if (loading || !apiKey || (user && loadingAdmin)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0c121f]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (company?.subscription_status === 'pending_approval' && !isSuperadmin) {
+    return (
+      <div className="min-h-screen bg-[#0a0f1d] flex flex-col items-center justify-center p-4 font-sans select-none relative overflow-hidden">
+        {/* Glow Spheres */}
+        <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[400px] h-[400px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
+
+        <div className="w-full max-w-lg bg-slate-900/60 border border-slate-800 backdrop-blur-xl p-8 rounded-2xl shadow-2xl z-10 text-center space-y-6">
+          <div className="mx-auto w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 animate-pulse border border-amber-500/20">
+            <Lock className="h-8 w-8" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-white tracking-tight">Application Under Review</h2>
+            <p className="text-amber-500 text-xs font-semibold tracking-wider uppercase">Founders Partner Charter Program</p>
+          </div>
+          <p className="text-slate-400 text-sm leading-relaxed">
+            Thank you for applying to the Founders Partner Charter! Our product team is currently verifying your business profile (<span className="text-white font-semibold">{company.name}</span>) to configure your dedicated dashboard and SMS routing channels.
+          </p>
+          <div className="p-4 bg-slate-950/50 border border-slate-850 rounded-xl space-y-1 text-left">
+            <p className="text-[11px] text-slate-500 uppercase font-bold tracking-wider">Submitted Profile Details</p>
+            <div className="text-xs text-slate-300 space-y-2 mt-2">
+              <p><strong className="text-slate-500">Industry:</strong> {company.industry}</p>
+              <p><strong className="text-slate-500">Business Address:</strong> {company.address || "—"}</p>
+              <p><strong className="text-slate-500">Estimated Crew Size:</strong> {company.staff_count || "—"}</p>
+              <p><strong className="text-slate-500">Annual Revenue Scope:</strong> {company.annual_revenue || "—"}</p>
+            </div>
+          </div>
+          <p className="text-xs text-slate-500">
+            We review and approve profiles within 2 hours. A confirmation email will be sent once your workspace is live.
+          </p>
+          <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate("/"); }} className="text-xs text-slate-400 hover:text-white hover:bg-slate-800/50 w-full">
+            Log Out or Switch Account
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (user && !company && signupMode === "founders_partner" && !isSuperadmin) {
+    return (
+      <div className="min-h-screen bg-[#0a0f1d] flex flex-col items-center justify-center p-4 font-sans select-none relative overflow-hidden">
+        {/* Glow Spheres */}
+        <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-blue-600/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[400px] h-[400px] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none" />
+
+        <div className="w-full max-w-xl bg-slate-900/60 border border-slate-800 backdrop-blur-xl p-8 rounded-2xl shadow-2xl z-10 space-y-6">
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl font-bold text-white tracking-tight">Founders Partner Application</h2>
+            <p className="text-slate-400 text-sm">
+              Apply to join our exclusive Charter Program. Please provide your business profile details below to initiate manual vetting.
+            </p>
+          </div>
+
+          <form onSubmit={handleApply} className="space-y-4">
+            <div className="space-y-1">
+              <Label className="text-slate-300 text-xs font-semibold">Business Name</Label>
+              <Input
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                placeholder="e.g. Acme Plumbing Services"
+                required
+                className="bg-slate-950/80 border-slate-800 text-white placeholder-slate-600 focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="text-slate-300 text-xs font-semibold">Industry Vertical</Label>
+                <Select value={companyVertical} onValueChange={setCompanyVertical}>
+                  <SelectTrigger className="bg-slate-950/80 border-slate-800 text-white">
+                    <SelectValue placeholder="Select vertical" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-slate-800 text-white">
+                    <SelectItem value="HVAC">HVAC</SelectItem>
+                    <SelectItem value="Electrical">Electrical</SelectItem>
+                    <SelectItem value="Plumbing">Plumbing</SelectItem>
+                    <SelectItem value="Landscaping">Landscaping</SelectItem>
+                    <SelectItem value="Cleaning">Cleaning</SelectItem>
+                    <SelectItem value="General">General Trade / Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-slate-300 text-xs font-semibold">Estimated Crew Size</Label>
+                <Select value={companyStaffCount} onValueChange={setCompanyStaffCount}>
+                  <SelectTrigger className="bg-slate-950/80 border-slate-800 text-white">
+                    <SelectValue placeholder="Select size" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-slate-800 text-white">
+                    <SelectItem value="1-5">1 to 5 technicians</SelectItem>
+                    <SelectItem value="6-20">6 to 20 technicians</SelectItem>
+                    <SelectItem value="21-50">21 to 50 technicians</SelectItem>
+                    <SelectItem value="50+">More than 50</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-slate-300 text-xs font-semibold">Business Address</Label>
+              <Input
+                value={companyAddress}
+                onChange={(e) => setCompanyAddress(e.target.value)}
+                placeholder="e.g. 100 Main St, Suite A, Austin, TX"
+                className="bg-slate-950/80 border-slate-800 text-white placeholder-slate-600 focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="text-slate-300 text-xs font-semibold">Company Website</Label>
+                <Input
+                  value={companyWebsite}
+                  onChange={(e) => setCompanyWebsite(e.target.value)}
+                  placeholder="e.g. www.acme.com"
+                  className="bg-slate-950/80 border-slate-800 text-white placeholder-slate-600 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-slate-300 text-xs font-semibold">Annual Revenue Scope</Label>
+                <Select value={companyAnnualRevenue} onValueChange={setCompanyAnnualRevenue}>
+                  <SelectTrigger className="bg-slate-950/80 border-slate-800 text-white">
+                    <SelectValue placeholder="Select revenue range" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-slate-800 text-white">
+                    <SelectItem value="Under $250k">Under $250k</SelectItem>
+                    <SelectItem value="$250k-$1M">$250k to $1M</SelectItem>
+                    <SelectItem value="$1M-$5M">$1M to $5M</SelectItem>
+                    <SelectItem value="Above $5M">Above $5M</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={submittingApp}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 mt-4 rounded-xl shadow-lg gap-2"
+            >
+              {submittingApp ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Submit Charter Application
+            </Button>
+          </form>
+
+          <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate("/"); }} className="text-xs text-slate-500 hover:text-white hover:bg-slate-800/50 w-full mt-2">
+            Log Out or Switch Account
+          </Button>
+        </div>
       </div>
     );
   }

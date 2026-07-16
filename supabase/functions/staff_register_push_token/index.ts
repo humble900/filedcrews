@@ -63,16 +63,15 @@ Deno.serve(async (req) => {
     }
 
     if (!isValidExpoPushToken(expoPushToken)) {
-      console.warn(`[PUSH_REG] Token format invalid: ${expoPushToken}`);
+      console.warn("[PUSH_REG] Token format invalid");
       return respond({
         ok: false,
         error: "Invalid Expo push token format",
         reason: "invalid_token_format",
-        receivedToken: expoPushToken,
       }, 400);
     }
 
-    console.log(`[PUSH_REG] Token format valid: ${expoPushToken}`);
+    console.log("[PUSH_REG] Token format valid");
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,

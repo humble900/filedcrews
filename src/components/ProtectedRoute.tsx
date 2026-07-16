@@ -3,6 +3,8 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions, type Feature } from '@/hooks/usePermissions';
 import { Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProtectedRouteProps {
   /** The feature this route requires access to */
@@ -18,10 +20,26 @@ interface ProtectedRouteProps {
  * Unauthorized users are redirected to "/" (which handles landing/login/staff routing).
  */
 export default function ProtectedRoute({ feature, children }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+  const { user, company, loading } = useAuth();
   const { hasPermission, canAccessDashboard } = usePermissions();
 
-  if (loading) {
+  // Check if current user is listed in platform_admins
+  const { data: isSuperadmin = false, isLoading: loadingAdmin } = useQuery({
+    queryKey: ["is_superadmin_route", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return false;
+      const { data, error } = await supabase
+        .from("platform_admins")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (error) return false;
+      return !!data;
+    },
+    enabled: !!user?.id
+  });
+
+  if (loading || (user && loadingAdmin)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -32,6 +50,16 @@ export default function ProtectedRoute({ feature, children }: ProtectedRouteProp
   // Not logged in → send to home (which shows landing page)
   if (!user) {
     return <Navigate to="/" replace />;
+  }
+
+  // If platform superadmin, redirect to superadmin console
+  if (isSuperadmin) {
+    return <Navigate to="/superadmin" replace />;
+  }
+
+  // If company is waiting for waitlist approval, redirect to /wizard
+  if (company?.subscription_status === 'pending_approval') {
+    return <Navigate to="/wizard" replace />;
   }
 
   // Logged in but cannot access the dashboard at all (Field Crew)
@@ -46,3 +74,4 @@ export default function ProtectedRoute({ feature, children }: ProtectedRouteProp
 
   return <>{children}</>;
 }
+
