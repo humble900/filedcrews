@@ -189,6 +189,133 @@ const marqueeCSS = `
 
 /* ══════════════════════════════════════════════════════════ */
 
+interface InteractiveParticlesCanvasProps {
+  color?: string;
+}
+
+export function InteractiveParticlesCanvas({ color = "13, 148, 136" }: InteractiveParticlesCanvasProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let width = (canvas.width = canvas.offsetWidth);
+    let height = (canvas.height = canvas.offsetHeight);
+
+    const particles: Array<{
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      radius: number;
+    }> = [];
+
+    const particleCount = Math.min(50, Math.floor((width * height) / 18000));
+
+    for (let i = 0; i < particleCount; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.35,
+        vy: (Math.random() - 0.5) * 0.35,
+        radius: Math.random() * 2 + 1,
+      });
+    }
+
+    let mouseX = 0;
+    let mouseY = 0;
+    let isHovering = false;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseX = e.clientX - rect.left;
+      mouseY = e.clientY - rect.top;
+      isHovering = true;
+    };
+
+    const handleMouseLeave = () => {
+      isHovering = false;
+    };
+
+    const parent = canvas.parentElement;
+    if (parent) {
+      window.addEventListener("mousemove", handleMouseMove);
+      parent.addEventListener("mouseleave", handleMouseLeave);
+    }
+
+    const handleResize = () => {
+      if (!canvas) return;
+      width = canvas.width = canvas.offsetWidth;
+      height = canvas.height = canvas.offsetHeight;
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    const render = () => {
+      ctx.clearRect(0, 0, width, height);
+
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i < particles.length; i++) {
+        const p1 = particles[i];
+        p1.x += p1.vx;
+        p1.y += p1.vy;
+
+        if (p1.x < 0 || p1.x > width) p1.vx *= -1;
+        if (p1.y < 0 || p1.y > height) p1.vy *= -1;
+
+        for (let j = i + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+          if (dist < 100) {
+            const alpha = (1 - dist / 100) * 0.12;
+            ctx.strokeStyle = `rgba(${color}, ${alpha})`;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+          }
+        }
+
+        if (isHovering) {
+          const distToMouse = Math.hypot(p1.x - mouseX, p1.y - mouseY);
+          if (distToMouse < 180) {
+            const alpha = (1 - distToMouse / 180) * 0.2;
+            ctx.strokeStyle = `rgba(${color}, ${alpha})`;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(mouseX, mouseY);
+            ctx.stroke();
+          }
+        }
+
+        ctx.fillStyle = `rgba(${color}, 0.35)`;
+        ctx.beginPath();
+        ctx.arc(p1.x, p1.y, p1.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("mousemove", handleMouseMove);
+      if (parent) {
+        parent.removeEventListener("mouseleave", handleMouseLeave);
+      }
+    };
+  }, [color]);
+
+  return <canvas ref={canvasRef} className="w-full h-full block" />;
+}
+
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
@@ -275,12 +402,17 @@ export default function LandingPage() {
         </header>
 
         {/* ──── HERO ──── */}
-        <section className="relative overflow-hidden">
+        <section className="relative overflow-hidden bg-slate-50/20 border-b border-stone-100/60">
+          <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+            <InteractiveParticlesCanvas color="13, 148, 136" />
+          </div>
+          <div className="absolute top-0 right-0 w-96 h-96 bg-teal-500/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-amber-500/3 rounded-full blur-3xl pointer-events-none" />
           <InteractiveMoon mouseX={mx} mouseY={my} top="6%" left="78%" size={200} color="rgba(13, 148, 136, 0.22)" delay={0} />
           <InteractiveMoon mouseX={mx} mouseY={my} top="50%" left="1%" size={130} color="rgba(20, 184, 166, 0.18)" delay={1.2} />
           <InteractiveMoon mouseX={mx} mouseY={my} top="25%" left="93%" size={80} color="rgba(245, 158, 11, 0.15)" delay={2.5} />
 
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-12 md:py-20 lg:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 md:py-14 lg:py-16">
             <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
               <motion.div initial="hidden" animate="visible" className="space-y-7">
                 <motion.div variants={fadeUp} custom={0} className="space-y-4">
@@ -318,8 +450,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ──── TRUST STRIP ──── */}
-        <section className="bg-white py-12 md:py-16">
+        <section className="bg-white py-8 md:py-10">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div className="max-w-2xl space-y-3">
               <p className="text-sm font-semibold uppercase tracking-widest text-teal-600">Built for the work that matters</p>
@@ -340,7 +471,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="border-y border-stone-100 bg-stone-50/60">
+        <section className="border-y border-stone-100 bg-stone-50/40">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 py-5 flex flex-wrap items-center justify-center gap-8 md:gap-16 text-center">
             {[
               { val: "Guided", label: "Founder Partner Setup" },
@@ -357,7 +488,7 @@ export default function LandingPage() {
         </section>
 
         {/* ──── INDUSTRIES — Marquee ──── */}
-        <section id="industries" className="py-10 md:py-14 bg-white overflow-hidden">
+        <section id="industries" className="py-8 md:py-10 bg-white overflow-hidden">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }} className="text-center mb-8 space-y-2">
               <motion.h2 variants={fadeUp} custom={0} className="text-2xl md:text-4xl font-extrabold text-slate-900">
@@ -407,7 +538,7 @@ export default function LandingPage() {
         </section>
 
         {/* ──── FEATURES ──── */}
-        <section id="features" className="relative overflow-hidden py-12 md:py-18 bg-stone-50/60">
+        <section id="features" className="relative overflow-hidden py-8 md:py-10 bg-stone-50/50">
           <InteractiveMoon mouseX={mx} mouseY={my} top="8%" left="87%" size={140} color="rgba(20, 184, 166, 0.18)" delay={0.5} />
           <InteractiveMoon mouseX={mx} mouseY={my} top="65%" left="2%" size={100} color="rgba(13, 148, 136, 0.15)" delay={2} />
 
@@ -444,7 +575,7 @@ export default function LandingPage() {
         </section>
 
         {/* ──── SCREENSHOTS SHOWCASE ──── */}
-        <section className="py-12 md:py-18 bg-white">
+        <section className="py-8 md:py-10 bg-white">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 space-y-14">
             {/* Staff management */}
             <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
@@ -495,7 +626,7 @@ export default function LandingPage() {
         </section>
 
         {/* ──── HOW IT WORKS ──── */}
-        <section id="how-it-works" className="relative overflow-hidden py-12 md:py-18 bg-stone-50/60">
+        <section id="how-it-works" className="relative overflow-hidden py-8 md:py-10 bg-stone-50/50">
           <InteractiveMoon mouseX={mx} mouseY={my} top="20%" left="90%" size={120} color="rgba(20, 184, 166, 0.18)" delay={1} />
 
           <div className="mx-auto max-w-7xl px-4 sm:px-6 relative z-10">
@@ -521,7 +652,7 @@ export default function LandingPage() {
         </section>
 
         {/* ──── MOBILE APP ──── */}
-        <section className="bg-slate-950 py-12 text-white md:py-16">
+        <section className="bg-slate-950 py-8 text-white md:py-10">
           <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:items-center">
             <div className="space-y-4">
               <p className="text-sm font-semibold uppercase tracking-widest text-teal-300">Built for accountable operations</p>
@@ -538,7 +669,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="mobile" className="py-12 md:py-18 bg-teal-600 text-white">
+        <section id="mobile" className="py-8 md:py-12 bg-teal-600 text-white">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div className="grid lg:grid-cols-2 gap-10 items-center">
               <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="space-y-5">
@@ -628,7 +759,7 @@ export default function LandingPage() {
         </section>
 
         {/* ──── FAQ ──── */}
-        <section id="faq" className="py-12 md:py-18 bg-white">
+        <section id="faq" className="py-8 md:py-10 bg-white">
           <div className="mx-auto max-w-3xl px-4 sm:px-6">
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }} className="text-center mb-8 space-y-2">
               <motion.h2 variants={fadeUp} custom={0} className="text-2xl md:text-4xl font-extrabold text-slate-900">Frequently asked questions</motion.h2>
@@ -653,7 +784,7 @@ export default function LandingPage() {
         </section>
 
         {/* ──── CTA ──── */}
-        <section className="relative overflow-hidden py-12 md:py-18 bg-stone-50/60">
+        <section className="relative overflow-hidden py-8 md:py-10 bg-stone-50/50">
           <InteractiveMoon mouseX={mx} mouseY={my} top="15%" left="6%" size={160} color="rgba(13, 148, 136, 0.18)" delay={0.3} />
           <InteractiveMoon mouseX={mx} mouseY={my} top="45%" left="86%" size={100} color="rgba(245, 158, 11, 0.12)" delay={1.8} />
 
@@ -677,8 +808,10 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ──── FOOTER ──── */}
-        <footer className="border-t border-stone-100 bg-stone-50">
+        <footer className="relative border-t border-stone-100 bg-stone-50 overflow-hidden">
+          <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none opacity-45">
+            <InteractiveParticlesCanvas color="13, 148, 136" />
+          </div>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-2">
