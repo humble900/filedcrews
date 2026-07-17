@@ -490,6 +490,45 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Card className="border-border/50">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base font-bold flex items-center gap-2">
+              <Zap className="h-4 w-4 text-amber-500" /> Accounting API Integration
+            </CardTitle>
+            <Badge className="bg-amber-500/10 text-amber-600 border-amber-200">Coming Soon</Badge>
+          </div>
+          <CardDescription>
+            Direct API Live Sync with QuickBooks Online and Xero.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Automate your bookkeeping. When direct sync is enabled, creating or paying invoices in OnSite will automatically push them to your QuickBooks or Xero registry in real-time.
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 border rounded-xl bg-muted/10 opacity-75 flex flex-col justify-between h-[120px]">
+              <div>
+                <p className="text-xs font-bold text-slate-800">QuickBooks Online</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Real-time bidirectional invoice and payment sync.</p>
+              </div>
+              <Button size="sm" variant="outline" className="w-full text-[10px] h-7 cursor-not-allowed" disabled>Connect QuickBooks</Button>
+            </div>
+            <div className="p-4 border rounded-xl bg-muted/10 opacity-75 flex flex-col justify-between h-[120px]">
+              <div>
+                <p className="text-xs font-bold text-slate-800">Xero</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Automated tax mapping and sales account exports.</p>
+              </div>
+              <Button size="sm" variant="outline" className="w-full text-[10px] h-7 cursor-not-allowed" disabled>Connect Xero</Button>
+            </div>
+          </div>
+          <p className="text-[10px] text-primary/70 bg-primary/5 p-2 rounded-lg border border-primary/10">
+            💡 <strong>Current Support:</strong> QuickBooks Online and Xero CSV exports are fully functional. You can download importable ledgers directly from the Invoices workspace.
+          </p>
+        </CardContent>
+      </Card>
+
       <Card className="border-border/50">
         <CardHeader>
           <CardTitle className="text-base font-bold flex items-center gap-2"><Megaphone className="h-4 w-4 text-primary" /> Marketing Campaigns</CardTitle>

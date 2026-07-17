@@ -1598,6 +1598,15 @@ export type Database = {
           renewal_date: string | null
           start_date: string
           status: string
+          contract_value: number | null
+          billing_terms: string | null
+          included_visits: number | null
+          completed_visits: number | null
+          sla_response_hours: number | null
+          auto_renew: boolean | null
+          renewal_status: string | null
+          contract_notes: string | null
+          contract_document_url: string | null
         }
         Insert: {
           created_at?: string
@@ -1607,6 +1616,15 @@ export type Database = {
           renewal_date?: string | null
           start_date?: string
           status?: string
+          contract_value?: number | null
+          billing_terms?: string | null
+          included_visits?: number | null
+          completed_visits?: number | null
+          sla_response_hours?: number | null
+          auto_renew?: boolean | null
+          renewal_status?: string | null
+          contract_notes?: string | null
+          contract_document_url?: string | null
         }
         Update: {
           created_at?: string
@@ -1616,6 +1634,15 @@ export type Database = {
           renewal_date?: string | null
           start_date?: string
           status?: string
+          contract_value?: number | null
+          billing_terms?: string | null
+          included_visits?: number | null
+          completed_visits?: number | null
+          sla_response_hours?: number | null
+          auto_renew?: boolean | null
+          renewal_status?: string | null
+          contract_notes?: string | null
+          contract_document_url?: string | null
         }
         Relationships: [
           {

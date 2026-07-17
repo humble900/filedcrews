@@ -79,6 +79,15 @@ interface Membership {
   start_date: string;
   renewal_date: string | null;
   created_at: string;
+  contract_value: number | null;
+  billing_terms: string | null;
+  included_visits: number | null;
+  completed_visits: number | null;
+  sla_response_hours: number | null;
+  auto_renew: boolean | null;
+  renewal_status: string | null;
+  contract_notes: string | null;
+  contract_document_url: string | null;
   plan?: MembershipPlan;
   customer?: Customer;
 }
@@ -104,6 +113,13 @@ export default function MembershipsPage() {
   // Form states - Customer Enrollment
   const [enrollCustomerId, setEnrollCustomerId] = useState("");
   const [enrollPlanId, setEnrollPlanId] = useState("");
+  const [enrollCustomValue, setEnrollCustomValue] = useState("");
+  const [enrollBillingTerms, setEnrollBillingTerms] = useState("Net 30");
+  const [enrollIncludedVisits, setEnrollIncludedVisits] = useState("2");
+  const [enrollSlaResponseHours, setEnrollSlaResponseHours] = useState("");
+  const [enrollAutoRenew, setEnrollAutoRenew] = useState(true);
+  const [enrollContractNotes, setEnrollContractNotes] = useState("");
+  const [enrollContractDocumentUrl, setEnrollContractDocumentUrl] = useState("");
 
   // 1. Fetch Membership Plans
   const { data: plans = [], isLoading: plansLoading } = useQuery({
@@ -217,6 +233,9 @@ export default function MembershipsPage() {
     mutationFn: async () => {
       if (!enrollCustomerId || !enrollPlanId) throw new Error("Customer and plan are required");
 
+      const selectedPlan = plans.find(p => p.id === enrollPlanId);
+      const finalValue = enrollCustomValue ? parseFloat(enrollCustomValue) : (selectedPlan ? selectedPlan.price : 0.00);
+
       // Calculate renewal date based on billing frequency
       const startDate = new Date();
       const renewalDate = addYears(startDate, 1); // standard annual agreement terms
@@ -227,6 +246,14 @@ export default function MembershipsPage() {
         status: "active",
         start_date: startDate.toISOString().split("T")[0],
         renewal_date: renewalDate.toISOString().split("T")[0],
+        contract_value: finalValue,
+        billing_terms: enrollBillingTerms,
+        included_visits: parseInt(enrollIncludedVisits) || (selectedPlan ? selectedPlan.visits_per_year : 2),
+        completed_visits: 0,
+        sla_response_hours: enrollSlaResponseHours ? parseInt(enrollSlaResponseHours) : null,
+        auto_renew: enrollAutoRenew,
+        contract_notes: enrollContractNotes.trim() || null,
+        contract_document_url: enrollContractDocumentUrl.trim() || null,
       });
       if (error) throw error;
     },
@@ -236,6 +263,13 @@ export default function MembershipsPage() {
       setEnrollDialogOpen(false);
       setEnrollCustomerId("");
       setEnrollPlanId("");
+      setEnrollCustomValue("");
+      setEnrollBillingTerms("Net 30");
+      setEnrollIncludedVisits("2");
+      setEnrollSlaResponseHours("");
+      setEnrollAutoRenew(true);
+      setEnrollContractNotes("");
+      setEnrollContractDocumentUrl("");
     },
     onError: (err: any) => {
       toast({ title: "Error enrolling", description: err.message, variant: "destructive" });
@@ -275,8 +309,18 @@ export default function MembershipsPage() {
   }, [memberships]);
 
   const projectedRevenue = useMemo(() => {
-    return plans.reduce((sum, p) => sum + (p.price * (memberships.filter(m => m.plan_id === p.id).length)), 0);
-  }, [plans, memberships]);
+    return memberships.reduce((sum, m) => {
+      if (m.status !== "active") return sum;
+      const val = m.contract_value ?? m.plan?.price ?? 0;
+      const freq = m.plan?.billing_frequency || "annually";
+      const multiplier = freq === "monthly" ? 12 : freq === "quarterly" ? 4 : 1;
+      return sum + (val * multiplier);
+    }, 0);
+  }, [memberships]);
+
+  const renewalAlertsCount = useMemo(() => {
+    return memberships.filter(m => m.renewal_status === "in_renewal_window").length;
+  }, [memberships]);
 
   if (authLoading || plansLoading || membershipsLoading) {
     return (
@@ -355,12 +399,12 @@ export default function MembershipsPage() {
             </Card>
             <Card className="border-border/40">
               <CardContent className="p-4 flex items-center gap-4">
-                <div className="p-3 bg-violet-500/10 rounded-xl">
-                  <Percent className="h-6 w-6 text-violet-600" />
+                <div className="p-3 bg-amber-500/10 rounded-xl">
+                  <Calendar className="h-6 w-6 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider font-semibold">Average Club Discount</p>
-                  <p className="text-2xl font-black text-violet-600 mt-0.5">10%</p>
+                  <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Renewal Alerts (30d)</p>
+                  <p className="text-2xl font-black text-amber-600 mt-0.5">{renewalAlertsCount}</p>
                 </div>
               </CardContent>
             </Card>
@@ -387,15 +431,17 @@ export default function MembershipsPage() {
                     <TableRow>
                       <TableHead>Customer</TableHead>
                       <TableHead>Agreement Plan</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Visits Allowed</TableHead>
+                      <TableHead>Contract Value</TableHead>
+                      <TableHead>SLA Target</TableHead>
+                      <TableHead>Visits</TableHead>
                       <TableHead>Renewal Date</TableHead>
+                      <TableHead>Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredMemberships.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground text-sm">
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground text-sm">
                           No active club members found.
                         </TableCell>
                       </TableRow>
@@ -403,15 +449,32 @@ export default function MembershipsPage() {
                       filteredMemberships.map((m) => (
                         <TableRow key={m.id}>
                           <TableCell className="font-semibold text-slate-800">{m.customer?.name}</TableCell>
-                          <TableCell>{m.plan?.name}</TableCell>
-                          <TableCell>
-                            <Badge className="bg-green-500/10 text-green-600 border-green-200">
-                              {m.status}
-                            </Badge>
+                          <TableCell className="text-xs">{m.plan?.name}</TableCell>
+                          <TableCell className="font-mono text-xs font-bold text-slate-900">
+                            ${(m.contract_value ?? m.plan?.price ?? 0).toFixed(2)}
+                            {m.contract_value !== null && m.plan?.price !== m.contract_value && (
+                              <span className="text-[10px] text-muted-foreground block font-normal">(Custom)</span>
+                            )}
                           </TableCell>
-                          <TableCell className="font-mono text-xs">{m.plan?.visits_per_year} visits/yr</TableCell>
+                          <TableCell className="text-xs">
+                            {m.sla_response_hours ? `${m.sla_response_hours} hr response` : "N/A"}
+                          </TableCell>
+                          <TableCell className="font-mono text-xs">
+                            {m.completed_visits ?? 0} / {m.included_visits ?? m.plan?.visits_per_year ?? 2}
+                          </TableCell>
                           <TableCell className="text-xs font-semibold">
                             {m.renewal_date ? format(new Date(m.renewal_date), "MMM dd, yyyy") : "—"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={
+                              m.renewal_status === "in_renewal_window"
+                                ? "bg-amber-500/10 text-amber-600 border-amber-200"
+                                : m.status === "expired"
+                                ? "bg-red-500/10 text-red-600 border-red-200"
+                                : "bg-green-500/10 text-green-600 border-green-200"
+                            }>
+                              {m.renewal_status === "in_renewal_window" ? "renewal window" : m.status}
+                            </Badge>
                           </TableCell>
                         </TableRow>
                       ))
@@ -544,39 +607,115 @@ export default function MembershipsPage() {
 
         {/* Customer Enrollment Modal */}
         <Dialog open={enrollDialogOpen} onOpenChange={setEnrollDialogOpen}>
-          <DialogContent className="sm:max-w-[400px]">
+          <DialogContent className="sm:max-w-[480px]">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" />
                 Enroll Club Member
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-3">
+            <div className="space-y-4 py-3 max-h-[70vh] overflow-y-auto pr-1">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold">Select Customer *</label>
+                  <Select value={enrollCustomerId} onValueChange={setEnrollCustomerId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose customer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customers.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold">Select Plan *</label>
+                  <Select value={enrollPlanId} onValueChange={setEnrollPlanId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose plan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {plans.map(p => (
+                        <SelectItem key={p.id} value={p.id}>{p.name} (${p.price})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="border-t border-border/40 pt-3">
+                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide mb-2">B2B Contract Adjustments (Optional)</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold">Negotiated Contract Value ($)</label>
+                    <Input
+                      type="number"
+                      placeholder="e.g. 1500.00"
+                      value={enrollCustomValue}
+                      onChange={(e) => setEnrollCustomValue(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold">SLA Response Window (hrs)</label>
+                    <Input
+                      type="number"
+                      placeholder="e.g. 4"
+                      value={enrollSlaResponseHours}
+                      onChange={(e) => setEnrollSlaResponseHours(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold">Included Visits / Year</label>
+                  <Input
+                    type="number"
+                    value={enrollIncludedVisits}
+                    onChange={(e) => setEnrollIncludedVisits(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold">Billing Terms</label>
+                  <Input
+                    placeholder="e.g. Net 30"
+                    value={enrollBillingTerms}
+                    onChange={(e) => setEnrollBillingTerms(e.target.value)}
+                  />
+                </div>
+              </div>
+
               <div className="space-y-1">
-                <label className="text-xs font-semibold">Select Customer *</label>
-                <Select value={enrollCustomerId} onValueChange={setEnrollCustomerId}>
+                <label className="text-xs font-semibold">Contract Auto-Renewal</label>
+                <Select value={enrollAutoRenew ? "true" : "false"} onValueChange={(val) => setEnrollAutoRenew(val === "true")}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Choose customer" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {customers.map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
+                    <SelectItem value="true">Enabled (Auto-renews on date)</SelectItem>
+                    <SelectItem value="false">Disabled (Requires manual renewal)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
               <div className="space-y-1">
-                <label className="text-xs font-semibold">Select Plan *</label>
-                <Select value={enrollPlanId} onValueChange={setEnrollPlanId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose plan" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {plans.map(p => (
-                      <SelectItem key={p.id} value={p.id}>{p.name} (${p.price})</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <label className="text-xs font-semibold">Signed Contract Link (URL)</label>
+                <Input
+                  placeholder="https://storage.provider.com/contract.pdf"
+                  value={enrollContractDocumentUrl}
+                  onChange={(e) => setEnrollContractDocumentUrl(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold">Contract Conditions / Notes</label>
+                <Input
+                  placeholder="Additional priority notes..."
+                  value={enrollContractNotes}
+                  onChange={(e) => setEnrollContractNotes(e.target.value)}
+                />
               </div>
             </div>
             <DialogFooter>

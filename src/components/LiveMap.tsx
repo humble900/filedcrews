@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { MapPin, Clock, History, X, CircleDot, Loader2, MapPinHouse, EyeOff, Eye, Users, ArrowRightLeft, CalendarIcon, ChevronLeft, ChevronRight, Plus, Pencil, Trash2 } from "lucide-react";
+import { MapPin, Clock, History, X, CircleDot, Loader2, MapPinHouse, EyeOff, Eye, Users, ArrowRightLeft, CalendarIcon, ChevronLeft, ChevronRight, Plus, Pencil, Trash2, Zap } from "lucide-react";
 import { formatDistanceToNow, format, startOfDay, endOfDay, addDays, subDays, isToday } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -792,6 +792,9 @@ const LiveMap = ({ apiKey, onEditModeChange, companyId, projectId, projectLatitu
   const [staffShifts, setStaffShifts] = useState<{ geofence_id: string; check_in_time: string; check_out_time: string | null }[]>([]);
   const [shiftStaff, setShiftStaff] = useState<{ id: string; name: string } | null>(null);
   const [crossingsDate, setCrossingsDate] = useState<Date>(new Date());
+  const [crewJobs, setCrewJobs] = useState<any[]>([]);
+  const [loadingCrewJobs, setLoadingCrewJobs] = useState(false);
+  const [optimizingRouteState, setOptimizingRouteState] = useState(false);
   
   // Segmented crew status filters and detailed overlay states
   const [crewStatusFilter, setCrewStatusFilter] = useState<"all" | "active" | "offline">("all");
@@ -1131,12 +1134,120 @@ const LiveMap = ({ apiKey, onEditModeChange, companyId, projectId, projectLatitu
     else setStaffShifts([]);
   }, [companyId, projectId]);
 
+  const fetchCrewJobs = useCallback(async (staffId: string) => {
+    setLoadingCrewJobs(true);
+    const startOfCurrentDay = startOfDay(crossingsDate).toISOString();
+    const endOfCurrentDay = endOfDay(crossingsDate).toISOString();
+
+    const { data } = await supabase
+      .from("jobs")
+      .select(`
+        id,
+        title,
+        status,
+        scheduled_start,
+        scheduled_end,
+        project_id,
+        project:projects(
+          id,
+          name,
+          geofences(latitude, longitude, name)
+        )
+      `)
+      .eq("assigned_staff_id", staffId)
+      .gte("scheduled_start", startOfCurrentDay)
+      .lte("scheduled_start", endOfCurrentDay)
+      .order("scheduled_start", { ascending: true });
+
+    if (data) {
+      setCrewJobs(data);
+    } else {
+      setCrewJobs([]);
+    }
+    setLoadingCrewJobs(false);
+  }, [crossingsDate]);
+
+  const handleOptimizeRoute = async () => {
+    if (!historyStaff?.id || crewJobs.length <= 1) return;
+
+    setOptimizingRouteState(true);
+    try {
+      // 1. Map jobs to stops with coordinates
+      const stops = crewJobs
+        .map((job) => {
+          const geofence = job.project?.geofences?.[0];
+          if (!geofence) return null;
+          return {
+            id: job.id,
+            latitude: geofence.latitude,
+            longitude: geofence.longitude,
+            scheduled_start: job.scheduled_start,
+            scheduled_end: job.scheduled_end,
+          };
+        })
+        .filter(Boolean) as any[];
+
+      if (stops.length <= 1) {
+        toast.error("Not enough jobs with valid coordinates to optimize.");
+        setOptimizingRouteState(false);
+        return;
+      }
+
+      // 2. Solve TSP Route Optimization sequence using our routeSolver algorithm
+      const { optimizeRoute: runSolver } = await import("@/lib/routeSolver");
+      const optimizedSequence = runSolver(stops);
+
+      // 3. Assign optimized sequential times starting from 9:00 AM on crossingsDate
+      const baseDate = new Date(crossingsDate);
+      baseDate.setHours(9, 0, 0, 0); // start at 9:00 AM
+
+      let currentHour = baseDate;
+
+      // Update each job in sequence in Supabase
+      for (let i = 0; i < optimizedSequence.length; i++) {
+        const stop = optimizedSequence[i];
+        const job = crewJobs.find((j) => j.id === stop.id);
+        if (!job) continue;
+
+        // Keep original duration or default to 1.5 hours
+        const originalDuration = job.scheduled_start && job.scheduled_end
+          ? new Date(job.scheduled_end).getTime() - new Date(job.scheduled_start).getTime()
+          : 90 * 60 * 1000;
+
+        const nextEnd = new Date(currentHour.getTime() + originalDuration);
+
+        // Update database
+        const { error } = await supabase
+          .from("jobs")
+          .update({
+            scheduled_start: currentHour.toISOString(),
+            scheduled_end: nextEnd.toISOString(),
+          })
+          .eq("id", job.id);
+
+        if (error) throw error;
+
+        // Set next job start time to 30 mins after this job ends (representing travel time)
+        currentHour = new Date(nextEnd.getTime() + 30 * 60 * 1000);
+      }
+
+      toast.success("Daily route optimized successfully! Timestamps updated.");
+      fetchCrewJobs(historyStaff.id);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(`Route optimization failed: ${err.message}`);
+    } finally {
+      setOptimizingRouteState(false);
+    }
+  };
+
   const showHistory = (staffId: string, name: string) => {
     setHistoryStaff({ id: staffId, name });
     setSelectedStaffId(staffId);
     fetchHistory(staffId);
     fetchCrossings(staffId);
     fetchStaffShifts(staffId);
+    fetchCrewJobs(staffId);
   };
 
   const closeHistory = () => {
@@ -1144,6 +1255,7 @@ const LiveMap = ({ apiKey, onEditModeChange, companyId, projectId, projectLatitu
     setHistoryPoints([]);
     setCrossings([]);
     setStaffShifts([]);
+    setCrewJobs([]);
     setSelectedPointId(null);
     setSelectedStaffId(null);
   };
@@ -1157,7 +1269,14 @@ const LiveMap = ({ apiKey, onEditModeChange, companyId, projectId, projectLatitu
     fetchHistory(loc.staff_id);
     fetchCrossings(loc.staff_id);
     fetchStaffShifts(loc.staff_id);
+    fetchCrewJobs(loc.staff_id);
   };
+
+  useEffect(() => {
+    if (historyStaff?.id) {
+      fetchCrewJobs(historyStaff.id);
+    }
+  }, [crossingsDate, historyStaff?.id, fetchCrewJobs]);
 
   // Fetch project staff assignments when in project mode
   useEffect(() => {
@@ -1236,6 +1355,10 @@ const LiveMap = ({ apiKey, onEditModeChange, companyId, projectId, projectLatitu
                 <TabsTrigger value="crossings" className="text-xs flex-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                   <ArrowRightLeft className="h-3 w-3 mr-1" />
                   Crossings
+                </TabsTrigger>
+                <TabsTrigger value="route" className="text-xs flex-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                  <Zap className="h-3 w-3 mr-1" />
+                  Route
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -1374,6 +1497,66 @@ const LiveMap = ({ apiKey, onEditModeChange, companyId, projectId, projectLatitu
                   </div>
                 );
               })()}
+            </TabsContent>
+            <TabsContent value="route" className="flex-1 overflow-auto mt-0 outline-none">
+              <div className="p-4 space-y-4">
+                <div className="flex items-center justify-between border-b border-border/20 pb-3">
+                  <span className="text-xs font-bold text-slate-300">Daily Jobs List</span>
+                  {crewJobs.length > 1 && (
+                    <Button
+                      size="sm"
+                      onClick={handleOptimizeRoute}
+                      disabled={optimizingRouteState}
+                      className="h-7 text-[10px] font-bold bg-blue-600 hover:bg-blue-700 text-white gap-1.5 shadow-[0_0_10px_rgba(37,99,235,0.2)]"
+                    >
+                      {optimizingRouteState ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Solving...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="h-3 w-3 text-amber-300" />
+                          Optimize Route
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+
+                {loadingCrewJobs ? (
+                  <p className="text-xs text-muted-foreground">Loading assigned jobs...</p>
+                ) : crewJobs.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No jobs scheduled for this date.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {crewJobs.map((job, idx) => {
+                      const geofence = job.project?.geofences?.[0];
+                      const start = job.scheduled_start ? format(new Date(job.scheduled_start), "hh:mm a") : "N/A";
+                      const end = job.scheduled_end ? format(new Date(job.scheduled_end), "hh:mm a") : "N/A";
+
+                      return (
+                        <div key={job.id} className="p-3 rounded-lg border border-border/40 bg-slate-900/40 relative flex flex-col gap-1.5 hover:border-blue-500/40 transition-colors">
+                          <div className="absolute top-3 left-3 bg-blue-600/10 border border-blue-500/20 text-blue-400 font-mono text-[10px] h-5 w-5 rounded-full flex items-center justify-center font-bold">
+                            {idx + 1}
+                          </div>
+                          <div className="pl-7">
+                            <span className="text-xs font-bold text-slate-200 block truncate">{job.title}</span>
+                            <span className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                              <MapPin className="h-3 w-3 text-slate-400" />
+                              {geofence?.name || "No coordinates set"}
+                            </span>
+                            <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1 mt-1 font-semibold">
+                              <Clock className="h-3 w-3 text-emerald-500" />
+                              {start} - {end}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </TabsContent>
           </Tabs>
         ) : (
