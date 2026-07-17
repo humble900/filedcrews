@@ -620,7 +620,7 @@ export default function ReportsPage({ projectId }: { projectId?: string }) {
           `$${c.debt.toFixed(2)}`
         ]);
         break;
-      case "profit_loss":
+      case "profit_loss": {
         cols = ["Project", "Revenue ($)", "Labor Cost ($)", "Other Expenses ($)", "Total Costs ($)", "Gross Margin ($)", "Margin %"];
         rows = projects.map((p: any) => {
           const rev = Number(p.contract_value) || 0;
@@ -642,6 +642,7 @@ export default function ReportsPage({ projectId }: { projectId?: string }) {
           ];
         });
         break;
+      }
       case "tax_retention":
         cols = ["Invoice #", "Customer", "Amount ($)", "Tax Rate (8.25%)", "Retained ($)"];
         rows = invoices.map((inv: any) => [
@@ -669,7 +670,7 @@ export default function ReportsPage({ projectId }: { projectId?: string }) {
           return acc;
         }, []);
         break;
-      case "collections_efficiency":
+      case "collections_efficiency": {
         cols = ["Status", "Invoice Count", "Aggregate Value ($)", "Percentage of Total"];
         const totalVal = invoices.reduce((sum, inv) => sum + Number(inv.amount), 0) || 1;
         const paidInvs = invoices.filter(inv => inv.payment_status === "Paid");
@@ -684,6 +685,7 @@ export default function ReportsPage({ projectId }: { projectId?: string }) {
           ["Partially Settled", partialInvs.length, partialVal.toFixed(2), `${((partialVal/totalVal)*100).toFixed(1)}%`]
         ];
         break;
+      }
       case "change_order_margins":
         cols = ["Change Order", "Project", "Requested Value ($)", "Approved Value ($)", "Status"];
         rows = changeOrders.map((co: any) => [
