@@ -1924,6 +1924,54 @@ export type Database = {
           },
         ]
       }
+      project_costs: {
+        Row: {
+          id: string
+          project_id: string
+          company_id: string
+          category: string
+          title: string
+          budget_amount: number
+          actual_amount: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          company_id: string
+          category: string
+          title: string
+          budget_amount?: number
+          actual_amount?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          company_id?: string
+          category?: string
+          title?: string
+          budget_amount?: number
+          actual_amount?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_costs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_costs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           address: string | null

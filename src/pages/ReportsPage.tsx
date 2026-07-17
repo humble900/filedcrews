@@ -79,6 +79,21 @@ export default function ReportsPage({ projectId }: { projectId?: string }) {
   const [reportRows, setReportRows] = useState<any[]>([]);
   const [reportCols, setReportCols] = useState<string[]>([]);
 
+  // Fetch Project Custom Costs for Profitability Calculations
+  const { data: allProjectCosts = [] } = useQuery({
+    queryKey: ["reports_project_costs", company?.id],
+    queryFn: async () => {
+      if (!company?.id) return [];
+      const { data, error } = await supabase
+        .from("project_costs")
+        .select("*")
+        .eq("company_id", company.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!company?.id,
+  });
+
   // 1. Fetch Projects (Updated: query actual database columns contract_value and budget_labour_cost)
   const { data: projects = [] } = useQuery({
     queryKey: ["reports_projects", company?.id],
@@ -567,7 +582,7 @@ export default function ReportsPage({ projectId }: { projectId?: string }) {
 
   const reportsList = [
     { id: "ar_aging", name: "Accounts Receivable Aging Ledger", category: "Financial", desc: "Detailed outstanding balances grouped by 1-30, 31-60, 61-90, 90+ days." },
-    { id: "profit_loss", name: "Gross Margin Profit & Loss", category: "Financial", desc: "Project contract value versus computed labor checks." },
+    { id: "profit_loss", name: "Gross Margin Profit & Loss", category: "Financial", desc: "Project contract value versus computed labor checks and custom expense categories." },
     { id: "tax_retention", name: "Tax & Retention Summary", category: "Financial", desc: "Tax rate allocation summary per client invoice." },
     { id: "payroll_costs", name: "Timesheet Payroll Costs", category: "Financial", desc: "Aggregated labor expense total per technician." },
     { id: "collections_efficiency", name: "Invoices Collections Efficiency", category: "Financial", desc: "Ratio of paid vs drafted invoice balances." },
@@ -606,13 +621,25 @@ export default function ReportsPage({ projectId }: { projectId?: string }) {
         ]);
         break;
       case "profit_loss":
-        cols = ["Project", "Revenue ($)", "Labor Cost ($)", "Gross Margin ($)", "Margin %"];
+        cols = ["Project", "Revenue ($)", "Labor Cost ($)", "Other Expenses ($)", "Total Costs ($)", "Gross Margin ($)", "Margin %"];
         rows = projects.map((p: any) => {
           const rev = Number(p.contract_value) || 0;
-          const cost = projectLaborCosts[p.id] || 0;
-          const profit = rev - cost;
+          const laborCost = projectLaborCosts[p.id] || 0;
+          const customCostSpent = allProjectCosts
+            .filter((c: any) => c.project_id === p.id)
+            .reduce((sum: number, c: any) => sum + Number(c.actual_amount), 0);
+          const totalCost = laborCost + customCostSpent;
+          const profit = rev - totalCost;
           const margin = rev > 0 ? (profit / rev) * 100 : 0;
-          return [p.name, rev.toFixed(2), cost.toFixed(2), profit.toFixed(2), `${margin.toFixed(1)}%`];
+          return [
+            p.name, 
+            rev.toFixed(2), 
+            laborCost.toFixed(2), 
+            customCostSpent.toFixed(2), 
+            totalCost.toFixed(2), 
+            profit.toFixed(2), 
+            `${margin.toFixed(1)}%`
+          ];
         });
         break;
       case "tax_retention":

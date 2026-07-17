@@ -161,6 +161,79 @@ export default function ProjectDetailWorkspace() {
   const [phaseStart, setPhaseStart] = useState("");
   const [phaseEnd, setPhaseEnd] = useState("");
 
+  // Custom project costs query and mutations state variables
+  const [showAddRow, setShowAddRow] = useState(false);
+  const [newCostCategory, setNewCostCategory] = useState("");
+  const [newCostTitle, setNewCostTitle] = useState("");
+  const [newCostBudget, setNewCostBudget] = useState("");
+  const [newCostActual, setNewCostActual] = useState("");
+  const [savingCostRow, setSavingCostRow] = useState(false);
+
+  // Fetch Project Costs
+  const { data: projectCosts = [], refetch: refetchCosts } = useQuery({
+    queryKey: ["project_costs", id],
+    queryFn: async () => {
+      if (!id) return [];
+      const { data, error } = await supabase
+        .from("project_costs")
+        .select("*")
+        .eq("project_id", id)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  const handleAddCost = async () => {
+    if (!newCostCategory.trim() || !newCostTitle.trim()) {
+      toast.error("Please enter a category and description.");
+      return;
+    }
+    setSavingCostRow(true);
+    try {
+      const { error } = await supabase
+        .from("project_costs")
+        .insert({
+          project_id: id!,
+          company_id: project!.company_id,
+          category: newCostCategory.trim(),
+          title: newCostTitle.trim(),
+          budget_amount: Number(newCostBudget) || 0,
+          actual_amount: Number(newCostActual) || 0,
+        });
+      if (error) throw error;
+      toast.success("Cost item added successfully!");
+      refetchCosts();
+      setNewCostCategory("");
+      setNewCostTitle("");
+      setNewCostBudget("");
+      setNewCostActual("");
+      setShowAddRow(false);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(`Failed to add cost item: ${err.message}`);
+    } finally {
+      setSavingCostRow(false);
+    }
+  };
+
+  const handleDeleteCost = async (costId: string) => {
+    if (!confirm("Are you sure you want to delete this cost item?")) return;
+    try {
+      const { error } = await supabase
+        .from("project_costs")
+        .delete()
+        .eq("id", costId);
+      if (error) throw error;
+      toast.success("Cost item deleted successfully!");
+      refetchCosts();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(`Failed to delete cost item: ${err.message}`);
+    }
+  };
+
   // 1. Fetch Project Details
   const { data: project, isLoading: projectLoading } = useQuery({
     queryKey: ["project_detail", id],
@@ -881,6 +954,9 @@ export default function ProjectDetailWorkspace() {
               <TabsTrigger value="map" className="gap-1.5 text-xs shrink-0">
                 <MapPin className="h-3.5 w-3.5" /> Map & Crew
               </TabsTrigger>
+              <TabsTrigger value="costs" className="gap-1.5 text-xs shrink-0">
+                <TrendingUp className="h-3.5 w-3.5" /> Budget & Costs
+              </TabsTrigger>
             </TabsList>
 
             {/* ─── OVERVIEW TAB ─── */}
@@ -1184,6 +1260,197 @@ export default function ProjectDetailWorkspace() {
                   </Card>
                 )}
               </div>
+            </TabsContent>
+
+            {/* ─── BUDGETS & COSTS TAB ─── */}
+            <TabsContent value="costs" className="space-y-6">
+              <Card className="border-border/50 shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <div>
+                    <CardTitle className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-indigo-400" /> Project Budgets & Expenses
+                    </CardTitle>
+                    <CardDescription className="text-xs mt-1">
+                      Track specific line item category budgets (e.g. Marketing, Foundation, Transportation) against actual spent amounts.
+                    </CardDescription>
+                  </div>
+                  {!showAddRow && (
+                    <Button 
+                      onClick={() => setShowAddRow(true)}
+                      size="sm" 
+                      className="text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white gap-1.5 shadow-[0_0_10px_rgba(37,99,235,0.2)]"
+                    >
+                      <Plus className="h-4 w-4" /> Add Cost Line
+                    </Button>
+                  )}
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Inline Adding Row */}
+                  {showAddRow && (
+                    <div className="p-4 rounded-xl border border-blue-500/20 bg-blue-600/5 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <h4 className="text-xs font-bold text-blue-400">Add New Cost Line Item</h4>
+                      <div className="grid gap-3 sm:grid-cols-4">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase">Category</label>
+                          <Input 
+                            placeholder="e.g. Marketing, Foundation" 
+                            value={newCostCategory} 
+                            onChange={(e) => setNewCostCategory(e.target.value)} 
+                            className="h-9 text-xs" 
+                          />
+                        </div>
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase">What is it for?</label>
+                          <Input 
+                            placeholder="e.g. Google Ads Campaign, Concrete Foundation" 
+                            value={newCostTitle} 
+                            onChange={(e) => setNewCostTitle(e.target.value)} 
+                            className="h-9 text-xs" 
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase">Budget ($)</label>
+                            <Input 
+                              type="number" 
+                              placeholder="0.00" 
+                              value={newCostBudget} 
+                              onChange={(e) => setNewCostBudget(e.target.value)} 
+                              className="h-9 text-xs" 
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase">Actual Spent ($)</label>
+                            <Input 
+                              type="number" 
+                              placeholder="0.00" 
+                              value={newCostActual} 
+                              onChange={(e) => setNewCostActual(e.target.value)} 
+                              className="h-9 text-xs" 
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2 pt-2 border-t border-border/20">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => { setShowAddRow(false); }} 
+                          className="h-8 text-xs font-semibold"
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          onClick={handleAddCost} 
+                          disabled={savingCostRow}
+                          className="h-8 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          {savingCostRow ? "Saving..." : "Save Cost Item"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {projectCosts.length === 0 ? (
+                    <div className="text-center py-12 border border-dashed rounded-2xl bg-card/10">
+                      <TrendingUp className="h-8 w-8 text-muted-foreground/40 mx-auto mb-3" />
+                      <p className="text-xs font-semibold text-muted-foreground italic">No custom project costs added yet.</p>
+                      <p className="text-[10px] text-muted-foreground/60 mt-1">Click the "Add Cost Line" button to record custom expenses.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {projectCosts.map((item) => {
+                        const budget = Number(item.budget_amount) || 0;
+                        const actual = Number(item.actual_amount) || 0;
+                        const pct = budget > 0 ? (actual / budget) * 100 : 0;
+                        const isOverrun = actual > budget && budget > 0;
+                        const overrunAmount = actual - budget;
+
+                        let fillClass = "bg-emerald-500";
+                        let borderClass = "border-emerald-500/20";
+                        let bgClass = "bg-emerald-500/5";
+                        let textClass = "text-emerald-400";
+
+                        if (pct > 70 && pct <= 100) {
+                          fillClass = "bg-amber-500";
+                          borderClass = "border-amber-500/20";
+                          bgClass = "bg-amber-500/5";
+                          textClass = "text-amber-400";
+                        } else if (pct > 100) {
+                          fillClass = "bg-rose-500 animate-pulse";
+                          borderClass = "border-rose-500/30";
+                          bgClass = "bg-rose-500/5";
+                          textClass = "text-rose-400";
+                        }
+
+                        return (
+                          <div 
+                            key={item.id} 
+                            className={`p-4 rounded-xl border ${borderClass} ${bgClass} transition-all duration-300 hover:scale-[1.005]`}
+                          >
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <Badge className="bg-slate-800 text-slate-200 border-border text-[10px] uppercase font-mono tracking-wider">
+                                    {item.category}
+                                  </Badge>
+                                  <span className="text-xs font-bold text-slate-100">{item.title}</span>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                  Recorded on {format(new Date(item.created_at), "MMM d, yyyy")}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-6 self-end sm:self-center">
+                                <div className="text-right">
+                                  <span className="text-[10px] font-bold text-muted-foreground block">BUDGET</span>
+                                  <span className="text-xs font-mono font-bold text-slate-300">
+                                    ${budget.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                                  </span>
+                                </div>
+                                <div className="text-right">
+                                  <span className="text-[10px] font-bold text-muted-foreground block">ACTUAL SPENT</span>
+                                  <span className="text-xs font-mono font-extrabold text-slate-100">
+                                    ${actual.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                                  </span>
+                                </div>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-7 w-7 text-destructive hover:bg-destructive/10 shrink-0" 
+                                  onClick={() => handleDeleteCost(item.id)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* Filling-type Progress Bar Analytic */}
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between text-[10px]">
+                                <span className="font-semibold text-muted-foreground">Budget Consumption</span>
+                                <span className={`font-mono font-bold ${textClass}`}>
+                                  {budget > 0 
+                                    ? `${pct.toFixed(0)}% consumed` 
+                                    : "No budget defined"
+                                  }
+                                  {isOverrun && ` (${overrunAmount.toLocaleString("en-US", { style: "currency", currency: "USD" })} overrun)`}
+                                </span>
+                              </div>
+                              <div className="h-3 w-full bg-slate-950/60 border border-[#233558]/40 rounded-full overflow-hidden relative shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)]">
+                                <div 
+                                  className={`h-full rounded-full transition-all duration-700 ease-out ${fillClass}`}
+                                  style={{ width: `${Math.min(pct, 100)}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
 
             {/* ─── TEAM TAB ─── */}
