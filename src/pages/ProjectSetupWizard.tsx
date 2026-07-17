@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { APIProvider, Map, useMap, AdvancedMarker, useMapsLibrary } from "@vis.gl/react-google-maps";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Badge } from "@/components/ui/badge";
 import {
   ChevronDown,
   Building2,
@@ -36,6 +37,8 @@ import {
   User,
   Eye,
   EyeOff,
+  X,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -357,6 +360,12 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
   const [saving, setSaving] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCreds, setCopiedCreds] = useState(false);
+
+  // Planned costs during project creation flow
+  const [wizardPlannedCosts, setWizardPlannedCosts] = useState<{ category: string; title: string; budget_amount: number }[]>([]);
+  const [newWizardCostCategory, setNewWizardCostCategory] = useState("");
+  const [newWizardCostTitle, setNewWizardCostTitle] = useState("");
+  const [newWizardCostBudget, setNewWizardCostBudget] = useState("");
 
   // Buffer state definitions
   const [companyName, setCompanyName] = useState("");
@@ -838,6 +847,22 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
         .single();
       if (projErr) throw new Error(`Failed to create project: ${projErr.message}`);
       projId = proj.id;
+
+      // Insert custom project costs configured in step 2
+      if (wizardPlannedCosts.length > 0) {
+        const costsToInsert = wizardPlannedCosts.map(c => ({
+          project_id: proj.id,
+          company_id: activeCompanyId,
+          category: c.category || "Other",
+          title: c.title || "Custom Cost Line",
+          budget_amount: Number(c.budget_amount) || 0.0,
+          actual_amount: 0.0,
+        }));
+        const { error: costsErr } = await supabase
+          .from("project_costs")
+          .insert(costsToInsert);
+        if (costsErr) throw new Error(`Failed to create project costs: ${costsErr.message}`);
+      }
     }
 
     // 4. Create or Reuse Geofence
@@ -2268,6 +2293,94 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                             rows={2}
                             className="bg-[#0c121f] border-[#233558] text-slate-100 focus:ring-blue-500 focus:border-blue-500"
                           />
+                        </div>
+
+                        {/* Custom Cost Categories & Budgets */}
+                        <div className="space-y-4 pt-4 border-t border-[#233558]/40">
+                          <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <TrendingUp className="h-4 w-4 text-blue-400" /> Planned Budgets & Cost Categories
+                          </h4>
+                          <p className="text-[11px] text-slate-400 leading-relaxed">
+                            Configure planned budgets for specific cost categories (e.g. Marketing, Foundation, Materials, Transportation) during this project setup.
+                          </p>
+
+                          {wizardPlannedCosts.length > 0 && (
+                            <div className="space-y-2 max-h-48 overflow-y-auto">
+                              {wizardPlannedCosts.map((item, idx) => (
+                                <div key={idx} className="flex items-center justify-between text-xs p-2.5 rounded bg-[#070b13] border border-[#233558]/60">
+                                  <div className="flex items-center gap-2">
+                                    <Badge className="bg-[#14223c] text-blue-300 border-none text-[9px] font-mono uppercase">
+                                      {item.category}
+                                    </Badge>
+                                    <span className="font-semibold text-slate-200">{item.title}</span>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <span className="font-mono font-bold text-slate-300">
+                                      ${item.budget_amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                                    </span>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 shrink-0"
+                                      onClick={() => {
+                                        setWizardPlannedCosts(prev => prev.filter((_, i) => i !== idx));
+                                      }}
+                                    >
+                                      <X className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Quick Add Form Row */}
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <Input
+                              placeholder="Category (e.g. Marketing)"
+                              value={newWizardCostCategory}
+                              onChange={(e) => setNewWizardCostCategory(e.target.value)}
+                              className="h-9 text-xs bg-[#0c121f] border-[#233558] text-slate-100 placeholder:text-slate-500 focus-visible:ring-blue-500"
+                            />
+                            <Input
+                              placeholder="Description (e.g. Ad Campaign)"
+                              value={newWizardCostTitle}
+                              onChange={(e) => setNewWizardCostTitle(e.target.value)}
+                              className="h-9 text-xs bg-[#0c121f] border-[#233558] text-slate-100 placeholder:text-slate-500 focus-visible:ring-blue-500"
+                            />
+                            <div className="flex gap-2">
+                              <Input
+                                type="number"
+                                placeholder="Budget ($)"
+                                value={newWizardCostBudget}
+                                onChange={(e) => setNewWizardCostBudget(e.target.value)}
+                                className="h-9 text-xs bg-[#0c121f] border-[#233558] text-slate-100 placeholder:text-slate-500 focus-visible:ring-blue-500 flex-1"
+                              />
+                              <Button
+                                type="button"
+                                onClick={() => {
+                                  if (!newWizardCostCategory.trim() || !newWizardCostTitle.trim()) {
+                                    toast.error("Category and description are required.");
+                                    return;
+                                  }
+                                  setWizardPlannedCosts(prev => [
+                                    ...prev,
+                                    {
+                                      category: newWizardCostCategory.trim(),
+                                      title: newWizardCostTitle.trim(),
+                                      budget_amount: Number(newWizardCostBudget) || 0.0,
+                                    }
+                                  ]);
+                                  setNewWizardCostCategory("");
+                                  setNewWizardCostTitle("");
+                                  setNewWizardCostBudget("");
+                                }}
+                                className="h-9 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 shrink-0"
+                              >
+                                Add
+                              </Button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>

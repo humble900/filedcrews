@@ -686,6 +686,7 @@ export type Database = {
           total_amount: number
           updated_at: string
           valid_until: string | null
+          planned_costs: Json
         }
         Insert: {
           approval_token?: string | null
@@ -708,6 +709,7 @@ export type Database = {
           total_amount?: number
           updated_at?: string
           valid_until?: string | null
+          planned_costs?: Json
         }
         Update: {
           approval_token?: string | null
@@ -730,6 +732,7 @@ export type Database = {
           total_amount?: number
           updated_at?: string
           valid_until?: string | null
+          planned_costs?: Json
         }
         Relationships: [
           {

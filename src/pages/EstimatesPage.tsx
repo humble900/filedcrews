@@ -127,6 +127,7 @@ interface Estimate {
   tax_percent: number;
   disclaimer: string | null;
   client_message: string | null;
+  planned_costs?: any;
 }
 
 interface EstimateItem {
@@ -628,6 +629,12 @@ export default function EstimatesPage() {
   const [wTaxPercent, setWTaxPercent] = useState(0);
   const [wDisclaimer, setWDisclaimer] = useState("This proposal is valid for 30 days. Any alterations may alter the final quote price.");
   const [wClientMessage, setWClientMessage] = useState("");
+
+  // Planned costs during estimation
+  const [wPlannedCosts, setWPlannedCosts] = useState<{ category: string; title: string; budget_amount: number }[]>([]);
+  const [newPlanCategory, setNewPlanCategory] = useState("");
+  const [newPlanTitle, setNewPlanTitle] = useState("");
+  const [newPlanBudget, setNewPlanBudget] = useState("");
   const [wOptions, setWOptions] = useState<EstimateOption[]>([
     { name: "Standard Package", is_recommended: true, items: [] },
   ]);
@@ -864,6 +871,7 @@ export default function EstimatesPage() {
             disclaimer: wDisclaimer || null,
             client_message: wClientMessage || null,
             status: finalStatus,
+            planned_costs: wPlannedCosts,
           })
           .eq("id", editingEstimate.id);
         if (estError) throw estError;
@@ -892,6 +900,7 @@ export default function EstimatesPage() {
             tax_percent: wTaxPercent,
             disclaimer: wDisclaimer || null,
             client_message: wClientMessage || null,
+            planned_costs: wPlannedCosts,
           })
           .select()
           .single();
@@ -974,12 +983,46 @@ export default function EstimatesPage() {
 
   const convertToJobMutation = useMutation({
     mutationFn: async (estimate: Estimate) => {
-      // 1. Create a job for the estimate customer
+      // 1. Create a Project for the estimate
+      const { data: project, error: projectError } = await supabase
+        .from("projects")
+        .insert({
+          company_id: company?.id!,
+          customer_id: estimate.customer_id,
+          name: estimate.title || `Project for Estimate #${estimate.id.slice(0, 6).toUpperCase()}`,
+          ref_number: `PRJ-${Math.floor(1000 + Math.random() * 9000)}`,
+          contract_value: Number(estimate.total_amount) || 0.0,
+          budget_labour_cost: 0.0,
+          status: "Planning",
+        })
+        .select()
+        .single();
+      if (projectError) throw projectError;
+
+      // 2. Transition planned_costs from estimate into project_costs table
+      const rawCosts = Array.isArray(estimate.planned_costs) ? estimate.planned_costs : [];
+      if (rawCosts.length > 0) {
+        const costsToInsert = rawCosts.map((c: any) => ({
+          project_id: project.id,
+          company_id: company?.id!,
+          category: c.category || "Other",
+          title: c.title || "Custom Cost Line",
+          budget_amount: Number(c.budget_amount) || 0.0,
+          actual_amount: 0.0,
+        }));
+        const { error: costsError } = await supabase
+          .from("project_costs")
+          .insert(costsToInsert);
+        if (costsError) throw costsError;
+      }
+
+      // 3. Create a job linked to the estimate customer and the newly created project
       const { data: job, error: jobError } = await supabase
         .from("jobs")
         .insert({
           company_id: company?.id,
           customer_id: estimate.customer_id,
+          project_id: project.id,
           title: `Job: ${estimate.title}`,
           status: "Scheduled",
           scheduled_start: new Date().toISOString(),
@@ -989,7 +1032,7 @@ export default function EstimatesPage() {
         .single();
       if (jobError) throw jobError;
 
-      // 2. Mark estimate as Converted
+      // 4. Mark estimate as Converted
       const { error: estError } = await supabase
         .from("estimates")
         .update({ status: "Converted", job_id: job.id })
@@ -1250,6 +1293,12 @@ export default function EstimatesPage() {
     setWTaxPercent(Number(est.tax_percent || 0));
     setWDisclaimer(est.disclaimer || "");
     setWClientMessage(est.client_message || "");
+    const rawCosts = Array.isArray(est.planned_costs) ? est.planned_costs : [];
+    setWPlannedCosts(rawCosts.map((c: any) => ({
+      category: c.category || "",
+      title: c.title || "",
+      budget_amount: Number(c.budget_amount || 0),
+    })));
     setWizardOpen(true);
     setIsPreviewMode(false);
     setIsDirty(false); // Clean initially on load
@@ -1263,6 +1312,10 @@ export default function EstimatesPage() {
     setIsDirty(false);
     setDiscardGuardOpen(false);
     setFormErrors({});
+    setWPlannedCosts([]);
+    setNewPlanCategory("");
+    setNewPlanTitle("");
+    setNewPlanBudget("");
   };
 
   const handleCancelOrBackClick = () => {
@@ -2294,6 +2347,98 @@ export default function EstimatesPage() {
                     </div>
                   </Card>
                 )}
+
+                {/* Custom Budgets & Cost Categories - planned costs */}
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-1.5">
+                    <TrendingUp className="h-4.5 w-4.5 text-emerald-600" /> Planned Project Budgets & Costs
+                  </h3>
+                  <Card className="border-slate-200 shadow-none bg-white p-5 space-y-4">
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      Plan internal cost categories (e.g. Marketing, Foundation, Sub-contractor, Transportation) for this proposal. These will automatically provision in the project workspace once approved.
+                    </p>
+
+                    {wPlannedCosts.length > 0 && (
+                      <div className="space-y-2 border-t pt-3">
+                        {wPlannedCosts.map((item, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-xs p-2 rounded bg-slate-50 border border-slate-100">
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-slate-800 text-slate-200 text-[9px] font-mono uppercase">
+                                {item.category}
+                              </Badge>
+                              <span className="font-semibold text-slate-700">{item.title}</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="font-mono font-bold text-slate-600">
+                                ${Number(item.budget_amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-rose-500 hover:bg-rose-50"
+                                onClick={() => {
+                                  setWPlannedCosts(prev => prev.filter((_, i) => i !== idx));
+                                  setIsDirty(true);
+                                }}
+                              >
+                                <X className="h-3.5 w-3.5 text-rose-500" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Quick Inline Adding Fields */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-slate-100">
+                      <Input
+                        placeholder="Category (e.g. Marketing)"
+                        value={newPlanCategory}
+                        onChange={(e) => setNewPlanCategory(e.target.value)}
+                        className="h-9 text-xs border-slate-200"
+                      />
+                      <Input
+                        placeholder="Description (e.g. Ad Spend)"
+                        value={newPlanTitle}
+                        onChange={(e) => setNewPlanTitle(e.target.value)}
+                        className="h-9 text-xs border-slate-200"
+                      />
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          placeholder="Budget ($)"
+                          value={newPlanBudget}
+                          onChange={(e) => setNewPlanBudget(e.target.value)}
+                          className="h-9 text-xs border-slate-200 flex-1"
+                        />
+                        <Button
+                          type="button"
+                          onClick={() => {
+                            if (!newPlanCategory.trim() || !newPlanTitle.trim()) {
+                              toast({ title: "Validation error", description: "Category and description are required.", variant: "destructive" });
+                              return;
+                            }
+                            setWPlannedCosts(prev => [
+                              ...prev,
+                              {
+                                category: newPlanCategory.trim(),
+                                title: newPlanTitle.trim(),
+                                budget_amount: Number(newPlanBudget) || 0.0,
+                              }
+                            ]);
+                            setNewPlanCategory("");
+                            setNewPlanTitle("");
+                            setNewPlanBudget("");
+                            setIsDirty(true);
+                          }}
+                          className="h-9 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-3 shrink-0"
+                        >
+                          Add
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
 
                 {/* Notes - Jobber style fieldset box */}
                 <div>
