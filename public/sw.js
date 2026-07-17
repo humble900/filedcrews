@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fieldcrews-pwa-cache-v2';
+const CACHE_NAME = 'fieldcrews-pwa-cache-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -36,18 +36,32 @@ self.addEventListener('fetch', (event) => {
     return; // Bypass and let the browser fetch naturally
   }
 
+  // Network-First strategy to prevent stale caches of javascript bundles/chunks
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).catch((err) => {
-        // Return index.html for SPA page navigations offline
-        if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
+    fetch(event.request)
+      .then((networkResponse) => {
+        // Cache static entrypoints if successful
+        const urlPath = new URL(event.request.url).pathname;
+        if (ASSETS_TO_CACHE.includes(urlPath)) {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
         }
-        throw err;
-      });
-    })
+        return networkResponse;
+      })
+      .catch((err) => {
+        // Fallback to cache if network is offline
+        return caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          // Return index.html for SPA page navigations offline
+          if (event.request.mode === 'navigate') {
+            return caches.match('/index.html');
+          }
+          throw err;
+        });
+      })
   );
 });
