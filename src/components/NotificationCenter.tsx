@@ -87,9 +87,10 @@ export default function NotificationCenter({ companyId }: NotificationCenterProp
 
     fetchRecentAlerts();
 
-    // 2. Set up realtime listener for new geofence events
+    // 2. Set up realtime listener for new geofence events with a unique channel name per mount
+    const uniqueChannelName = `company_realtime_events_${Math.random().toString(36).substring(2, 9)}`;
     const channel = supabase
-      .channel("company_realtime_events")
+      .channel(uniqueChannelName)
       .on(
         "postgres_changes",
         {

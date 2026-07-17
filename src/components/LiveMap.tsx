@@ -1287,9 +1287,10 @@ const LiveMap = ({ apiKey, onEditModeChange, companyId, projectId, projectLatitu
     fetchLocations();
     fetchGeofences();
     const interval = setInterval(fetchLocations, 8000);
+    const uniqueSuffix = Math.random().toString(36).substring(2, 9);
     const channelName = projectId
-      ? `staff_locations_project_${projectId}`
-      : `staff_locations_company_${companyId}`;
+      ? `staff_locations_project_${projectId}_${uniqueSuffix}`
+      : `staff_locations_company_${companyId}_${uniqueSuffix}`;
     const channel = supabase
       .channel(channelName)
       .on("postgres_changes", { event: "*", schema: "public", table: "staff_locations" }, () => {
