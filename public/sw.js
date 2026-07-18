@@ -1,7 +1,5 @@
-const CACHE_NAME = 'fieldcrews-pwa-cache-v3';
+const CACHE_NAME = 'fieldcrews-pwa-cache-v4';
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
   '/favicon.ico',
   '/favicon.png',
   '/placeholder.svg'
@@ -40,9 +38,9 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
-        // Cache static entrypoints if successful
+        // Cache static entrypoints dynamically if successful
         const urlPath = new URL(event.request.url).pathname;
-        if (ASSETS_TO_CACHE.includes(urlPath)) {
+        if (ASSETS_TO_CACHE.includes(urlPath) || urlPath === '/' || urlPath === '/index.html') {
           const responseClone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseClone);
@@ -58,7 +56,7 @@ self.addEventListener('fetch', (event) => {
           }
           // Return index.html for SPA page navigations offline
           if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
+            return caches.match('/index.html') || caches.match('/');
           }
           throw err;
         });
