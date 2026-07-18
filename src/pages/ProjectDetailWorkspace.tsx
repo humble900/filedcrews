@@ -187,7 +187,11 @@ export default function ProjectDetailWorkspace() {
 
   const handleAddCost = async () => {
     if (!newCostCategory.trim() || !newCostTitle.trim()) {
-      toast.error("Please enter a category and description.");
+      toast({
+        title: "Error",
+        description: "Please enter a category and description.",
+        variant: "destructive",
+      });
       return;
     }
     setSavingCostRow(true);
@@ -203,7 +207,10 @@ export default function ProjectDetailWorkspace() {
           actual_amount: Number(newCostActual) || 0,
         });
       if (error) throw error;
-      toast.success("Cost item added successfully!");
+      toast({
+        title: "Success",
+        description: "Cost item added successfully!",
+      });
       refetchCosts();
       setNewCostCategory("");
       setNewCostTitle("");
@@ -212,7 +219,11 @@ export default function ProjectDetailWorkspace() {
       setShowAddRow(false);
     } catch (err: any) {
       console.error(err);
-      toast.error(`Failed to add cost item: ${err.message}`);
+      toast({
+        title: "Error",
+        description: `Failed to add cost item: ${err.message}`,
+        variant: "destructive",
+      });
     } finally {
       setSavingCostRow(false);
     }
@@ -226,11 +237,18 @@ export default function ProjectDetailWorkspace() {
         .delete()
         .eq("id", costId);
       if (error) throw error;
-      toast.success("Cost item deleted successfully!");
+      toast({
+        title: "Success",
+        description: "Cost item deleted successfully!",
+      });
       refetchCosts();
     } catch (err: any) {
       console.error(err);
-      toast.error(`Failed to delete cost item: ${err.message}`);
+      toast({
+        title: "Error",
+        description: `Failed to delete cost item: ${err.message}`,
+        variant: "destructive",
+      });
     }
   };
 
