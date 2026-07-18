@@ -1,9 +1,33 @@
-# IMPORTANT: Replace the Sitemap URL with your production domain once connected.
+# robots.txt for FiledCrews.com
+
 User-agent: *
 Allow: /
+Allow: /about
+Allow: /support
+Allow: /booking
+Allow: /privacy
+Allow: /terms
 
-# Private / authenticated routes
+# Private, Auth, Portal, and Admin routes
 Disallow: /face-verify
 Disallow: /reset-password
+Disallow: /superadmin
+Disallow: /superadmin-login
+Disallow: /crm
+Disallow: /projects
+Disallow: /jobs
+Disallow: /work-orders
+Disallow: /invoices
+Disallow: /estimates
+Disallow: /safety
+Disallow: /change-orders
+Disallow: /reports
+Disallow: /timesheets
+Disallow: /memberships
+Disallow: /compliance
+Disallow: /settings
+Disallow: /portal
+Disallow: /setup-wizard
 
-Sitemap: https://staff-tracker-buddy.lovable.app/sitemap.xml
+# Sitemap location
+Sitemap: https://filedcrews.com/sitemap.xml
