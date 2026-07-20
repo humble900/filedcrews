@@ -151,11 +151,11 @@ const industriesRow2 = [
 ];
 
 const faqs = [
-  { q: "How does real-time GPS tracking work?", a: "Each crew member downloads the OnSite Crew Manager mobile app. The app securely transmits their GPS coordinates in the background, updating your admin dashboard map every few seconds. All location data is encrypted end-to-end." },
+  { q: "How does real-time GPS tracking work?", a: "Each crew member downloads the FiledCrews mobile app. The app securely transmits their GPS coordinates in the background, updating your admin dashboard map every few seconds. All location data is encrypted end-to-end." },
   { q: "What is geofencing and how do I set it up?", a: "Geofencing lets you draw a virtual boundary on the map around any job site or office. When a crew member enters or exits that zone, you receive an instant push notification. Setting up a geofence takes under 30 seconds — just click on the map, set the radius, and save." },
   { q: "How does face verification prevent buddy punching?", a: "When face verification is enabled for a geofence, the crew member must take a selfie upon arrival. Our AI compares it against their enrolled profile photo, ensuring the person checking in is who they claim to be. This eliminates proxy attendance (buddy punching)." },
-  { q: "Is the platform suitable for small teams?", a: "Absolutely. OnSite Crew Manager works for teams of any size — from a 3-person plumbing crew to a 500-person construction company. You only pay for the seats you use, and setup takes under 2 minutes." },
-  { q: "What devices does the mobile app support?", a: "The OnSite Crew Manager mobile app is available for Android phones and tablets. An iOS version is currently in development. The admin dashboard works on any modern web browser — Chrome, Firefox, Safari, or Edge." },
+  { q: "Is the platform suitable for small teams?", a: "Absolutely. FiledCrews works for teams of any size — from a 3-person plumbing crew to a 500-person construction company. Setup takes under 2 minutes and is completely free." },
+  { q: "What devices does the mobile app support?", a: "The FiledCrews mobile app is available for Android phones and tablets. An iOS version is currently in development. The admin dashboard works on any modern web browser — Chrome, Firefox, Safari, or Edge." },
   { q: "How do invoices and billing work?", a: "You can generate invoices directly from completed jobs or projects. Each invoice links to tracked hours, assigned crew, and project details. Track payment status, send reminders, and export to CSV for your accounting software." },
 ];
 
@@ -320,6 +320,7 @@ export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [activeTourTab, setActiveTourTab] = useState<"map" | "geofences" | "costs" | "billing">("map");
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -340,10 +341,10 @@ export default function LandingPage() {
   return (
     <>
       <SEO
-        title="OnSite Crew Manager — Real-Time Staff Location & Attendance Dashboard"
-        description="Track your field service team in real time with GPS, geofences, and face verification. Manage HVAC, plumbing, electrical, and construction crews from one dashboard."
+        title="FiledCrews — Free Field Service Management (FSM) & Dispatch Software"
+        description="Manage field operations with FiledCrews, the best free Field Service Management (FSM) software. Features live GPS map tracking, automatic geofence audits, customer job dispatching, custom category cost tracking, and biometric face check verification."
         path="/"
-        ogImageAlt="OnSite Crew Manager dashboard showing a live map with staff locations, geofence zones, and a mobile app companion view."
+        ogImageAlt="FiledCrews FSM dashboard showing live map tracking, geofence zones, and mobile dispatching."
       />
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
@@ -353,24 +354,24 @@ export default function LandingPage() {
       <div className="min-h-screen bg-white text-slate-900" onMouseMove={handleMouseMove}>
 
         {/* ──── NAVBAR ──── */}
-        <header className="sticky top-0 z-50 border-b border-stone-100 bg-white/90 backdrop-blur-md">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-3">
+        <header className="sticky top-0 z-50 border-b border-stone-100 bg-white/80 backdrop-blur-md">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-3.5">
             <Link to="/" className="flex items-center gap-2 shrink-0">
-              <img src="/favicon.png" alt="Ocrem" className="h-8 w-8 rounded-lg" />
-              <span className="text-lg sm:text-xl font-bold text-slate-900">OnSite Crew Manager</span>
+              <img src="/favicon.png" alt="FiledCrews" className="h-8 w-8 rounded-lg" />
+              <span className="text-lg sm:text-xl font-bold tracking-tight text-slate-900">FiledCrews<span className="text-teal-600">.</span></span>
             </Link>
             <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-500">
               <a href="#features" className="hover:text-slate-900 transition-colors">Features</a>
-              <a href="#industries" className="hover:text-slate-900 transition-colors">Industries</a>
-              <a href="#how-it-works" className="hover:text-slate-900 transition-colors">How It Works</a>
+              <a href="#compare" className="hover:text-slate-900 transition-colors">Why FiledCrews</a>
+              <a href="#regions" className="hover:text-slate-900 transition-colors">Global Support</a>
               <a href="#faq" className="hover:text-slate-900 transition-colors">FAQ</a>
             </nav>
             <div className="flex items-center gap-2 sm:gap-3">
               <Link to="/auth" className="hidden md:inline-flex">
-                <Button variant="ghost" size="sm" className="text-sm text-slate-600 hover:text-slate-900">Log In</Button>
+                <Button variant="ghost" size="sm" className="text-sm font-semibold text-slate-600 hover:text-slate-900">Log In</Button>
               </Link>
               <Link to="/wizard" className="hidden md:inline-flex">
-                <Button size="sm" className="text-sm px-4 bg-teal-600 hover:bg-teal-700 text-white">
+                <Button size="sm" className="text-sm px-4 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg shadow-sm">
                   Apply as a Founder Partner <ChevronRight className="ml-1 h-4 w-4" />
                 </Button>
               </Link>
@@ -384,7 +385,7 @@ export default function LandingPage() {
             {mobileMenuOpen && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="md:hidden overflow-hidden border-t border-stone-100 bg-white">
                 <nav className="flex flex-col px-4 py-3 gap-1">
-                  {[{ href: "#features", label: "Features" }, { href: "#industries", label: "Industries" }, { href: "#how-it-works", label: "How It Works" }, { href: "#faq", label: "FAQ" }, { href: "#mobile", label: "Mobile App" }].map((link) => (
+                  {[{ href: "#features", label: "Features" }, { href: "#compare", label: "Why FiledCrews" }, { href: "#regions", label: "Global Support" }, { href: "#faq", label: "FAQ" }].map((link) => (
                     <a key={link.href} href={link.href} className="py-2.5 px-3 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-stone-50 transition-colors" onClick={() => setMobileMenuOpen(false)}>{link.label}</a>
                   ))}
                   <div className="flex gap-2 pt-2 pb-1">
@@ -402,7 +403,7 @@ export default function LandingPage() {
         </header>
 
         {/* ──── HERO ──── */}
-        <section className="relative overflow-hidden bg-slate-50/20 border-b border-stone-100/60">
+        <section className="relative overflow-hidden bg-slate-50/10 border-b border-stone-100/60">
           <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
             <InteractiveParticlesCanvas color="13, 148, 136" />
           </div>
@@ -412,78 +413,197 @@ export default function LandingPage() {
           <InteractiveMoon mouseX={mx} mouseY={my} top="50%" left="1%" size={130} color="rgba(20, 184, 166, 0.18)" delay={1.2} />
           <InteractiveMoon mouseX={mx} mouseY={my} top="25%" left="93%" size={80} color="rgba(245, 158, 11, 0.15)" delay={2.5} />
 
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 md:py-14 lg:py-16">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-10 md:py-16 lg:py-20">
             <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-              <motion.div initial="hidden" animate="visible" className="space-y-7">
-                <motion.div variants={fadeUp} custom={0} className="space-y-4">
-
-                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.1] text-slate-900">
-                    Run the field and the<br />
-                    <span className="text-teal-600" style={{ textShadow: "0 0 40px rgba(13,148,136,0.25)" }}>office from one place.</span>
+              <motion.div initial="hidden" animate="visible" className="space-y-8">
+                <motion.div variants={fadeUp} custom={0} className="space-y-5">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-teal-200/80 bg-teal-50/60 px-3.5 py-1 text-xs font-semibold text-teal-800">
+                    <span className="flex h-1.5 w-1.5 rounded-full bg-teal-600 animate-pulse" />
+                    Free Field Service Management Software
+                  </div>
+                  <h1 className="text-4xl md:text-5xl lg:text-6.5xl font-extrabold leading-[1.08] tracking-tight text-slate-900">
+                    The simplest way to run<br />
+                    <span className="bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">your field operations.</span>
                   </h1>
                   <p className="text-lg md:text-xl text-slate-500 max-w-lg leading-relaxed">
-                    Real-time crew location tracking with geofencing, face verification, and instant alerts — built for HVAC, plumbing, electrical, cleaning, and construction teams.
+                    Live GPS technician tracking, automatic geofenced timesheets, client dispatching, and category expense tracking. Completely free and built for US, UK, Canada, Australia, and EU service trades.
                   </p>
-                  <p className="text-sm font-medium text-slate-600 max-w-lg">Founder Partners receive guided setup. Access is reviewed and activated manually for each company.</p>
                 </motion.div>
                 <motion.div variants={fadeUp} custom={2} className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <Link to="/wizard" className="w-full sm:w-auto">
-                    <Button size="lg" className="w-full sm:w-auto text-base px-8 bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-600/20">
-                      Apply for Founder Partner Access <ArrowRight className="ml-2 h-5 w-5" />
+                    <Button size="lg" className="w-full sm:w-auto text-base px-8 bg-teal-600 hover:bg-teal-700 text-white font-semibold shadow-lg shadow-teal-600/15 rounded-xl">
+                      Get Started Free <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </Link>
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto text-base px-8 group border-stone-200 text-slate-700 hover:bg-stone-50" onClick={() => setDemoOpen(true)}>
-                    <PlayCircle className="mr-2 h-5 w-5 text-teal-600 transition-transform group-hover:scale-110" /> Watch the 2-minute demo
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto text-base px-8 group border-stone-200 text-slate-700 hover:bg-stone-50 rounded-xl" onClick={() => setDemoOpen(true)}>
+                    <PlayCircle className="mr-2 h-5 w-5 text-teal-600 transition-transform group-hover:scale-110" /> Watch the demo
                   </Button>
+                </motion.div>
+                <motion.div variants={fadeUp} custom={3} className="pt-2 border-t border-stone-100 space-y-2.5">
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Trusted by leading field crews globally</p>
+                  <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-bold text-slate-500">
+                    <span>⚡ HVAC & COOLING</span>
+                    <span>💧 PLUMBING</span>
+                    <span>🛠️ CONSTRUCTION</span>
+                    <span>🌳 LANDSCAPING</span>
+                  </div>
                 </motion.div>
               </motion.div>
 
               <motion.div initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7, delay: 0.2 }} className="relative">
-                <div className="rounded-xl overflow-hidden shadow-2xl border border-stone-200/80 ring-1 ring-slate-900/5">
-                  <img src={heroDashboard} alt="OnSite Crew Manager admin dashboard showing live map with staff locations" width={1920} height={1080} className="w-full h-auto" />
+                <div className="rounded-2xl overflow-hidden shadow-[0_24px_60px_-15px_rgba(15,118,110,0.12)] border border-stone-200/80 ring-1 ring-slate-900/5">
+                  <img src={heroDashboard} alt="FiledCrews FSM admin dashboard live map view" width={1920} height={1080} className="w-full h-auto" />
                 </div>
                 <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.6 }} className="absolute -bottom-4 left-0 sm:-bottom-8 sm:-left-8 w-28 sm:w-36 md:w-48 rounded-2xl overflow-hidden shadow-2xl border-4 border-white ring-1 ring-slate-900/5">
-                  <img src={heroMobile} alt="Mobile app check-in view" width={800} height={1200} className="w-full h-auto" loading="lazy" />
+                  <img src={heroMobile} alt="FiledCrews mobile check-in view" width={800} height={1200} className="w-full h-auto" loading="lazy" />
                 </motion.div>
               </motion.div>
             </div>
           </div>
         </section>
 
-        <section className="bg-white py-8 md:py-10">
+        {/* ──── INTERACTIVE PRODUCT TOUR (Clay/Apollo Style) ──── */}
+        <section className="bg-white py-12 md:py-20 border-b border-stone-100">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <div className="max-w-2xl space-y-3">
-              <p className="text-sm font-semibold uppercase tracking-widest text-teal-600">Built for the work that matters</p>
-              <h2 className="text-2xl md:text-4xl font-extrabold text-slate-900">One operating view for your entire service business</h2>
-              <p className="text-slate-500 text-lg leading-relaxed">Keep the office and the field connected without stitching together separate dispatch, time, and billing tools.</p>
+            <div className="text-center max-w-3xl mx-auto space-y-4 mb-12 md:mb-16">
+              <span className="text-xs font-extrabold uppercase tracking-widest text-teal-600 bg-teal-50 px-3 py-1 rounded-full">Interactive Product Tour</span>
+              <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900">
+                One unified workspace for office and field operations.
+              </h2>
+              <p className="text-slate-500 text-lg leading-relaxed">
+                Experience how FiledCrews connects dispatchers and technicians without the complexity or cost of legacy software.
+              </p>
             </div>
-            <div className="mt-8 grid gap-5 md:grid-cols-3">
-              {outcomes.map((outcome) => (
-                <Card key={outcome.title} className="border-stone-200 bg-stone-50/50 shadow-sm">
-                  <CardContent className="p-6 space-y-3">
-                    <outcome.icon className="h-6 w-6 text-teal-600" />
-                    <h3 className="text-lg font-bold text-slate-900">{outcome.title}</h3>
-                    <p className="text-sm leading-relaxed text-slate-600">{outcome.desc}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
 
-        <section className="border-y border-stone-100 bg-stone-50/40">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-5 flex flex-wrap items-center justify-center gap-8 md:gap-16 text-center">
-            {[
-              { val: "Guided", label: "Founder Partner Setup" },
-              { val: "Connected", label: "Office + Field Workflows" },
-              { val: "Configurable", label: "Worksite Boundaries" },
-              { val: "Mobile", label: "Crew Updates" },
-            ].map((s) => (
-              <div key={s.label}>
-                <p className="text-xl font-bold text-teal-600">{s.val}</p>
-                <p className="text-sm text-slate-500 font-medium">{s.label}</p>
+            <div className="grid lg:grid-cols-[1.1fr_1.9fr] gap-10 lg:gap-16 items-start">
+              {/* Left Selector Grid */}
+              <div className="space-y-4">
+                {[
+                  {
+                    id: "map" as const,
+                    title: "Live GPS Map Tracking",
+                    subtitle: "Real-time fleet coordination",
+                    desc: "Monitor staff locations, view current work status, and dispatch emergency jobs instantly on an interactive, live-updating map view.",
+                    icon: Map,
+                  },
+                  {
+                    id: "geofences" as const,
+                    title: "Smart Geofence Boundaries",
+                    subtitle: "Automated site tracking",
+                    desc: "Draw virtual boundaries around customer job locations. Shift entries and exits are audited automatically to verify timesheet accuracy.",
+                    icon: Target,
+                  },
+                  {
+                    id: "costs" as const,
+                    title: "Custom Category Cost Ledgers",
+                    subtitle: "Budgeting & financial control",
+                    desc: "Track planned and actual expenses against projects (e.g. Marketing, Foundation, Permits) with progress percentages and budget alert limits.",
+                    icon: ClipboardList,
+                  },
+                  {
+                    id: "billing" as const,
+                    title: "Invoices & Profitability Reports",
+                    subtitle: "Seamless financial operations",
+                    desc: "Convert completed jobs directly to draft invoices, track collection status, and run detailed financial reports showing project net margins.",
+                    icon: Receipt,
+                  },
+                ].map((tab) => {
+                  const isActive = activeTourTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTourTab(tab.id)}
+                      className={`w-full text-left p-5 rounded-2xl border transition-all duration-300 flex gap-4 ${
+                        isActive
+                          ? "bg-stone-50 border-teal-200/80 shadow-md shadow-teal-600/5 ring-1 ring-teal-500/10"
+                          : "bg-white border-stone-100 hover:border-stone-200 hover:bg-stone-50/50"
+                      }`}
+                    >
+                      <div
+                        className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-300 ${
+                          isActive ? "bg-teal-600 text-white shadow-md shadow-teal-600/20" : "bg-stone-100 text-slate-500"
+                        }`}
+                      >
+                        <tab.icon className="h-5 w-5" />
+                      </div>
+                      <div className="space-y-1 min-w-0">
+                        <span className="text-xs font-bold text-teal-600 tracking-wide uppercase">{tab.subtitle}</span>
+                        <h3 className="text-base font-extrabold text-slate-900">{tab.title}</h3>
+                        <p className={`text-sm leading-relaxed ${isActive ? "text-slate-600" : "text-slate-400"}`}>
+                          {tab.desc}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-            ))}
+
+              {/* Right Interactive Mockup Display */}
+              <div className="relative rounded-2xl overflow-hidden border border-stone-200/80 bg-stone-50/50 p-3 shadow-xl ring-1 ring-slate-900/5 lg:sticky lg:top-24">
+                <div className="absolute inset-0 bg-gradient-to-tr from-teal-500/10 to-emerald-500/5 opacity-40 blur-xl -z-10" />
+                <div className="rounded-xl overflow-hidden border border-stone-200 bg-white shadow-2xl relative" style={{ aspectRatio: "16 / 10" }}>
+                  {activeTourTab === "map" && (
+                    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="absolute inset-0">
+                      <img src={heroDashboard} alt="Live GPS Map Dispatching" className="w-full h-full object-cover" />
+                    </motion.div>
+                  )}
+                  {activeTourTab === "geofences" && (
+                    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="absolute inset-0">
+                      <img src={featureGeofence} alt="Smart Geofence Boundaries" className="w-full h-full object-cover animate-fade-in" />
+                    </motion.div>
+                  )}
+                  {activeTourTab === "costs" && (
+                    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="absolute inset-0 bg-stone-900 text-white p-6 sm:p-10 flex flex-col justify-between">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+                          <span className="text-xs font-bold tracking-widest text-slate-400 uppercase">Cost Tracking Ledger</span>
+                        </div>
+                        <h4 className="text-xl sm:text-2xl font-extrabold tracking-tight">Track custom categories against budgets.</h4>
+                        <p className="text-slate-400 text-sm leading-relaxed max-w-md">Create planned cost lines for Marketing, Foundations, App Building, Permits, and Materials. View progress bars comparing budgeted versus actual expenditures in real time.</p>
+                      </div>
+                      <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
+                        <div className="flex justify-between text-xs font-bold text-slate-300">
+                          <span>Marketing Campaign</span>
+                          <span className="text-teal-400">80% Spent</span>
+                        </div>
+                        <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                          <div className="h-full bg-teal-500 rounded-full" style={{ width: "80%" }} />
+                        </div>
+                        <div className="flex justify-between text-[11px] text-slate-400">
+                          <span>Budget: $5,000.00</span>
+                          <span>Actual: $4,000.00</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                  {activeTourTab === "billing" && (
+                    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="absolute inset-0 bg-slate-950 text-white p-6 sm:p-10 flex flex-col justify-between">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                          <span className="text-xs font-bold tracking-widest text-slate-400 uppercase">Automated Billing Hub</span>
+                        </div>
+                        <h4 className="text-xl sm:text-2xl font-extrabold tracking-tight">Convert completed shifts to invoice drafts.</h4>
+                        <p className="text-slate-400 text-sm leading-relaxed max-w-md">No manual timesheet reentry. Generate professional PDF invoices directly linked to completed crew visits, record manual or Stripe payments, and track margins.</p>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[
+                          { title: "Total Invoiced", val: "$14,250.00", color: "text-white" },
+                          { title: "Outstanding", val: "$3,400.00", color: "text-amber-400" },
+                          { title: "Paid Margin", val: "+74.5%", color: "text-emerald-400" },
+                        ].map((stat) => (
+                          <div key={stat.title} className="rounded-lg bg-white/5 border border-white/10 p-3">
+                            <span className="text-[10px] text-slate-400 font-medium block">{stat.title}</span>
+                            <span className={`text-sm font-bold ${stat.color}`}>{stat.val}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -574,53 +694,109 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ──── SCREENSHOTS SHOWCASE ──── */}
-        <section className="py-8 md:py-10 bg-white">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 space-y-14">
-            {/* Staff management */}
-            <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-              <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="space-y-4">
-                <motion.p variants={fadeUp} custom={0} className="text-sm font-semibold uppercase tracking-widest text-teal-600 flex items-center gap-2">
-                  <Users className="h-4 w-4" /> Staff Management
-                </motion.p>
-                <motion.h3 variants={fadeUp} custom={1} className="text-2xl md:text-3xl font-extrabold text-slate-900">Your entire team at a glance</motion.h3>
-                <motion.p variants={fadeUp} custom={2} className="text-slate-500 text-lg leading-relaxed">
-                  Add staff with their photos, assign them to zones, and see their status instantly. Know who's active, who's offline, and where they were last seen.
-                </motion.p>
-                <motion.ul variants={fadeUp} custom={3} className="space-y-2">
-                  {["Photo-based staff profiles", "Active/offline status tracking", "Location history per staff member"].map((t) => (
-                    <li key={t} className="flex items-center gap-3 text-slate-700 font-medium text-sm">
-                      <CheckCircle2 className="h-4 w-4 text-teal-500 shrink-0" /> {t}
-                    </li>
-                  ))}
-                </motion.ul>
-              </motion.div>
-              <motion.div initial={{ opacity: 0, scale: 0.96 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="rounded-xl overflow-hidden shadow-xl border border-stone-200/60 ring-1 ring-slate-900/5">
-                <img src={featureStaffList} alt="Staff management list view" width={1200} height={700} className="w-full h-auto" loading="lazy" />
-              </motion.div>
+        {/* ──── COMPETITOR COMPARISON GRID (GEO/AEO Focus) ──── */}
+        <section id="compare" className="py-16 md:py-24 bg-white border-b border-stone-100">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+            <div className="text-center max-w-3xl mx-auto space-y-4 mb-12 md:mb-16">
+              <span className="text-xs font-extrabold uppercase tracking-widest text-teal-600 bg-teal-50 px-3 py-1 rounded-full">Why FiledCrews</span>
+              <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900">
+                How we compare to legacy software.
+              </h2>
+              <p className="text-slate-500 text-lg leading-relaxed">
+                Most Field Service Management tools charge hefty per-user subscription fees. FiledCrews offers enterprise capabilities completely free.
+              </p>
             </div>
 
-            {/* Geofences */}
-            <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-              <motion.div initial={{ opacity: 0, scale: 0.96 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="rounded-xl overflow-hidden shadow-xl border border-stone-200/60 ring-1 ring-slate-900/5 order-2 lg:order-1">
-                <img src={featureGeofence} alt="Geofence zone configuration" width={1200} height={700} className="w-full h-auto" loading="lazy" />
-              </motion.div>
-              <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="space-y-4 order-1 lg:order-2">
-                <motion.p variants={fadeUp} custom={0} className="text-sm font-semibold uppercase tracking-widest text-teal-600 flex items-center gap-2">
-                  <Target className="h-4 w-4" /> Geofence Zones
-                </motion.p>
-                <motion.h3 variants={fadeUp} custom={1} className="text-2xl md:text-3xl font-extrabold text-slate-900">Smart boundaries, smarter alerts</motion.h3>
-                <motion.p variants={fadeUp} custom={2} className="text-slate-500 text-lg leading-relaxed">
-                  Draw circles on the map to define work zones. When staff enter or leave these zones, you know immediately. Enable face verification for extra security.
-                </motion.p>
-                <motion.ul variants={fadeUp} custom={3} className="space-y-2">
-                  {["Visual geofence editor on map", "Customizable radius and schedules", "Optional face ID on check-in"].map((t) => (
-                    <li key={t} className="flex items-center gap-3 text-slate-700 font-medium text-sm">
-                      <CheckCircle2 className="h-4 w-4 text-teal-500 shrink-0" /> {t}
-                    </li>
+            <div className="overflow-x-auto border border-stone-200/80 rounded-2xl shadow-sm bg-white">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-stone-100 bg-stone-50/50">
+                    <th className="p-5 text-sm font-bold text-slate-900">Feature Capabilities</th>
+                    <th className="p-5 text-sm font-bold text-teal-700 bg-teal-50/30">FiledCrews FSM</th>
+                    <th className="p-5 text-sm font-medium text-slate-500">Legacy Paid FSM</th>
+                    <th className="p-5 text-sm font-medium text-slate-500">Paper & Spreadsheets</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100 text-sm">
+                  {[
+                    { f: "Pricing Model", c1: "$0 Free Forever", c2: "$150+/mo per user", c3: "Free (but high time cost)" },
+                    { f: "Live GPS Tracking Map", c1: "Included (Real-time updates)", c2: "Paid add-on", c3: "None" },
+                    { f: "Geofenced Check-in Audits", c1: "Automated (Map boundary)", c2: "Basic tracking", c3: "Manual entries" },
+                    { f: "Biometric Face ID verification", c1: "Included (AI face match)", c2: "Rarely supported", c3: "None" },
+                    { f: "Custom Cost categories Ledger", c1: "Included (Budget vs Actual)", c2: "Requires integrations", c3: "Manual formulas" },
+                    { f: "Invoice & Billing dispatch", c1: "Direct draft creation", c2: "Paid subscription", c3: "Manual creation" },
+                    { f: "Multi-Country Tax support", c1: "US, UK, CA, AU & EU presets", c2: "Single region focus", c3: "Custom setup needed" },
+                  ].map((row, idx) => (
+                    <tr key={idx} className="hover:bg-stone-50/40 transition-colors">
+                      <td className="p-5 font-semibold text-slate-900">{row.f}</td>
+                      <td className="p-5 font-bold text-teal-600 bg-teal-50/10">{row.c1}</td>
+                      <td className="p-5 text-slate-600">{row.c2}</td>
+                      <td className="p-5 text-slate-500">{row.c3}</td>
+                    </tr>
                   ))}
-                </motion.ul>
-              </motion.div>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        {/* ──── MULTI-REGIONAL LOCALIZATION & COMPLIANCE ──── */}
+        <section id="regions" className="py-16 md:py-24 bg-stone-50/40 border-b border-stone-100">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+            <div className="text-center max-w-3xl mx-auto space-y-4 mb-12 md:mb-16">
+              <span className="text-xs font-extrabold uppercase tracking-widest text-teal-600 bg-teal-50 px-3 py-1 rounded-full">Global Presence</span>
+              <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900">
+                Built for compliance. Engineered for ease of use.
+              </h2>
+              <p className="text-slate-500 text-lg leading-relaxed">
+                FiledCrews is localized and compliance-certified, making it the best and easiest to use field service system across major global regions.
+              </p>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {[
+                {
+                  flag: "🇺🇸",
+                  country: "United States",
+                  badge: "Easiest to Use FSM",
+                  desc: "Supports state-by-state custom tax rules, automated IRS mileage tracking, and real-time crew location compliance mapping.",
+                },
+                {
+                  flag: "🇬🇧",
+                  country: "United Kingdom",
+                  badge: "HMRC Compliant Logs",
+                  desc: "Configure HMRC-aligned shift and worklogs. Automatically calculate UK VAT invoices and exports for easy accounting alignment.",
+                },
+                {
+                  flag: "🇨🇦",
+                  country: "Canada",
+                  badge: "HST/GST/PST Tax Engine",
+                  desc: "Easily handle GST, HST, and PST calculations per province on project cost ledgers and invoices for seamless operations.",
+                },
+                {
+                  flag: "🇦🇺",
+                  country: "Australia",
+                  badge: "ATO Ready Records",
+                  desc: "Perfect for Australian trade contracts with integrated GST reporting templates and ATO compliance check-in records.",
+                },
+                {
+                  flag: "🇪🇺",
+                  country: "European Union",
+                  badge: "GDPR Compliant Audits",
+                  desc: "Fully GDPR compliant background location tracking with strict data isolation, encryption, and local EU VAT billing presets.",
+                },
+              ].map((reg, idx) => (
+                <div key={idx} className="bg-white border border-stone-100 p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 space-y-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-3xl select-none">{reg.flag}</span>
+                    <span className="text-[11px] font-extrabold tracking-widest text-teal-600 bg-teal-50 px-2.5 py-0.5 rounded-full uppercase">{reg.badge}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-bold text-slate-900">{reg.country}</h3>
+                    <p className="text-sm text-slate-500 leading-relaxed">{reg.desc}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -677,7 +853,7 @@ export default function LandingPage() {
                   A mobile app your<br />crew will actually use
                 </motion.h2>
                 <motion.p variants={fadeUp} custom={1} className="text-base text-teal-100 max-w-lg leading-relaxed">
-                  The OnSite Crew Manager mobile app is <span className="font-extrabold text-white">coming soon</span> to the Google Play Store. Background location, automatic check-ins, and face verification — all seamless.
+                  The FiledCrews mobile app is <span className="font-extrabold text-white">coming soon</span> to the Google Play Store. Background location, automatic check-ins, and face verification — all seamless.
                 </motion.p>
                 <motion.div variants={fadeUp} custom={2} className="space-y-2">
                   {[
@@ -713,13 +889,13 @@ export default function LandingPage() {
                   <div className="rounded-3xl bg-white text-slate-900 p-4 shadow-2xl ring-1 ring-black/5">
                     <div className="flex items-center gap-3 rounded-full bg-stone-100 px-4 py-2.5 mb-3">
                       <Search className="h-4 w-4 text-slate-400 shrink-0" />
-                      <div className="text-sm font-medium text-slate-900 truncate">OnSite Crew Manager</div>
+                      <div className="text-sm font-medium text-slate-900 truncate">FiledCrews</div>
                       <span className="ml-auto inline-block h-4 w-px bg-stone-200" />
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-teal-50 text-teal-600 text-[10px] font-bold">O</div>
                     </div>
                     <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Android mobile app preview</div>
                     <div className="rounded-xl overflow-hidden border border-stone-200 bg-white">
-                      <img src={playStoreListing} alt="OnSite Crew Manager on Google Play" className="w-full h-auto block" loading="lazy" />
+                      <img src={playStoreListing} alt="FiledCrews on Google Play" className="w-full h-auto block" loading="lazy" />
                     </div>
                     <div className="mt-3 flex items-center justify-between text-xs">
                       <div className="flex items-center gap-3">
@@ -763,7 +939,7 @@ export default function LandingPage() {
           <div className="mx-auto max-w-3xl px-4 sm:px-6">
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }} className="text-center mb-8 space-y-2">
               <motion.h2 variants={fadeUp} custom={0} className="text-2xl md:text-4xl font-extrabold text-slate-900">Frequently asked questions</motion.h2>
-              <motion.p variants={fadeUp} custom={1} className="text-slate-500">Everything you need to know about OnSite Crew Manager.</motion.p>
+              <motion.p variants={fadeUp} custom={1} className="text-slate-500">Everything you need to know about FiledCrews.</motion.p>
             </motion.div>
 
             <div className="space-y-2.5">
@@ -815,8 +991,8 @@ export default function LandingPage() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-2">
-                <img src="/favicon.png" alt="Ocrem" className="h-6 w-6 rounded-md" />
-                <span className="font-semibold text-slate-900">OnSite Crew Manager</span>
+                <img src="/favicon.png" alt="FiledCrews" className="h-6 w-6 rounded-md" />
+                <span className="font-semibold text-slate-900">FiledCrews</span>
               </div>
               <nav className="flex flex-wrap justify-center gap-x-4 sm:gap-x-6 gap-y-2 text-sm text-slate-500">
                 <Link to="/about" className="hover:text-slate-900 transition-colors">About</Link>
@@ -826,7 +1002,7 @@ export default function LandingPage() {
                 <Link to="/account-deletion" className="hover:text-slate-900 transition-colors">Account Deletion</Link>
               </nav>
             </div>
-            <p className="text-center text-sm text-slate-400 mt-5">© {new Date().getFullYear()} OnSite Crew Manager. All rights reserved.</p>
+            <p className="text-center text-sm text-slate-400 mt-5">© {new Date().getFullYear()} FiledCrews. All rights reserved.</p>
           </div>
         </footer>
 
@@ -834,8 +1010,8 @@ export default function LandingPage() {
         <Dialog open={demoOpen} onOpenChange={setDemoOpen}>
           <DialogContent className="max-w-5xl w-[95vw] p-0 overflow-hidden border-stone-200 bg-white sm:rounded-2xl">
             <VisuallyHidden>
-              <DialogTitle>OnSite Crew Manager product demo</DialogTitle>
-              <DialogDescription>Watch a short demo of the OnSite Crew Manager dashboard and mobile app.</DialogDescription>
+              <DialogTitle>FiledCrews product demo</DialogTitle>
+              <DialogDescription>Watch a short demo of the FiledCrews dashboard and mobile app.</DialogDescription>
             </VisuallyHidden>
             <div className="relative w-full bg-black" style={{ aspectRatio: "16 / 9" }}>
               {demoOpen && (
@@ -845,7 +1021,7 @@ export default function LandingPage() {
                   allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
                   allowFullScreen
                   className="absolute inset-0 h-full w-full border-0"
-                  title="OnSite Crew Manager demo"
+                  title="FiledCrews demo"
                 />
               )}
             </div>
