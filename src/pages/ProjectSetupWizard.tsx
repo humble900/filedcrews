@@ -1034,6 +1034,20 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
     setSaving(true);
     try {
+      // Step 0: Check prefix uniqueness before creating auth user
+      const prefixToUse = companyPrefix.toUpperCase();
+      if (prefixToUse) {
+        const { data: existingPrefixComp } = await supabase
+          .from("companies")
+          .select("id")
+          .eq("prefix", prefixToUse)
+          .maybeSingle();
+
+        if (existingPrefixComp) {
+          throw new Error(`The company prefix "${prefixToUse}" is already in use. Please change your company name slightly.`);
+        }
+      }
+
       // Step A: SignUp user
       const { data: authData, error: authErr } = await supabase.auth.signUp({
         email: signupEmail.trim(),
