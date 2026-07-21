@@ -499,23 +499,21 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
     const computedFullName = [firstName, lastName].filter(Boolean).join(" ");
     if (!username || !computedFullName || !password) return;
 
-    // Check seat limits (if NOT Founding Partner)
+    // Check seat limits (Enforced for all tiers, including Founding Partner Charter)
     const isFoundingPartner = company?.subscription_tier === "Founding Partner";
-    if (!isFoundingPartner) {
-      if (newStaffRole === "Field Crew") {
-        const maxFieldCrew = company?.max_field_crew_seats ?? 10;
-        if (activeFieldCrew >= maxFieldCrew) {
-          setLimitWarningRole("Field Crew");
-          setShowLimitWarning(true);
-          return;
-        }
-      } else {
-        const maxAdmins = company?.max_admin_seats ?? 3;
-        if (activeAdmins >= maxAdmins) {
-          setLimitWarningRole("Office Seat");
-          setShowLimitWarning(true);
-          return;
-        }
+    if (newStaffRole === "Field Crew") {
+      const maxFieldCrew = company?.max_field_crew_seats ?? (isFoundingPartner ? 15 : 10);
+      if (activeFieldCrew >= maxFieldCrew) {
+        setLimitWarningRole("Field Crew");
+        setShowLimitWarning(true);
+        return;
+      }
+    } else {
+      const maxAdmins = company?.max_admin_seats ?? (isFoundingPartner ? 5 : 3);
+      if (activeAdmins >= maxAdmins) {
+        setLimitWarningRole("Office Seat");
+        setShowLimitWarning(true);
+        return;
       }
     }
 
@@ -1262,7 +1260,7 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
                 You have reached your limit of active <span className="font-bold text-rose-500">{limitWarningRole}</span> seats.
               </p>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                To allocate more seats, please top up your licenses or upgrade to the <strong>Founding Partner Charter</strong> by contacting our support desk.
+                To allocate more seats, please contact your platform administrator to adjust your seat cap or upgrade your plan.
               </p>
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -224,8 +224,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const trialEndDate = new Date(createdAtDate.getTime() + trialDurationDays * 24 * 60 * 60 * 1000);
     const now = new Date();
     const timeDiff = trialEndDate.getTime() - now.getTime();
+    // Founding Partner Charter accounts are annual — bypass trial only when subscription_status is 'active'
+    const isActiveSubscription = state.company.subscription_status === 'active';
+    if (isActiveSubscription) return { isTrialExpired: false, daysRemaining: 365 };
+    const isTrialExpired = timeDiff <= 0;
     const daysRemaining = Math.max(0, Math.ceil(timeDiff / (1000 * 60 * 60 * 24)));
-    const isTrialExpired = timeDiff <= 0 && state.company.subscription_tier !== 'Founding Partner';
     return { isTrialExpired, daysRemaining };
   };
 

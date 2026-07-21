@@ -349,7 +349,12 @@ export default function SuperadminDashboard() {
     mutationFn: async (companyId: string) => {
       const { error } = await supabase
         .from("companies")
-        .update({ subscription_status: "trialing", subscription_tier: "Founding Partner" })
+        .update({
+          subscription_status: "active",
+          subscription_tier: "Founding Partner",
+          max_admin_seats: 5,
+          max_field_crew_seats: 15
+        })
         .eq("id", companyId);
       if (error) throw error;
     },
@@ -1634,7 +1639,7 @@ export default function SuperadminDashboard() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Free">Free (Standard Limits)</SelectItem>
-                  <SelectItem value="Founding Partner">Founding Partner (Lifetime VIP)</SelectItem>
+                  <SelectItem value="Founding Partner">Founding Partner ($2,899/yr Charter · 20 Seats Cap)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

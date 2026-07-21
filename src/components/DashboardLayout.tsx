@@ -570,7 +570,7 @@ export default function DashboardLayout({
               <div className="space-y-2">
                 <h2 className="text-2xl font-extrabold">Trial Period Expired</h2>
                 <p className="text-muted-foreground text-sm">
-                  Your 14-day free trial has ended. Upgrade to a paid plan or join our Founding Partner Charter to continue using OnSite Crew Manager.
+                  Your 14-day free trial has ended. Upgrade to a paid plan or join our Founding Partner Charter ($2,899/yr for up to 20 seats) to continue using OnSite Crew Manager.
                 </p>
               </div>
               <Button onClick={() => navigate('/settings?tab=billing')} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500">

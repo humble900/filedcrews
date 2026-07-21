@@ -326,14 +326,14 @@ export default function SettingsPage() {
                   <div className="p-2 rounded-lg bg-amber-500/15 text-amber-500"><Crown className="h-6 w-6 animate-bounce" /></div>
                   <div>
                     <CardTitle className="text-xl font-extrabold">Founding Partner Membership</CardTitle>
-                    <CardDescription className="text-amber-500/80 font-semibold text-xs tracking-wider uppercase">VIP Charter · Lifetime Tier</CardDescription>
+                    <CardDescription className="text-amber-500/80 font-semibold text-xs tracking-wider uppercase">VIP Charter · $2,899/yr Annual Plan</CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm text-foreground/90">Your company is an official <strong>Founding Partner</strong> with full lifetime access.</p>
+                <p className="text-sm text-foreground/90">Your company is an official <strong>Founding Partner</strong> on the annual charter plan.</p>
                 <div className="grid gap-3 sm:grid-cols-2 pt-2">
-                  {[{ icon: CheckCircle, t: "Unlimited Office & Crew Seats" }, { icon: ShieldCheck, t: "Priority Roadmap Co-Design" }, { icon: Zap, t: "White-Glove Migrations" }, { icon: MessageSquare, t: "Direct WhatsApp Hotline" }].map(({ icon: I, t }) => (
+                  {[{ icon: CheckCircle, t: `Up to ${(company?.max_admin_seats ?? 5) + (company?.max_field_crew_seats ?? 15)} Total Seats` }, { icon: ShieldCheck, t: "Priority Roadmap Co-Design" }, { icon: Zap, t: "White-Glove Migrations" }, { icon: MessageSquare, t: "Direct WhatsApp Hotline" }].map(({ icon: I, t }) => (
                     <div key={t} className="flex items-center gap-2.5 text-xs text-foreground/80 bg-background/50 p-3 rounded-lg border border-border/40"><I className="h-4 w-4 text-emerald-500 shrink-0" /><span>{t}</span></div>
                   ))}
                 </div>
@@ -345,15 +345,15 @@ export default function SettingsPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2.5">
                   <div className="p-2 rounded-lg bg-blue-500/15"><Crown className="h-5 w-5 text-blue-400" /></div>
-                  <div><CardTitle className="text-lg font-bold">Founding Partner Charter</CardTitle><CardDescription>Lifetime membership with roadmap input.</CardDescription></div>
+                  <div><CardTitle className="text-lg font-bold">Founding Partner Charter</CardTitle><CardDescription>$2,899/yr · 20 seats (field + office staff).</CardDescription></div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4 text-sm text-muted-foreground">
-                <p>Join our closed cohort with a <strong>lifetime license</strong> and direct roadmap design input.</p>
+                <p>Join our closed cohort with an <strong>annual charter subscription</strong> and direct roadmap design input.</p>
                 <div className="space-y-2 border-y border-border/40 py-4">
                   <h4 className="font-semibold text-foreground text-xs uppercase tracking-wider">Charter Privileges:</h4>
                   <ul className="grid gap-2 sm:grid-cols-2 text-xs">
-                    {["Lifetime license", "Unlimited seats", "Co-design feedback", "White-glove onboarding"].map(t => (
+                    {["$2,899/yr flat rate", "Up to 20 seats (field + office)", "Co-design feedback", "White-glove onboarding"].map(t => (
                       <li key={t} className="flex items-center gap-2 text-foreground/90"><CheckCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />{t}</li>
                     ))}
                   </ul>
@@ -391,16 +391,16 @@ export default function SettingsPage() {
             <CardContent className="space-y-6">
               {loadingStaff ? <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div> : (<>
                 <div className="space-y-2">
-                  <div className="flex justify-between text-xs font-medium"><span>Office Seats</span><span className="font-semibold">{activeAdmins} / {isFoundingPartner ? "\u221e" : maxAdmins}</span></div>
-                  {!isFoundingPartner && <div className="w-full h-2.5 rounded-full bg-muted overflow-hidden border border-border/30"><div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${adminPercent}%` }} /></div>}
+                  <div className="flex justify-between text-xs font-medium"><span>Office Seats</span><span className="font-semibold">{activeAdmins} / {maxAdmins}</span></div>
+                  <div className="w-full h-2.5 rounded-full bg-muted overflow-hidden border border-border/30"><div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${adminPercent}%` }} /></div>
                   <p className="text-[10px] text-muted-foreground">Owner, Admin, Finance, Dispatcher.</p>
                 </div>
                 <div className="space-y-2">
-                  <div className="flex justify-between text-xs font-medium"><span>Crew Seats</span><span className="font-semibold">{activeFieldCrew} / {isFoundingPartner ? "\u221e" : maxFieldCrew}</span></div>
-                  {!isFoundingPartner && <div className="w-full h-2.5 rounded-full bg-muted overflow-hidden border border-border/30"><div className="h-full bg-purple-500 rounded-full transition-all duration-500" style={{ width: `${fieldPercent}%` }} /></div>}
+                  <div className="flex justify-between text-xs font-medium"><span>Crew Seats</span><span className="font-semibold">{activeFieldCrew} / {maxFieldCrew}</span></div>
+                  <div className="w-full h-2.5 rounded-full bg-muted overflow-hidden border border-border/30"><div className="h-full bg-purple-500 rounded-full transition-all duration-500" style={{ width: `${fieldPercent}%` }} /></div>
                   <p className="text-[10px] text-muted-foreground">Field crew mobile accounts.</p>
                 </div>
-                {!isFoundingPartner && (activeAdmins >= maxAdmins || activeFieldCrew >= maxFieldCrew) && (
+                {(activeAdmins >= maxAdmins || activeFieldCrew >= maxFieldCrew) && (
                   <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-lg flex gap-2.5 text-xs font-medium">
                     <AlertTriangle className="h-4 w-4 shrink-0" /><div><p>Seat limit reached!</p><p className="text-[10px] text-rose-500/80 font-normal">Upgrade to add more.</p></div>
                   </div>
