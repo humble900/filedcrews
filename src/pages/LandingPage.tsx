@@ -32,6 +32,18 @@ import {
   Sun,
   Bug,
   Home,
+  Link2,
+  MessageSquare,
+  CreditCard,
+  Calendar,
+  FileText,
+  TrendingDown,
+  Quote,
+  DollarSign,
+  MapPin,
+  TrendingUp,
+  ArrowUpRight,
+  Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -179,6 +191,20 @@ const marqueeCSS = `
   0% { transform: translateX(-50%); }
   100% { transform: translateX(0); }
 }
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+@keyframes flow {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
 .marquee-track { will-change: transform; }
 .marquee-wrap:hover .marquee-track { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) {
@@ -320,8 +346,30 @@ export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [activeTourTab, setActiveTourTab] = useState<"map" | "geofences" | "costs" | "billing">("map");
   const rafRef = useRef<number | null>(null);
+  const [activeStep, setActiveStep] = useState(0);
+  const [activePhraseIndex, setActivePhraseIndex] = useState(0);
+
+  const phrases = [
+    { text: "your field operations.", color: "from-teal-600 to-emerald-600" },
+    { text: "your service crews.", color: "from-indigo-600 to-violet-600" },
+    { text: "your business growth.", color: "from-amber-600 to-orange-600" },
+    { text: "your dispatch & billing.", color: "from-sky-600 to-blue-600" },
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActivePhraseIndex((prev) => (prev + 1) % 4);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveStep((prev) => (prev + 1) % 4);
+    }, 4500);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
@@ -363,7 +411,7 @@ export default function LandingPage() {
             <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-500">
               <a href="#features" className="hover:text-slate-900 transition-colors">Features</a>
               <a href="#compare" className="hover:text-slate-900 transition-colors">Why FiledCrews</a>
-              <a href="#regions" className="hover:text-slate-900 transition-colors">Global Support</a>
+
               <a href="#faq" className="hover:text-slate-900 transition-colors">FAQ</a>
             </nav>
             <div className="flex items-center gap-2 sm:gap-3">
@@ -385,7 +433,7 @@ export default function LandingPage() {
             {mobileMenuOpen && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="md:hidden overflow-hidden border-t border-stone-100 bg-white">
                 <nav className="flex flex-col px-4 py-3 gap-1">
-                  {[{ href: "#features", label: "Features" }, { href: "#compare", label: "Why FiledCrews" }, { href: "#regions", label: "Global Support" }, { href: "#faq", label: "FAQ" }].map((link) => (
+                  {[{ href: "#features", label: "Features" }, { href: "#compare", label: "Why FiledCrews" }, { href: "#faq", label: "FAQ" }].map((link) => (
                     <a key={link.href} href={link.href} className="py-2.5 px-3 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-stone-50 transition-colors" onClick={() => setMobileMenuOpen(false)}>{link.label}</a>
                   ))}
                   <div className="flex gap-2 pt-2 pb-1">
@@ -413,22 +461,33 @@ export default function LandingPage() {
           <InteractiveMoon mouseX={mx} mouseY={my} top="50%" left="1%" size={130} color="rgba(20, 184, 166, 0.18)" delay={1.2} />
           <InteractiveMoon mouseX={mx} mouseY={my} top="25%" left="93%" size={80} color="rgba(245, 158, 11, 0.15)" delay={2.5} />
 
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-10 md:py-16 lg:py-20">
-            <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 pt-6 pb-12 md:pt-10 md:pb-16 lg:pt-12 lg:pb-20">
+            <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-16 items-center">
+              {/* Left Column: Text & CTAs */}
               <motion.div initial="hidden" animate="visible" className="space-y-8">
                 <motion.div variants={fadeUp} custom={0} className="space-y-5">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-teal-200/80 bg-teal-50/60 px-3.5 py-1 text-xs font-semibold text-teal-800">
-                    <span className="flex h-1.5 w-1.5 rounded-full bg-teal-600 animate-pulse" />
-                    Free Field Service Management Software
-                  </div>
-                  <h1 className="text-4xl md:text-5xl lg:text-6.5xl font-extrabold leading-[1.08] tracking-tight text-slate-900">
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.1] tracking-tight text-slate-900">
                     The simplest way to run<br />
-                    <span className="bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">your field operations.</span>
+                    <span className="inline-block relative w-full">
+                      <AnimatePresence mode="wait">
+                        <motion.span
+                          key={activePhraseIndex}
+                          initial={{ y: 15, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          exit={{ y: -15, opacity: 0 }}
+                          transition={{ duration: 0.35, ease: "easeInOut" }}
+                          className={`inline-block bg-gradient-to-r ${phrases[activePhraseIndex].color} bg-clip-text text-transparent`}
+                        >
+                          {phrases[activePhraseIndex].text}
+                        </motion.span>
+                      </AnimatePresence>
+                    </span>
                   </h1>
-                  <p className="text-lg md:text-xl text-slate-500 max-w-lg leading-relaxed">
-                    Live GPS technician tracking, automatic geofenced timesheets, client dispatching, and category expense tracking. Completely free and built for US, UK, Canada, Australia, and EU service trades.
+                  <p className="text-base md:text-lg text-slate-500 max-w-lg leading-relaxed">
+                    Schedule work, dispatch teams, track progress in real time, send estimates, generate invoices, collect payments, and communicate with customers seamlessly. Stop juggling multiple tools and get the complete visibility you need to run and grow your business effortlessly.
                   </p>
                 </motion.div>
+
                 <motion.div variants={fadeUp} custom={2} className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <Link to="/wizard" className="w-full sm:w-auto">
                     <Button size="lg" className="w-full sm:w-auto text-base px-8 bg-teal-600 hover:bg-teal-700 text-white font-semibold shadow-lg shadow-teal-600/15 rounded-xl">
@@ -439,22 +498,24 @@ export default function LandingPage() {
                     <PlayCircle className="mr-2 h-5 w-5 text-teal-600 transition-transform group-hover:scale-110" /> Watch the demo
                   </Button>
                 </motion.div>
-                <motion.div variants={fadeUp} custom={3} className="pt-2 border-t border-stone-100 space-y-2.5">
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Trusted by leading field crews globally</p>
-                  <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-bold text-slate-500">
-                    <span>⚡ HVAC & COOLING</span>
-                    <span>💧 PLUMBING</span>
-                    <span>🛠️ CONSTRUCTION</span>
-                    <span>🌳 LANDSCAPING</span>
-                  </div>
-                </motion.div>
               </motion.div>
 
-              <motion.div initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7, delay: 0.2 }} className="relative">
+              {/* Right Column: Interactive visuals */}
+              <motion.div
+                initial={{ opacity: 0, x: 40 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.7, delay: 0.2 }}
+                className="relative"
+              >
                 <div className="rounded-2xl overflow-hidden shadow-[0_24px_60px_-15px_rgba(15,118,110,0.12)] border border-stone-200/80 ring-1 ring-slate-900/5">
                   <img src={heroDashboard} alt="FiledCrews FSM admin dashboard live map view" width={1920} height={1080} className="w-full h-auto" />
                 </div>
-                <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.6 }} className="absolute -bottom-4 left-0 sm:-bottom-8 sm:-left-8 w-28 sm:w-36 md:w-48 rounded-2xl overflow-hidden shadow-2xl border-4 border-white ring-1 ring-slate-900/5">
+                <motion.div
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.6 }}
+                  className="absolute -bottom-4 left-0 sm:-bottom-8 sm:-left-8 w-28 sm:w-36 md:w-48 rounded-2xl overflow-hidden shadow-2xl border-4 border-white ring-1 ring-slate-900/5"
+                >
                   <img src={heroMobile} alt="FiledCrews mobile check-in view" width={800} height={1200} className="w-full h-auto" loading="lazy" />
                 </motion.div>
               </motion.div>
@@ -462,147 +523,697 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ──── INTERACTIVE PRODUCT TOUR (Clay/Apollo Style) ──── */}
-        <section className="bg-white py-12 md:py-20 border-b border-stone-100">
+        {/* ──── SOCIAL PROOF + IMPACT STATS (Apollo-style) ──── */}
+        <section className="bg-[#f5f3ef] pt-8 md:pt-10 pb-12 md:pb-14 border-b border-stone-200/40">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <div className="text-center max-w-3xl mx-auto space-y-4 mb-12 md:mb-16">
-              <span className="text-xs font-extrabold uppercase tracking-widest text-teal-600 bg-teal-50 px-3 py-1 rounded-full">Interactive Product Tour</span>
-              <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900">
-                One unified workspace for office and field operations.
-              </h2>
-              <p className="text-slate-500 text-lg leading-relaxed">
-                Experience how FiledCrews connects dispatchers and technicians without the complexity or cost of legacy software.
-              </p>
-            </div>
 
-            <div className="grid lg:grid-cols-[1.1fr_1.9fr] gap-10 lg:gap-16 items-start">
-              {/* Left Selector Grid */}
-              <div className="space-y-4">
-                {[
-                  {
-                    id: "map" as const,
-                    title: "Live GPS Map Tracking",
-                    subtitle: "Real-time fleet coordination",
-                    desc: "Monitor staff locations, view current work status, and dispatch emergency jobs instantly on an interactive, live-updating map view.",
-                    icon: Map,
-                  },
-                  {
-                    id: "geofences" as const,
-                    title: "Smart Geofence Boundaries",
-                    subtitle: "Automated site tracking",
-                    desc: "Draw virtual boundaries around customer job locations. Shift entries and exits are audited automatically to verify timesheet accuracy.",
-                    icon: Target,
-                  },
-                  {
-                    id: "costs" as const,
-                    title: "Custom Category Cost Ledgers",
-                    subtitle: "Budgeting & financial control",
-                    desc: "Track planned and actual expenses against projects (e.g. Marketing, Foundation, Permits) with progress percentages and budget alert limits.",
-                    icon: ClipboardList,
-                  },
-                  {
-                    id: "billing" as const,
-                    title: "Invoices & Profitability Reports",
-                    subtitle: "Seamless financial operations",
-                    desc: "Convert completed jobs directly to draft invoices, track collection status, and run detailed financial reports showing project net margins.",
-                    icon: Receipt,
-                  },
-                ].map((tab) => {
-                  const isActive = activeTourTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTourTab(tab.id)}
-                      className={`w-full text-left p-5 rounded-2xl border transition-all duration-300 flex gap-4 ${
-                        isActive
-                          ? "bg-stone-50 border-teal-200/80 shadow-md shadow-teal-600/5 ring-1 ring-teal-500/10"
-                          : "bg-white border-stone-100 hover:border-stone-200 hover:bg-stone-50/50"
-                      }`}
-                    >
+            {/* Trust bar — tight single row */}
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }}>
+              <motion.div variants={fadeUp} custom={0} className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-10 md:mb-14">
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-slate-400 shrink-0" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>Trusted by field service teams across 5 countries</p>
+                <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-2">
+                  {[
+                    { Icon: Thermometer, label: "HVAC" },
+                    { Icon: Droplets, label: "Plumbing" },
+                    { Icon: Hammer, label: "Construction" },
+                    { Icon: Leaf, label: "Landscaping" },
+                    { Icon: Zap, label: "Electrical" },
+                    { Icon: Bug, label: "Pest Control" },
+                  ].map(({ Icon, label }) => (
+                    <div key={label} className="flex items-center gap-1.5 text-slate-900/50">
+                      <Icon className="h-3.5 w-3.5" strokeWidth={2.5} />
+                      <span className="text-[11px] font-extrabold tracking-[0.12em]">{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </motion.div>
+
+            {/* Testimonial quote + attribution */}
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} className="grid lg:grid-cols-[1.3fr_0.7fr] gap-8 lg:gap-14 items-end mb-10 md:mb-14">
+              <motion.div variants={fadeUp} custom={0}>
+                <blockquote className="text-lg sm:text-xl md:text-2xl font-semibold leading-[1.4] tracking-[-0.005em] text-slate-800">
+                  {"\u201C"}We used to run our 40-person crew on WhatsApp groups and Excel spreadsheets. Now our office manager schedules every technician, tracks project costs in real-time, and sends invoices, all from one screen before lunch.{"\u201D"}
+                </blockquote>
+              </motion.div>
+              <motion.div variants={fadeUp} custom={1} className="flex flex-col justify-end">
+                <div className="space-y-0.5 lg:pl-4">
+                  <p className="text-[10.5px] font-extrabold uppercase tracking-[0.2em] text-slate-400">Andrew Mitchell</p>
+                  <p className="text-[10.5px] font-bold uppercase tracking-[0.15em] text-slate-400">Operations Director</p>
+                  <div className="flex items-center gap-2 pt-2">
+                    <img src="/favicon.png" alt="Premier Mechanical" className="h-5 w-5 rounded" />
+                    <span className="text-sm font-extrabold tracking-tight text-slate-900">Premier Mechanical</span>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+
+            {/* Impact stat cards — compact, Apollo-style */}
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-40px" }} className="grid sm:grid-cols-3 gap-3 md:gap-4">
+              {[
+                { stat: "85%", desc: "Fewer scheduling conflicts", brand: "Field Operations" },
+                { stat: "3x", desc: "Faster job-to-invoice cycle", brand: "Service Companies" },
+                { stat: "$14K", desc: "Saved annually on software per crew", brand: "Cost Analysis" },
+              ].map((item, i) => (
+                <motion.div
+                  key={item.stat}
+                  variants={fadeUp}
+                  custom={i}
+                  className="rounded-xl border border-stone-200/70 bg-white/80 px-5 py-5 md:px-6 md:py-6"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <p className="text-[13px] font-medium text-slate-500 leading-snug max-w-[170px]">{item.desc}</p>
+                    <span className="text-[10.5px] font-extrabold uppercase tracking-[0.1em] text-slate-400 shrink-0 ml-3">{item.brand}</span>
+                  </div>
+                  <p className="text-[3.2rem] md:text-[3.8rem] font-extrabold tracking-[-0.03em] leading-none text-slate-900">{item.stat}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+
+          </div>
+        </section>
+
+
+        {/* ──── FIVE TOOLS REPLACEMENT & PROJECT FLOW VISUALIZER ──── */}
+        <section className="bg-white py-10 md:py-16 border-b border-stone-100 relative overflow-hidden">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+            <div className="grid lg:grid-cols-[1.1fr_1.3fr] gap-12 lg:gap-20 items-center">
+              
+              {/* Left side: Heading, copy and interactive selector steps */}
+              <div className="space-y-8">
+                <div className="space-y-4">
+                  <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
+                    Why pay for five tools <br />
+                    <span className="italic text-teal-600">when one does it better?</span>
+                  </h2>
+                  <p className="text-slate-500 text-base leading-relaxed">
+                    FiledCrews replaces separate dispatching systems, timesheet software, expense sheets, invoicing tools, and team alerts. One unified database controls your operations from initial estimate to final net profit reports.
+                  </p>
+                </div>
+
+                {/* Interactive Steps List */}
+                <div className="space-y-2">
+                  {[
+                    { id: 0, title: "1. Instant Estimates & Guardrails", desc: "Say goodbye to manual double-entry. Clients approve proposals digitally, immediately locking in cost codes and materials budgets." },
+                    { id: 1, title: "2. Frictionless Dispatch & Routes", desc: "Eliminate scheduling bottlenecks. Assign jobs by proximity, dispatch maps directly to crew, and notify clients with automated ETAs." },
+                    { id: 2, title: "3. Automated Labor Compliance", desc: "Stop timesheet rounding and labor leaks. GPS boundaries auto-clock crews in when they cross the geofence on-site." },
+                    { id: 3, title: "4. Real-Time Profit Analytics", desc: "Never guess if you made a profit. Convert completed work into Stripe-ready invoices and instantly compare actual vs. budgeted costs." }
+                  ].map((step) => {
+                    const isActive = activeStep === step.id;
+                    return (
                       <div
-                        className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-300 ${
-                          isActive ? "bg-teal-600 text-white shadow-md shadow-teal-600/20" : "bg-stone-100 text-slate-500"
+                        key={step.id}
+                        onClick={() => setActiveStep(step.id)}
+                        className={`group relative pl-6 py-4 rounded-2xl cursor-pointer transition-all duration-300 ${
+                          isActive 
+                            ? "bg-slate-50 border border-stone-200/50 shadow-sm" 
+                            : "hover:bg-slate-50/40 border border-transparent"
                         }`}
                       >
-                        <tab.icon className="h-5 w-5" />
-                      </div>
-                      <div className="space-y-1 min-w-0">
-                        <span className="text-xs font-bold text-teal-600 tracking-wide uppercase">{tab.subtitle}</span>
-                        <h3 className="text-base font-extrabold text-slate-900">{tab.title}</h3>
-                        <p className={`text-sm leading-relaxed ${isActive ? "text-slate-600" : "text-slate-400"}`}>
-                          {tab.desc}
+                        {/* Glowing progress line indicating active state */}
+                        <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl transition-all duration-500 ${
+                          isActive ? "bg-teal-500 scale-y-100" : "bg-transparent scale-y-0"
+                        }`} />
+                        <h4 className={`text-sm font-bold transition-colors ${isActive ? "text-slate-900" : "text-slate-500 group-hover:text-slate-800"}`}>
+                          {step.title}
+                        </h4>
+                        <p className={`text-xs mt-1.5 transition-colors leading-relaxed ${isActive ? "text-slate-500" : "text-slate-400"}`}>
+                          {step.desc}
                         </p>
                       </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Right Interactive Mockup Display */}
-              <div className="relative rounded-2xl overflow-hidden border border-stone-200/80 bg-stone-50/50 p-3 shadow-xl ring-1 ring-slate-900/5 lg:sticky lg:top-24">
-                <div className="absolute inset-0 bg-gradient-to-tr from-teal-500/10 to-emerald-500/5 opacity-40 blur-xl -z-10" />
-                <div className="rounded-xl overflow-hidden border border-stone-200 bg-white shadow-2xl relative" style={{ aspectRatio: "16 / 10" }}>
-                  {activeTourTab === "map" && (
-                    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="absolute inset-0">
-                      <img src={heroDashboard} alt="Live GPS Map Dispatching" className="w-full h-full object-cover" />
-                    </motion.div>
-                  )}
-                  {activeTourTab === "geofences" && (
-                    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="absolute inset-0">
-                      <img src={featureGeofence} alt="Smart Geofence Boundaries" className="w-full h-full object-cover animate-fade-in" />
-                    </motion.div>
-                  )}
-                  {activeTourTab === "costs" && (
-                    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="absolute inset-0 bg-stone-900 text-white p-6 sm:p-10 flex flex-col justify-between">
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                          <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-                          <span className="text-xs font-bold tracking-widest text-slate-400 uppercase">Cost Tracking Ledger</span>
-                        </div>
-                        <h4 className="text-xl sm:text-2xl font-extrabold tracking-tight">Track custom categories against budgets.</h4>
-                        <p className="text-slate-400 text-sm leading-relaxed max-w-md">Create planned cost lines for Marketing, Foundations, App Building, Permits, and Materials. View progress bars comparing budgeted versus actual expenditures in real time.</p>
-                      </div>
-                      <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
-                        <div className="flex justify-between text-xs font-bold text-slate-300">
-                          <span>Marketing Campaign</span>
-                          <span className="text-teal-400">80% Spent</span>
-                        </div>
-                        <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
-                          <div className="h-full bg-teal-500 rounded-full" style={{ width: "80%" }} />
-                        </div>
-                        <div className="flex justify-between text-[11px] text-slate-400">
-                          <span>Budget: $5,000.00</span>
-                          <span>Actual: $4,000.00</span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                  {activeTourTab === "billing" && (
-                    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="absolute inset-0 bg-slate-950 text-white p-6 sm:p-10 flex flex-col justify-between">
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
-                          <span className="text-xs font-bold tracking-widest text-slate-400 uppercase">Automated Billing Hub</span>
-                        </div>
-                        <h4 className="text-xl sm:text-2xl font-extrabold tracking-tight">Convert completed shifts to invoice drafts.</h4>
-                        <p className="text-slate-400 text-sm leading-relaxed max-w-md">No manual timesheet reentry. Generate professional PDF invoices directly linked to completed crew visits, record manual or Stripe payments, and track margins.</p>
-                      </div>
-                      <div className="grid grid-cols-3 gap-3">
-                        {[
-                          { title: "Total Invoiced", val: "$14,250.00", color: "text-white" },
-                          { title: "Outstanding", val: "$3,400.00", color: "text-amber-400" },
-                          { title: "Paid Margin", val: "+74.5%", color: "text-emerald-400" },
-                        ].map((stat) => (
-                          <div key={stat.title} className="rounded-lg bg-white/5 border border-white/10 p-3">
-                            <span className="text-[10px] text-slate-400 font-medium block">{stat.title}</span>
-                            <span className={`text-sm font-bold ${stat.color}`}>{stat.val}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
+                    );
+                  })}
                 </div>
               </div>
+
+              {/* Right side: Modern Animative Project Management Dashboard Screen Mock */}
+              <div className="relative rounded-3xl bg-slate-950 p-6 md:p-10 border border-slate-800/85 shadow-2xl overflow-hidden h-[460px] flex flex-col justify-between text-white select-none">
+                {/* Header background glow */}
+                <div className="absolute -top-16 -right-16 w-48 h-48 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
+                {/* Dashboard top-bar */}
+                <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/80" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-green-500/80" />
+                    <span className="text-[10px] font-bold text-slate-500 tracking-wider uppercase ml-2 bg-white/5 px-2 py-0.5 rounded">Project Workspace</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 bg-white/5 px-3 py-1.5 rounded-xl border border-white/5">
+                    <Activity className="h-3 w-3 text-teal-400 animate-pulse" />
+                    <span>Live Syncing</span>
+                  </div>
+                </div>
+
+                {/* Interactive State Area */}
+                <div className="flex-1 flex flex-col justify-center">
+                  <AnimatePresence mode="wait">
+                    
+                    {/* Step 0: Estimating & Budgeting */}
+                    {activeStep === 0 && (
+                      <motion.div
+                        key="step0"
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -15 }}
+                        transition={{ duration: 0.35 }}
+                        className="space-y-5"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Project ID: WO-9204</span>
+                            <h3 className="text-lg font-bold text-slate-100">Residential HVAC System Install</h3>
+                          </div>
+                          <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-bold px-2 py-1 rounded uppercase tracking-wider">Client Approved</span>
+                        </div>
+
+                        <div className="space-y-3">
+                          {/* Cost lines */}
+                          <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 space-y-1">
+                            <div className="flex justify-between text-[11px] text-slate-300 font-semibold">
+                              <span>Materials: HVAC Unit + Copper Piping</span>
+                              <span className="text-slate-100">$3,200.00</span>
+                            </div>
+                            <div className="flex justify-between text-[9px] text-slate-500 font-medium">
+                              <span>Code: MAT-010 • Planned Cost</span>
+                              <span>Approved • Qty 1</span>
+                            </div>
+                          </div>
+                          
+                          <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 space-y-1">
+                            <div className="flex justify-between text-[11px] text-slate-300 font-semibold">
+                              <span>Township Building Permit Fees</span>
+                              <span className="text-slate-100">$450.00</span>
+                            </div>
+                            <div className="flex justify-between text-[9px] text-slate-500 font-medium">
+                              <span>Code: PRM-022 • Expense Account</span>
+                              <span>Approved • Internal</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Cost progress bar */}
+                        <div className="pt-2 border-t border-white/5 space-y-1.5">
+                          <div className="flex justify-between text-[10px] text-slate-400 font-semibold">
+                            <span>Project Cost Allocation</span>
+                            <span className="text-teal-400">$3,650.00 Budgeted</span>
+                          </div>
+                          <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                            <motion.div 
+                              initial={{ width: 0 }}
+                              animate={{ width: "75%" }}
+                              transition={{ duration: 0.8, ease: "easeOut" }}
+                              className="h-full bg-teal-500 rounded-full" 
+                            />
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Step 1: Dispatching */}
+                    {activeStep === 1 && (
+                      <motion.div
+                        key="step1"
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -15 }}
+                        transition={{ duration: 0.35 }}
+                        className="space-y-5"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-12 w-12 rounded-2xl bg-teal-500/10 text-teal-400 border border-teal-500/20 flex items-center justify-center font-bold text-lg">
+                            MV
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Technician Dispatch</span>
+                            <h3 className="text-base font-bold text-slate-100">Marcus Vance</h3>
+                          </div>
+                          <span className="ml-auto bg-teal-500/10 text-teal-400 border border-teal-500/20 text-[9px] font-bold px-2 py-1 rounded uppercase tracking-wider animate-pulse">En Route</span>
+                        </div>
+
+                        {/* Real-time SMS bubble */}
+                        <div className="rounded-2xl bg-white/[0.03] border border-white/5 p-4 space-y-3">
+                          <div className="flex justify-between text-[10px] text-slate-500 font-bold">
+                            <span>Auto-SMS Outbox</span>
+                            <span>Just now</span>
+                          </div>
+                          <p className="text-xs text-slate-300 italic leading-relaxed">
+                            "Hello Premier Client, technician Marcus Vance is en route to your location. Expected arrival: 08:42 AM. View live technician location map here: fc.co/t/7a82f"
+                          </p>
+                        </div>
+
+                        {/* Route card */}
+                        <div className="flex justify-between items-center text-xs font-bold text-slate-400 bg-white/[0.01] border border-white/5 rounded-xl p-3.5">
+                          <div className="flex items-center gap-2">
+                            <div className="h-2 w-2 rounded-full bg-teal-500 animate-ping" />
+                            <span>Destination: 104 Oak Dr</span>
+                          </div>
+                          <span className="text-slate-300">ETA 12 mins</span>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Step 2: Geofenced Compliance */}
+                    {activeStep === 2 && (
+                      <motion.div
+                        key="step2"
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -15 }}
+                        transition={{ duration: 0.35 }}
+                        className="space-y-4"
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Worksite Compliance</span>
+                            <h3 className="text-base font-bold text-slate-100">Geofence Attendance Verification</h3>
+                          </div>
+                          <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-bold px-2 py-1 rounded uppercase tracking-wider">Clock-in Verified</span>
+                        </div>
+
+                        {/* Geofence Map Mock */}
+                        <div className="relative h-[160px] bg-slate-905 border border-white/5 rounded-2xl overflow-hidden flex items-center justify-center">
+                          {/* Pulsing geofence circle */}
+                          <div className="absolute h-24 w-24 rounded-full border border-teal-500/40 bg-teal-500/10 flex items-center justify-center animate-pulse">
+                            <div className="h-2 w-2 rounded-full bg-teal-400 animate-ping" />
+                          </div>
+                          {/* Technician dot */}
+                          <div className="absolute top-[48%] left-[47%] h-4 w-4 bg-teal-500 rounded-full border-2 border-slate-950 flex items-center justify-center text-[7px] font-bold shadow-lg shadow-teal-500/50">
+                            MV
+                          </div>
+                          {/* Small Map Label */}
+                          <div className="absolute bottom-2 left-2 bg-slate-950/80 border border-white/10 px-2 py-0.5 rounded text-[8px] font-bold text-slate-400 tracking-wider">
+                            150m Safety Radius Boundary
+                          </div>
+                        </div>
+
+                        {/* Verified details */}
+                        <div className="grid grid-cols-2 gap-3 text-center">
+                          <div className="bg-white/[0.02] border border-white/5 p-2 rounded-xl">
+                            <span className="text-[8px] font-bold text-slate-500 uppercase block mb-0.5">Clock In time</span>
+                            <span className="text-xs font-bold text-slate-200">08:30:12 AM</span>
+                          </div>
+                          <div className="bg-white/[0.02] border border-white/5 p-2 rounded-xl">
+                            <span className="text-[8px] font-bold text-slate-500 uppercase block mb-0.5">Biometrics Check</span>
+                            <span className="text-xs font-bold text-emerald-400 flex items-center justify-center gap-1">
+                              <ShieldCheck className="h-3 w-3" /> Face Verified
+                            </span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Step 3: Profit Ledger */}
+                    {activeStep === 3 && (
+                      <motion.div
+                        key="step3"
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -15 }}
+                        transition={{ duration: 0.35 }}
+                        className="space-y-4"
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Finance Ledger</span>
+                            <h3 className="text-base font-bold text-slate-100">Project Net Profitability</h3>
+                          </div>
+                          <span className="bg-teal-500 text-slate-950 border border-teal-400 text-[9px] font-bold px-2 py-1 rounded uppercase tracking-wider">Invoice Sent</span>
+                        </div>
+
+                        {/* Revenue vs Cost Grid */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-emerald-500/5 border border-emerald-500/10 p-3 rounded-xl">
+                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Collected Revenue</span>
+                            <span className="text-lg font-black text-emerald-400">$4,800.00</span>
+                          </div>
+                          <div className="bg-red-500/5 border border-red-500/10 p-3 rounded-xl">
+                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Total Actual Costs</span>
+                            <span className="text-lg font-black text-red-400">$1,224.00</span>
+                          </div>
+                        </div>
+
+                        {/* Profit Margin Details */}
+                        <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4 flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider block">Net Income Margin</span>
+                            <span className="text-xl font-black text-teal-400">+$3,576.00 Profit</span>
+                          </div>
+                          <div className="flex flex-col items-end">
+                            <span className="text-[10px] font-bold text-slate-500">Planned Margin: 72%</span>
+                            <span className="text-xs font-black text-emerald-400 flex items-center gap-1">
+                              <TrendingUp className="h-3.5 w-3.5" /> 74.5% Net Margin
+                            </span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+
+                  </AnimatePresence>
+                </div>
+
+                {/* Footer progress bar representing the step transition */}
+                <div className="border-t border-white/5 pt-4 mt-4 flex items-center justify-between text-slate-500 text-[10px] font-semibold">
+                  <div className="flex gap-1.5">
+                    {[0, 1, 2, 3].map((stepIdx) => (
+                      <button
+                        key={stepIdx}
+                        onClick={() => setActiveStep(stepIdx)}
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          activeStep === stepIdx ? "w-6 bg-teal-500" : "w-2 bg-white/10 hover:bg-white/20"
+                        }`}
+                        aria-label={`Go to step ${stepIdx + 1}`}
+                      />
+                    ))}
+                  </div>
+                  <span>Real-Time Database Sync</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        {/* ──── PRODUCT FEATURES (Clay-style stacked blocks) ──── */}
+        <section className="bg-[#faf8f5] py-10 md:py-16">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} className="text-center max-w-3xl mx-auto space-y-4 mb-10 md:mb-12">
+              <motion.h2 variants={fadeUp} custom={0} className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900">
+                One unified workspace for office{" "}
+                <span className="italic text-teal-600">and field operations.</span>
+              </motion.h2>
+              <motion.p variants={fadeUp} custom={1} className="text-slate-500 text-lg leading-relaxed">
+                Experience how FiledCrews connects dispatchers and technicians without the complexity or cost of legacy software.
+              </motion.p>
+            </motion.div>
+
+            <div className="relative">
+              {/* Block 1 — Live GPS Map */}
+              <motion.div 
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.7, ease: "easeOut" }}
+                className="sticky top-[100px] z-10 bg-[#f0fafb] text-slate-900 rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 grid lg:grid-cols-[1fr_1.3fr] gap-8 lg:gap-10 items-center shadow-md border border-teal-100/30 mb-6"
+              >
+                <div className="space-y-5">
+                  {/* Badge Style: Trailing Echoes */}
+                  <div className="relative inline-flex items-center pl-6 select-none">
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-9 rounded-full border border-teal-400/10" />
+                    <span className="absolute left-1.5 top-1/2 -translate-y-1/2 h-5 w-9 rounded-full border border-teal-400/20 bg-teal-400/5" />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-9 rounded-full border border-teal-400/35 bg-teal-400/10" />
+                    <span className="relative z-10 text-[9px] font-extrabold uppercase tracking-[0.2em] text-white bg-gradient-to-r from-teal-600 to-teal-500 px-3.5 py-1 rounded-full ml-4 shadow-[0_2px_8px_rgba(20,184,166,0.3)]">
+                      Real-time tracking
+                    </span>
+                  </div>
+                  <h3 className="text-2xl md:text-[2.5rem] font-extrabold leading-tight text-slate-900">
+                    Live GPS Map{" "}
+                    <span className="italic text-teal-600">Tracking</span>
+                  </h3>
+                  <p className="text-slate-500 leading-relaxed">
+                    Monitor staff locations, view current work status, and dispatch emergency jobs instantly on an interactive, live-updating map view.
+                  </p>
+                  <div className="flex items-center gap-4 pt-2">
+                    <Link to="/wizard">
+                      <Button size="sm" className="text-sm px-5 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-lg shadow-sm">
+                        Get Started Free <ArrowRight className="ml-1.5 h-4 w-4" />
+                      </Button>
+                    </Link>
+                    <button onClick={() => setDemoOpen(true)} className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">Watch the demo</button>
+                  </div>
+                </div>
+                <div className="rounded-2xl overflow-hidden shadow-[0_20px_50px_-12px_rgba(15,118,110,0.12)] border border-stone-200/80 ring-1 ring-slate-900/5">
+                  <img src={heroDashboard} alt="Live GPS Map Dispatching — real-time crew tracking" className="w-full h-auto animate-fade-in" loading="lazy" />
+                </div>
+              </motion.div>
+
+              {/* Block 2 — Smart Geofences (reversed layout) */}
+              <motion.div 
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.7, ease: "easeOut" }}
+                className="sticky top-[130px] z-20 bg-[#fef0f7] text-slate-900 rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 grid lg:grid-cols-[1.3fr_1fr] gap-8 lg:gap-10 items-center shadow-md border border-rose-100/30 mb-6"
+              >
+                <div className="rounded-2xl overflow-hidden shadow-[0_20px_50px_-12px_rgba(15,118,110,0.12)] border border-stone-200/80 ring-1 ring-slate-900/5 order-2 lg:order-1">
+                  <img src={featureGeofence} alt="Smart Geofence Boundaries — automated site compliance" className="w-full h-auto animate-fade-in" loading="lazy" />
+                </div>
+                <div className="space-y-5 order-1 lg:order-2">
+                  {/* Badge Style: Signal Pulse */}
+                  <div className="inline-flex items-center gap-2.5 select-none">
+                    <span className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-60" />
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.5)]" />
+                    </span>
+                    <span className="h-px w-4 bg-gradient-to-r from-rose-400 to-rose-200" />
+                    <span className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-rose-700 bg-rose-50 border border-rose-200/80 px-3 py-1 rounded-full shadow-sm">
+                      Automated compliance
+                    </span>
+                  </div>
+                  <h3 className="text-2xl md:text-[2.5rem] font-extrabold leading-tight text-slate-900">
+                    Smart Geofence{" "}
+                    <span className="italic text-rose-600">Boundaries</span>
+                  </h3>
+                  <p className="text-slate-500 leading-relaxed">
+                    Draw virtual boundaries around customer job locations. Shift entries and exits are audited automatically to verify timesheet accuracy.
+                  </p>
+                  <div className="flex items-center gap-4 pt-2">
+                    <Link to="/wizard">
+                      <Button size="sm" className="text-sm px-5 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg shadow-sm">
+                        Get Started Free <ArrowRight className="ml-1.5 h-4 w-4" />
+                      </Button>
+                    </Link>
+                    <a href="#features" className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">Explore all features</a>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Block 3 — Cost Tracking (dark themed) */}
+              <motion.div 
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.7, ease: "easeOut" }}
+                className="sticky top-[160px] z-30 bg-slate-950 text-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 grid lg:grid-cols-[1fr_1.3fr] gap-8 lg:gap-10 items-center shadow-2xl mb-6"
+              >
+                <div className="space-y-5">
+                  {/* Badge Style: Neon Glow Outline */}
+                  <div className="inline-flex select-none">
+                    <span className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-amber-400 border border-amber-400/50 px-4 py-1 rounded-full shadow-[0_0_12px_rgba(251,191,36,0.2),inset_0_0_12px_rgba(251,191,36,0.06)] backdrop-blur-sm">
+                      Financial control
+                    </span>
+                  </div>
+                  <h3 className="text-2xl md:text-[2.5rem] font-extrabold leading-tight">
+                    Custom Category{" "}
+                    <span className="italic text-teal-400">Cost Ledgers</span>
+                  </h3>
+                  <p className="text-slate-400 leading-relaxed">
+                    Track planned and actual expenses against projects. Create cost categories for Marketing, Foundation, Permits, and Materials with real-time budget progress.
+                  </p>
+                  <div className="flex items-center gap-4 pt-2">
+                    <Link to="/wizard">
+                      <Button size="sm" className="text-sm px-5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-semibold rounded-lg shadow-sm">
+                        Get Started Free <ArrowRight className="ml-1.5 h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+                <div className="space-y-5">
+                  {/* Budget progress mockup */}
+                  {[
+                    { label: "Marketing Campaign", pct: 80, budget: "$5,000", actual: "$4,000" },
+                    { label: "Foundation Work", pct: 45, budget: "$12,000", actual: "$5,400" },
+                    { label: "Building Permits", pct: 100, budget: "$2,200", actual: "$2,200" },
+                  ].map((row) => (
+                    <div key={row.label} className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2.5">
+                      <div className="flex justify-between text-xs font-bold text-slate-300">
+                        <span>{row.label}</span>
+                        <span className={row.pct >= 100 ? "text-emerald-400" : "text-teal-400"}>{row.pct}% Spent</span>
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                        <div className={`h-full rounded-full ${row.pct >= 100 ? "bg-emerald-500" : "bg-teal-500"}`} style={{ width: `${row.pct}%` }} />
+                      </div>
+                      <div className="flex justify-between text-[11px] text-slate-500">
+                        <span>Budget: {row.budget}</span>
+                        <span>Actual: {row.actual}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+
+              {/* Block 4 — Invoicing & Billing */}
+              <motion.div 
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.7, ease: "easeOut" }}
+                className="sticky top-[190px] z-40 bg-[#fdf8f2] text-slate-900 rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 grid lg:grid-cols-[1fr_1.3fr] gap-8 lg:gap-10 items-center shadow-md border border-amber-100/30"
+              >
+                <div className="space-y-5">
+                  {/* Badge Style: Split Chip */}
+                  <div className="inline-flex items-center bg-white border border-stone-200 rounded-full pl-1.5 pr-3.5 py-0.5 shadow-sm select-none">
+                    <span className="h-4 w-4 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 shadow-[0_2px_4px_rgba(245,158,11,0.3)] mr-2 flex items-center justify-center">
+                      <DollarSign className="h-2.5 w-2.5 text-white" />
+                    </span>
+                    <span className="h-3 w-px bg-stone-200 mr-2" />
+                    <span className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-amber-800">
+                      Billing & payments
+                    </span>
+                  </div>
+                  <h3 className="text-2xl md:text-[2.5rem] font-extrabold leading-tight text-slate-900">
+                    Invoices &{" "}
+                    <span className="italic text-teal-600">Profitability Reports</span>
+                  </h3>
+                  <p className="text-slate-500 leading-relaxed">
+                    Convert completed jobs directly to draft invoices, track collection status, and run detailed financial reports showing project net margins.
+                  </p>
+                  <div className="grid grid-cols-3 gap-3 pt-2">
+                    {[
+                      { title: "Total Invoiced", val: "$14,250", color: "text-slate-900" },
+                      { title: "Outstanding", val: "$3,400", color: "text-amber-600" },
+                      { title: "Paid Margin", val: "+74.5%", color: "text-emerald-600" },
+                    ].map((stat) => (
+                      <div key={stat.title} className="rounded-xl bg-white border border-stone-200/80 p-3.5 shadow-sm">
+                        <span className="text-[10px] text-slate-400 font-medium block mb-0.5">{stat.title}</span>
+                        <span className={`text-sm font-bold ${stat.color}`}>{stat.val}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-4 pt-1">
+                    <Link to="/wizard">
+                      <Button size="sm" className="text-sm px-5 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-lg shadow-sm">
+                        Get Started Free <ArrowRight className="ml-1.5 h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+                <div className="rounded-2xl overflow-hidden shadow-[0_20px_50px_-12px_rgba(15,118,110,0.12)] border border-stone-200/80 ring-1 ring-slate-900/5">
+                  <img src={featureStaffList} alt="Staff and crew management — invoices and scheduling" className="w-full h-auto animate-fade-in" loading="lazy" />
+                </div>
+              </motion.div>
+
+              {/* Block 5 — Shifts & Scheduling (reversed layout) */}
+              <motion.div 
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.7, ease: "easeOut" }}
+                className="sticky top-[220px] z-50 bg-[#f5f3ff] text-slate-900 rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 grid lg:grid-cols-[1.3fr_1fr] gap-8 lg:gap-10 items-center shadow-md border border-indigo-100/30 mb-6"
+              >
+                <div className="space-y-4 order-2 lg:order-1 bg-white border border-stone-200/60 rounded-2xl p-5 shadow-sm">
+                  <div className="flex justify-between items-center border-b border-stone-100 pb-3">
+                    <span className="text-xs font-bold text-indigo-700 uppercase">Scheduler Board</span>
+                    <span className="text-[10px] font-semibold text-slate-400">Today • 3 Active Crews</span>
+                  </div>
+                  <div className="space-y-3">
+                    {[
+                      { time: "08:00 AM", task: "Residential HVAC Service", crew: "Marcus Vance", status: "Active", dotColor: "bg-emerald-500" },
+                      { time: "01:00 PM", task: "Permit Inspection", crew: "Sarah Jenkins", status: "Pending", dotColor: "bg-amber-500" },
+                      { time: "03:30 PM", task: "Emergency Pipe Leak", crew: "Alex Mercer", status: "Dispatched", dotColor: "bg-indigo-500" }
+                    ].map((shift, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-stone-50 border border-stone-100 rounded-xl hover:border-indigo-100 transition-colors">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-extrabold text-slate-400">{shift.time}</span>
+                            <span className="text-xs font-bold text-slate-900">{shift.task}</span>
+                          </div>
+                          <span className="text-[10px] text-slate-500 block">Crew: {shift.crew}</span>
+                        </div>
+                        <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-700">
+                          <span className={`h-2.5 w-2.5 rounded-full ${shift.dotColor} ${shift.status === 'Active' ? 'animate-pulse' : ''}`} />
+                          {shift.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-5 order-1 lg:order-2">
+                  {/* Badge Style: Gradient Shimmer */}
+                  <div className="inline-flex select-none">
+                    <span className="relative overflow-hidden text-[9px] font-extrabold uppercase tracking-[0.2em] text-white bg-gradient-to-r from-indigo-600 via-violet-500 to-indigo-600 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] px-4 py-1 rounded-full shadow-[0_2px_10px_rgba(99,102,241,0.35)]">
+                      Dynamic Dispatching
+                    </span>
+                  </div>
+                  <h3 className="text-2xl md:text-[2.5rem] font-extrabold leading-tight text-slate-900">
+                    Crew Shift &{" "}
+                    <span className="italic text-indigo-600">Work Schedules</span>
+                  </h3>
+                  <p className="text-slate-500 leading-relaxed">
+                    Ditch the whiteboard. Drag-and-drop shift blocks, check real-time crew availability, and notify teams instantly on the FiledCrews mobile app about shift updates.
+                  </p>
+                  <div className="flex items-center gap-4 pt-2">
+                    <Link to="/wizard">
+                      <Button size="sm" className="text-sm px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm">
+                        Get Started Free <ArrowRight className="ml-1.5 h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Block 6 — Biometric Attendance Verification */}
+              <motion.div 
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.7, ease: "easeOut" }}
+                className="sticky top-[250px] z-60 bg-[#f0fdf4] text-slate-900 rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 grid lg:grid-cols-[1fr_1.3fr] gap-8 lg:gap-10 items-center shadow-md border border-emerald-100/30"
+              >
+                <div className="space-y-5">
+                  {/* Badge Style: Verified Seal */}
+                  <div className="inline-flex items-center gap-2 select-none">
+                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.15),0_2px_6px_rgba(16,185,129,0.25)]">
+                      <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                    </span>
+                    <span className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-3 py-1 rounded-full">
+                      Attendance Security
+                    </span>
+                  </div>
+                  <h3 className="text-2xl md:text-[2.5rem] font-extrabold leading-tight text-slate-900">
+                    Biometric Face ID{" "}
+                    <span className="italic text-emerald-600">Attendance Audits</span>
+                  </h3>
+                  <p className="text-slate-500 leading-relaxed">
+                    Stop buddy clock-ins and double entry. Technicians clock in on site by taking a quick selfie to confirm coordinate matches and facial bio-identity verification.
+                  </p>
+                  <div className="flex items-center gap-4 pt-2">
+                    <Link to="/wizard">
+                      <Button size="sm" className="text-sm px-5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shadow-sm">
+                        Get Started Free <ArrowRight className="ml-1.5 h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-stone-200/60 bg-white p-5 shadow-sm space-y-4 max-w-sm mx-auto w-full">
+                  <div className="flex items-center gap-2 border-b border-stone-100 pb-3">
+                    <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-xs font-bold text-slate-700">Mobile Check-In Audit</span>
+                  </div>
+                  {/* Viewfinder Mock */}
+                  <div className="relative h-44 bg-slate-950 rounded-xl overflow-hidden border border-stone-100 flex items-center justify-center">
+                    {/* Viewfinder corners */}
+                    <div className="absolute top-4 left-4 h-4 w-4 border-t-2 border-l-2 border-emerald-400 rounded-tl" />
+                    <div className="absolute top-4 right-4 h-4 w-4 border-t-2 border-r-2 border-emerald-400 rounded-tr" />
+                    <div className="absolute bottom-4 left-4 h-4 w-4 border-b-2 border-l-2 border-emerald-400 rounded-bl" />
+                    <div className="absolute bottom-4 right-4 h-4 w-4 border-b-2 border-r-2 border-emerald-400 rounded-br" />
+                    {/* Scan indicator line */}
+                    <div className="absolute inset-x-4 h-0.5 bg-emerald-400/40 top-[40%] animate-bounce" />
+                    {/* Scan text */}
+                    <span className="text-[10px] font-extrabold tracking-widest text-emerald-400 uppercase bg-emerald-950/80 border border-emerald-500/30 px-3 py-1 rounded">Identity Confirmed</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-slate-100 border border-stone-200 flex items-center justify-center text-xs font-bold text-slate-600">MV</div>
+                    <div className="space-y-0.5">
+                      <span className="text-xs font-bold text-slate-900 block">Marcus Vance (HVAC Tech)</span>
+                      <span className="text-[9px] text-slate-500 block">GPS coordinates verified within geofence</span>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
             </div>
           </div>
         </section>
@@ -615,7 +1226,7 @@ export default function LandingPage() {
                 Built for every field service trade
               </motion.h2>
               <motion.p variants={fadeUp} custom={1} className="text-slate-500 max-w-lg mx-auto">
-                Whether you manage a 5-person crew or a 500-person operation, OnSite Crew Manager adapts to your trade.
+                Whether you manage a 5-person crew or a 500-person operation, FiledCrews adapts to your trade.
               </motion.p>
             </motion.div>
           </div>
@@ -695,10 +1306,10 @@ export default function LandingPage() {
         </section>
 
         {/* ──── COMPETITOR COMPARISON GRID (GEO/AEO Focus) ──── */}
-        <section id="compare" className="py-16 md:py-24 bg-white border-b border-stone-100">
+        <section id="compare" className="py-10 md:py-16 bg-white border-b border-stone-100">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <div className="text-center max-w-3xl mx-auto space-y-4 mb-12 md:mb-16">
-              <span className="text-xs font-extrabold uppercase tracking-widest text-teal-600 bg-teal-50 px-3 py-1 rounded-full">Why FiledCrews</span>
+            <div className="text-center max-w-3xl mx-auto space-y-4 mb-8 md:mb-10">
+
               <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900">
                 How we compare to legacy software.
               </h2>
@@ -740,66 +1351,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ──── MULTI-REGIONAL LOCALIZATION & COMPLIANCE ──── */}
-        <section id="regions" className="py-16 md:py-24 bg-stone-50/40 border-b border-stone-100">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <div className="text-center max-w-3xl mx-auto space-y-4 mb-12 md:mb-16">
-              <span className="text-xs font-extrabold uppercase tracking-widest text-teal-600 bg-teal-50 px-3 py-1 rounded-full">Global Presence</span>
-              <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900">
-                Built for compliance. Engineered for ease of use.
-              </h2>
-              <p className="text-slate-500 text-lg leading-relaxed">
-                FiledCrews is localized and compliance-certified, making it the best and easiest to use field service system across major global regions.
-              </p>
-            </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {[
-                {
-                  flag: "🇺🇸",
-                  country: "United States",
-                  badge: "Easiest to Use FSM",
-                  desc: "Supports state-by-state custom tax rules, automated IRS mileage tracking, and real-time crew location compliance mapping.",
-                },
-                {
-                  flag: "🇬🇧",
-                  country: "United Kingdom",
-                  badge: "HMRC Compliant Logs",
-                  desc: "Configure HMRC-aligned shift and worklogs. Automatically calculate UK VAT invoices and exports for easy accounting alignment.",
-                },
-                {
-                  flag: "🇨🇦",
-                  country: "Canada",
-                  badge: "HST/GST/PST Tax Engine",
-                  desc: "Easily handle GST, HST, and PST calculations per province on project cost ledgers and invoices for seamless operations.",
-                },
-                {
-                  flag: "🇦🇺",
-                  country: "Australia",
-                  badge: "ATO Ready Records",
-                  desc: "Perfect for Australian trade contracts with integrated GST reporting templates and ATO compliance check-in records.",
-                },
-                {
-                  flag: "🇪🇺",
-                  country: "European Union",
-                  badge: "GDPR Compliant Audits",
-                  desc: "Fully GDPR compliant background location tracking with strict data isolation, encryption, and local EU VAT billing presets.",
-                },
-              ].map((reg, idx) => (
-                <div key={idx} className="bg-white border border-stone-100 p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 space-y-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-3xl select-none">{reg.flag}</span>
-                    <span className="text-[11px] font-extrabold tracking-widest text-teal-600 bg-teal-50 px-2.5 py-0.5 rounded-full uppercase">{reg.badge}</span>
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="text-lg font-bold text-slate-900">{reg.country}</h3>
-                    <p className="text-sm text-slate-500 leading-relaxed">{reg.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
 
         {/* ──── HOW IT WORKS ──── */}
         <section id="how-it-works" className="relative overflow-hidden py-8 md:py-10 bg-stone-50/50">
@@ -827,109 +1379,176 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ──── MOBILE APP ──── */}
-        <section className="bg-slate-950 py-8 text-white md:py-10">
-          <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:items-center">
-            <div className="space-y-4">
-              <p className="text-sm font-semibold uppercase tracking-widest text-teal-300">Built for accountable operations</p>
-              <h2 className="text-2xl font-extrabold md:text-4xl">Your company controls how field workflows are configured.</h2>
-              <p className="text-slate-300 leading-relaxed">Use worksite boundaries, shift workflows, and optional verification features according to your company policies and local requirements. Give your team clear notice and review exceptions before taking action.</p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {["Company-managed worksite settings", "Role-based office and crew access", "Configurable attendance workflows", "Privacy and account controls"].map((item) => (
-                <div key={item} className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 p-4 text-sm font-medium text-slate-100">
-                  <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-teal-300" /> {item}
+        {/* ──── INTEGRATIONS (Clay-style animated diagram) ──── */}
+        <section className="bg-slate-950 py-16 md:py-24 text-white overflow-hidden relative">
+          {/* Subtle backgrounds */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(15,118,110,0.15),transparent_60%)] pointer-events-none" />
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 relative z-10">
+            <div className="grid lg:grid-cols-[1.1fr_1.3fr] gap-12 lg:gap-20 items-center">
+              <div className="space-y-6">
+                <h2 className="text-3xl md:text-[2.5rem] font-extrabold leading-tight">
+                  Connects seamlessly with{" "}
+                  <span className="italic text-teal-400">your business stack.</span>
+                </h2>
+                <p className="text-slate-400 leading-relaxed">
+                  No isolated data silos. FiledCrews integrates directly with the software you already use to sync financial ledgers, process cards, and alert your crew instantly.
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2 pt-2">
+                  {[
+                    { title: "QuickBooks & Xero", desc: "Sync timesheets & client billing" },
+                    { title: "Stripe Payments", desc: "Accept card payments in the field" },
+                    { title: "Slack & Teams", desc: "Real-time office alerts & logs" },
+                    { title: "Twilio SMS", desc: "Auto-notify clients when crew arrives" },
+                  ].map((int) => (
+                    <div key={int.title} className="rounded-xl border border-white/5 bg-white/[0.03] p-4 space-y-1 hover:border-white/10 transition-colors">
+                      <h4 className="text-sm font-bold text-slate-200 flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-teal-400" />
+                        {int.title}
+                      </h4>
+                      <p className="text-xs text-slate-500">{int.desc}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              {/* Animated Interactive Diagram */}
+              <div className="relative h-[400px] w-full max-w-[400px] mx-auto flex items-center justify-center shrink-0">
+                {/* SVG connection lines */}
+                <svg className="absolute inset-0 h-full w-full pointer-events-none" viewBox="0 0 400 400" fill="none">
+                  {/* QuickBooks line */}
+                  <path d="M 70 70 L 200 200" stroke="rgba(16, 185, 129, 0.4)" strokeWidth="1.5" strokeDasharray="5 5" className="animate-[flow_1.5s_linear_infinite]" />
+                  {/* Stripe line */}
+                  <path d="M 330 70 L 200 200" stroke="rgba(99, 102, 241, 0.4)" strokeWidth="1.5" strokeDasharray="5 5" className="animate-[flow_1.5s_linear_infinite]" />
+                  {/* Slack line */}
+                  <path d="M 70 330 L 200 200" stroke="rgba(236, 72, 153, 0.4)" strokeWidth="1.5" strokeDasharray="5 5" className="animate-[flow_1.5s_linear_infinite]" />
+                  {/* Twilio line */}
+                  <path d="M 330 330 L 200 200" stroke="rgba(239, 68, 68, 0.4)" strokeWidth="1.5" strokeDasharray="5 5" className="animate-[flow_1.5s_linear_infinite]" />
+                </svg>
+
+                {/* Central FiledCrews Orb with brand logo */}
+                <div className="absolute left-[200px] top-[200px] -translate-x-1/2 -translate-y-1/2 z-20 h-20 w-20 rounded-3xl bg-slate-900 border-2 border-teal-500 shadow-[0_0_50px_rgba(13,148,136,0.6)] flex items-center justify-center animate-[pulse_4s_ease-in-out_infinite]">
+                  <img src="/favicon.png" alt="FiledCrews logo" className="h-10 w-10 rounded-xl" />
+                </div>
+
+                {/* Floating Node 1 — QuickBooks */}
+                <div className="absolute left-[70px] top-[70px] -translate-x-1/2 -translate-y-1/2 z-10">
+                  <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-slate-900/90 px-3.5 py-2.5 shadow-lg animate-[float_6s_ease-in-out_infinite] w-[130px]">
+                    <div className="h-6 w-6 rounded-md bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+                      <ClipboardList className="h-3.5 w-3.5" />
+                    </div>
+                    <div>
+                      <div className="text-[11px] font-bold">QuickBooks</div>
+                      <div className="text-[9px] text-slate-500 font-medium">Accounting</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Floating Node 2 — Stripe */}
+                <div className="absolute left-[330px] top-[70px] -translate-x-1/2 -translate-y-1/2 z-10">
+                  <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-slate-900/90 px-3.5 py-2.5 shadow-lg animate-[float_7s_ease-in-out_infinite_1.5s] w-[130px]">
+                    <div className="h-6 w-6 rounded-md bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
+                      <CreditCard className="h-3.5 w-3.5" />
+                    </div>
+                    <div>
+                      <div className="text-[11px] font-bold">Stripe</div>
+                      <div className="text-[9px] text-slate-500 font-medium">Payments</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Floating Node 3 — Slack */}
+                <div className="absolute left-[70px] top-[330px] -translate-x-1/2 -translate-y-1/2 z-10">
+                  <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-slate-900/90 px-3.5 py-2.5 shadow-lg animate-[float_5s_ease-in-out_infinite_0.8s] w-[130px]">
+                    <div className="h-6 w-6 rounded-md bg-pink-500/10 text-pink-400 flex items-center justify-center shrink-0">
+                      <Users className="h-3.5 w-3.5" />
+                    </div>
+                    <div>
+                      <div className="text-[11px] font-bold">Slack</div>
+                      <div className="text-[9px] text-slate-500 font-medium">Alerts</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Floating Node 4 — Twilio */}
+                <div className="absolute left-[330px] top-[330px] -translate-x-1/2 -translate-y-1/2 z-10">
+                  <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-slate-900/90 px-3.5 py-2.5 shadow-lg animate-[float_8s_ease-in-out_infinite_2.2s] w-[130px]">
+                    <div className="h-6 w-6 rounded-md bg-rose-500/10 text-rose-400 flex items-center justify-center shrink-0">
+                      <MessageSquare className="h-3.5 w-3.5" />
+                    </div>
+                    <div>
+                      <div className="text-[11px] font-bold">Twilio</div>
+                      <div className="text-[9px] text-slate-500 font-medium">SMS Dispatch</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        <section id="mobile" className="py-8 md:py-12 bg-teal-600 text-white">
+        {/* ──── MOBILE INFRASTRUCTURE (Clay-style premium visual card) ──── */}
+        <section id="mobile" className="py-10 md:py-16 bg-white border-b border-stone-100">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <div className="grid lg:grid-cols-2 gap-10 items-center">
-              <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="space-y-5">
-                <motion.h2 variants={fadeUp} custom={0} className="text-2xl md:text-4xl font-extrabold">
-                  A mobile app your<br />crew will actually use
-                </motion.h2>
-                <motion.p variants={fadeUp} custom={1} className="text-base text-teal-100 max-w-lg leading-relaxed">
-                  The FiledCrews mobile app is <span className="font-extrabold text-white">coming soon</span> to the Google Play Store. Background location, automatic check-ins, and face verification — all seamless.
-                </motion.p>
-                <motion.div variants={fadeUp} custom={2} className="space-y-2">
-                  {[
-                    "Android APK available now; Google Play listing planned",
-                    "Works on any Android phone or tablet",
-                    "Free, secure install",
-                    "Background GPS, face verification & push notifications",
-                  ].map((t) => (
-                    <div key={t} className="flex items-center gap-3">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-300 shrink-0" />
-                      <span className="text-teal-100 text-sm">{t}</span>
-                    </div>
-                  ))}
-                </motion.div>
-                <motion.div variants={fadeUp} custom={3} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-1">
-                  <a href="/downloads/Ocrem.apk" download>
-                    <Button size="lg" className="text-base gap-2 bg-white text-teal-700 hover:bg-teal-50 font-bold shadow-lg">
-                      <Download className="h-5 w-5" /> Download Android APK
-                    </Button>
+            <div className="bg-[#faf8f5] rounded-[2rem] md:rounded-[3rem] border border-stone-200/60 p-6 md:p-10 space-y-12">
+              
+              {/* Header Grid (2-column layout matching Clay screenshot) */}
+              <div className="grid lg:grid-cols-2 gap-10 items-start">
+                <div className="space-y-4">
+                  <span className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-teal-700">FIELD INFRASTRUCTURE</span>
+                  <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
+                    A mobile app your <span className="italic text-teal-600">crew will actually use</span>
+                  </h2>
+                  <a href="/downloads/Ocrem.apk" download className="inline-flex items-center gap-1.5 text-sm font-semibold text-teal-600 hover:text-teal-700 transition-colors pt-2">
+                    Download Android APK <ArrowRight className="h-4 w-4" />
                   </a>
-                  <div className="inline-block opacity-40 cursor-not-allowed grayscale pointer-events-none" aria-label="Coming soon on Google Play">
-                    <img alt="Get it on Google Play — Coming Soon" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" className="h-14 w-auto" />
-                  </div>
-                </motion.div>
-              </motion.div>
-
-              <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="relative flex justify-center pt-4 pb-10">
-                <div className="absolute inset-0 -z-0 flex items-center justify-center pointer-events-none">
-                  <div className="h-[350px] w-[350px] rounded-full bg-white/5 blur-3xl" />
                 </div>
 
-                <div className="relative z-10 w-full max-w-md">
-                  <div className="rounded-3xl bg-white text-slate-900 p-4 shadow-2xl ring-1 ring-black/5">
-                    <div className="flex items-center gap-3 rounded-full bg-stone-100 px-4 py-2.5 mb-3">
-                      <Search className="h-4 w-4 text-slate-400 shrink-0" />
-                      <div className="text-sm font-medium text-slate-900 truncate">FiledCrews</div>
-                      <span className="ml-auto inline-block h-4 w-px bg-stone-200" />
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-teal-50 text-teal-600 text-[10px] font-bold">O</div>
+                <div className="space-y-6">
+                  <p className="text-slate-500 text-base leading-relaxed">
+                    The FiledCrews mobile app makes field operations completely seamless. Technicians can check in automatically via geofencing, log tasks, and verify their identity with quick biometric Face ID checks.
+                  </p>
+                  
+                  {/* Quote block matching Clay screenshot style */}
+                  <div className="flex items-start gap-4 p-4 rounded-2xl bg-white border border-stone-200/50">
+                    <div className="flex -space-x-1.5 shrink-0 pt-0.5">
+                      <div className="h-5 w-5 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[9px] font-extrabold">H</div>
+                      <div className="h-5 w-5 rounded-full bg-teal-50 border-2 border-white flex items-center justify-center text-[9px] font-extrabold">F</div>
                     </div>
-                    <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Android mobile app preview</div>
-                    <div className="rounded-xl overflow-hidden border border-stone-200 bg-white">
-                      <img src={playStoreListing} alt="FiledCrews on Google Play" className="w-full h-auto block" loading="lazy" />
+                    <p className="text-[11px] text-slate-400 leading-normal">
+                      <strong className="text-slate-800">HVAC Solutions</strong> got a +45% lift in check-in logs accuracy by switching to geofenced shift checklists on day one.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Huge visual display block representing device / app mock */}
+              <div className="bg-white rounded-2xl border border-stone-200/80 p-8 md:p-14 shadow-sm relative overflow-hidden flex flex-col md:flex-row items-center justify-around gap-10">
+                <div className="space-y-4 max-w-sm text-left">
+                  <span className="text-xs font-bold text-teal-600 uppercase tracking-widest">Biometric Check-in</span>
+                  <h4 className="text-xl md:text-2xl font-extrabold text-slate-900">Secure. Accountable. Zero friction.</h4>
+                  <p className="text-slate-400 text-sm leading-relaxed">Technicians get immediate access to assigned work orders, routes, and client histories. Office managers verify shifts automatically without tracking calls or manual corrections.</p>
+                </div>
+                
+                {/* Visual Stack Layout */}
+                <div className="relative w-full max-w-xs shrink-0">
+                  <div className="rounded-3xl bg-[#faf8f5] text-slate-900 p-4 shadow-2xl border border-stone-200/50 relative">
+                    <div className="flex items-center gap-3 rounded-full bg-stone-100 px-4 py-2 mb-3">
+                      <Search className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      <div className="text-xs font-medium text-slate-700 truncate">FiledCrews Mobile</div>
+                      <span className="ml-auto inline-block h-3.5 w-px bg-stone-200" />
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-teal-50 text-teal-600 text-[8px] font-bold">O</div>
                     </div>
-                    <div className="mt-3 flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-3">
-                        <div className="font-semibold text-slate-700">Direct download</div>
-                        <div className="text-slate-400">Free</div>
-                        <div className="text-slate-400">Android</div>
-                      </div>
-                      <div className="inline-flex items-center gap-1.5 rounded-full bg-stone-100 text-slate-400 px-4 py-1.5 font-semibold cursor-not-allowed opacity-60">
-                        <Download className="h-3.5 w-3.5" /> Coming Soon
-                      </div>
+                    <div className="rounded-xl overflow-hidden border border-stone-200/60 bg-white">
+                      <img src={playStoreListing} alt="FiledCrews Mobile app on Google Play Store" className="w-full h-auto block" loading="lazy" />
+                    </div>
+                    <div className="mt-3 flex items-center justify-between text-[11px] text-slate-500">
+                      <span>Android App Preview</span>
+                      <span className="text-teal-600 font-bold">Available Now</span>
                     </div>
                   </div>
-
-                  <motion.div initial={{ opacity: 0, x: -20, y: 10 }} whileInView={{ opacity: 1, x: 0, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3, duration: 0.5 }} className="hidden sm:flex absolute -left-8 -top-6 z-20 items-center gap-3 rounded-2xl bg-white text-slate-900 px-4 py-3 shadow-xl ring-1 ring-black/5">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-50">
-                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-amber-500" aria-hidden><path d="M10 1.5l2.6 5.3 5.9.9-4.3 4.2 1 5.9L10 15l-5.3 2.8 1-5.9L1.5 7.7l5.9-.9z" /></svg>
-                    </div>
-                    <div>
-                      <div className="text-sm font-bold leading-tight">Founder Partner</div>
-                      <div className="text-xs text-slate-400">Guided setup included</div>
-                    </div>
-                  </motion.div>
-
-                  <motion.div initial={{ opacity: 0, x: 20, y: 10 }} whileInView={{ opacity: 1, x: 0, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.45, duration: 0.5 }} className="hidden sm:flex absolute -right-8 -bottom-10 z-20 items-center gap-3 rounded-2xl bg-white text-slate-900 px-4 py-3 shadow-xl ring-1 ring-black/5">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50">
-                      <Smartphone className="h-5 w-5 text-emerald-500" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-bold leading-tight">Any Android</div>
-                      <div className="text-xs text-slate-400">Phone or tablet</div>
-                    </div>
-                  </motion.div>
                 </div>
-              </motion.div>
+              </div>
+
             </div>
           </div>
         </section>
