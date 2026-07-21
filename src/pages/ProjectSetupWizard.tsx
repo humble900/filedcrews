@@ -788,6 +788,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
             website: companyWebsite.trim() || null,
             staff_count: companyStaffCount.trim() || null,
             annual_revenue: companyAnnualRevenue.trim() || null,
+            affiliate_promo_code: localStorage.getItem("filedcrews_affiliate_code") || null,
           })
           .select()
           .single();
@@ -1900,6 +1901,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                             website: companyWebsite.trim() || null,
                             staff_count: companyStaffCount.trim() || null,
                             annual_revenue: companyAnnualRevenue.trim() || null,
+                            affiliate_promo_code: localStorage.getItem("filedcrews_affiliate_code") || null,
                           })
                           .select()
                           .single();

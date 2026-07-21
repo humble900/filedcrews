@@ -100,6 +100,15 @@ const queryClient = new QueryClient({
   },
 });
 
+function ReferralTracker() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("aff") || params.get("ref") || params.get("promo");
+  if (code) {
+    localStorage.setItem("filedcrews_affiliate_code", code.trim());
+  }
+  return null;
+}
+
 const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
@@ -107,8 +116,9 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-        <AuthProvider>
-          <Suspense fallback={<PageSkeleton />}>
+          <ReferralTracker />
+          <AuthProvider>
+            <Suspense fallback={<PageSkeleton />}>
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/auth" element={<Index />} />
