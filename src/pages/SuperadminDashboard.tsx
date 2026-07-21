@@ -48,6 +48,20 @@ import {
   Globe,
   Settings,
   Edit2,
+  DollarSign,
+  MousePointer,
+  TrendingUp,
+  Eye,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Clock,
+  ArrowUpRight,
+  Copy,
+  Check,
+  CalendarDays,
+  AlertTriangle,
+  BarChart3,
 } from "lucide-react";
 import { format } from "date-fns";
 import { Link, Navigate } from "react-router-dom";
@@ -121,6 +135,124 @@ export default function SuperadminDashboard() {
     setEditJobTitle(u.job_title || "");
     setEditGlobalRole(u.global_role || "Field Crew");
     setNewPassword("");
+  };
+
+  // Affiliate States
+  const [affiliateSearch, setAffiliateSearch] = useState("");
+  const [affiliateStatusFilter, setAffiliateStatusFilter] = useState("all");
+  const [selectedAffiliateId, setSelectedAffiliateId] = useState<string | null>(null);
+  const [copiedAffCode, setCopiedAffCode] = useState<string | null>(null);
+  const [affiliatesList, setAffiliatesList] = useState([
+    {
+      id: "1", name: "Sarah Jenkins", email: "sarah@jenkinsco.com", company: "Jenkins HVAC Consulting",
+      code: "JENKINS10", website: "https://jenkinsco.com", status: "pending", manager: "Unassigned",
+      created_at: "2026-07-18T10:00:00Z", commissionRate: 20, avatar: "SJ", avatarBg: "bg-rose-100 text-rose-700",
+      stats: { clicks: 0, referrals: 0, activePaid: 0, totalEarned: 0, pendingPayout: 0, conversionRate: 0 },
+      referredCrews: [] as { name: string; trade: string; date: string; status: string; plan: string; seats: number; commission: string }[],
+    },
+    {
+      id: "2", name: "Marcus Vance", email: "marcus@vanceadvisory.com", company: "Vance Trade Advisory",
+      code: "VANCE20", website: "https://vanceadvisory.com", status: "approved", manager: "Operator Admin",
+      created_at: "2026-07-15T12:30:00Z", commissionRate: 20, avatar: "MV", avatarBg: "bg-indigo-100 text-indigo-700",
+      stats: { clicks: 1248, referrals: 12, activePaid: 8, totalEarned: 4850, pendingPayout: 920, conversionRate: 3.04 },
+      referredCrews: [
+        { name: "Anderson Heating & AC", trade: "HVAC", date: "July 12, 2026", status: "Active Paid", plan: "Growth Plan", seats: 8, commission: "+$85.00/mo" },
+        { name: "Apex Plumbing Solutions", trade: "Plumbing", date: "July 18, 2026", status: "Trial Period", plan: "Starter Plan", seats: 3, commission: "$0.00" },
+        { name: "GreenTech Landscaping", trade: "Landscaping", date: "June 28, 2026", status: "Active Paid", plan: "Growth Plan", seats: 5, commission: "+$54.00/mo" },
+        { name: "Summit HVAC Services", trade: "HVAC", date: "July 19, 2026", status: "Active Paid", plan: "Growth Plan", seats: 12, commission: "+$120.00/mo" },
+        { name: "Rivera Construction Co", trade: "Construction", date: "June 05, 2026", status: "Active Paid", plan: "Pro Plan", seats: 20, commission: "+$190.00/mo" },
+        { name: "Vance Electrical Corp", trade: "Electrical", date: "May 10, 2026", status: "Churned", plan: "Lite Plan", seats: 1, commission: "Voided" },
+        { name: "Blue Wave Plumbing", trade: "Plumbing", date: "July 20, 2026", status: "Pending Setup", plan: "Starter Plan", seats: 2, commission: "$0.00" },
+        { name: "ProFlow Fire & Safety", trade: "Fire Protection", date: "April 22, 2026", status: "Active Paid", plan: "Growth Plan", seats: 6, commission: "+$72.00/mo" },
+      ],
+    },
+    {
+      id: "3", name: "Alex Mercer", email: "alex@mercerplumbing.com", company: "Mercer Contracting Group",
+      code: "MERCER15", website: "https://mercerplumbing.com", status: "pending", manager: "Unassigned",
+      created_at: "2026-07-20T14:45:00Z", commissionRate: 20, avatar: "AM", avatarBg: "bg-emerald-100 text-emerald-700",
+      stats: { clicks: 0, referrals: 0, activePaid: 0, totalEarned: 0, pendingPayout: 0, conversionRate: 0 },
+      referredCrews: [],
+    },
+    {
+      id: "4", name: "David Miller", email: "david@millermedia.com", company: "Miller Marketing Solutions",
+      code: "MILLER5", website: "https://millermedia.com", status: "suspended", manager: "Operator Admin",
+      created_at: "2026-07-10T08:15:00Z", commissionRate: 15, avatar: "DM", avatarBg: "bg-amber-100 text-amber-700",
+      stats: { clicks: 342, referrals: 3, activePaid: 1, totalEarned: 280, pendingPayout: 0, conversionRate: 0.87 },
+      referredCrews: [
+        { name: "Miller Plumbing Co", trade: "Plumbing", date: "June 20, 2026", status: "Active Paid", plan: "Starter Plan", seats: 4, commission: "+$35.00/mo" },
+        { name: "Quick Fix HVAC", trade: "HVAC", date: "June 25, 2026", status: "Churned", plan: "Lite Plan", seats: 2, commission: "Voided" },
+        { name: "Evergreen Landscaping", trade: "Landscaping", date: "July 01, 2026", status: "Trial Period", plan: "Growth Plan", seats: 7, commission: "$0.00" },
+      ],
+    },
+    {
+      id: "5", name: "Linda Torres", email: "linda@torresgroup.com", company: "Torres Trade Consulting",
+      code: "TORRES25", website: "https://torresgroup.com", status: "approved", manager: "Lead Account Manager",
+      created_at: "2026-06-28T09:15:00Z", commissionRate: 20, avatar: "LT", avatarBg: "bg-purple-100 text-purple-700",
+      stats: { clicks: 876, referrals: 6, activePaid: 4, totalEarned: 1920, pendingPayout: 440, conversionRate: 2.16 },
+      referredCrews: [
+        { name: "Torres Electric LLC", trade: "Electrical", date: "July 05, 2026", status: "Active Paid", plan: "Growth Plan", seats: 10, commission: "+$95.00/mo" },
+        { name: "Pacific Plumbing & Gas", trade: "Plumbing", date: "July 08, 2026", status: "Active Paid", plan: "Pro Plan", seats: 15, commission: "+$145.00/mo" },
+        { name: "Sunshine HVAC", trade: "HVAC", date: "July 12, 2026", status: "Trial Period", plan: "Starter Plan", seats: 4, commission: "$0.00" },
+        { name: "Valley Landscaping Inc", trade: "Landscaping", date: "July 14, 2026", status: "Active Paid", plan: "Growth Plan", seats: 8, commission: "+$85.00/mo" },
+      ],
+    },
+  ]);
+
+  const handleApproveAffiliate = (id: string) => {
+    setAffiliatesList((prev) =>
+      prev.map((aff) => (aff.id === id ? { ...aff, status: "approved" } : aff))
+    );
+    toast.success("Affiliate application approved successfully!");
+  };
+
+  const handleReactivateAffiliate = (id: string) => {
+    setAffiliatesList((prev) =>
+      prev.map((aff) => (aff.id === id ? { ...aff, status: "approved" } : aff))
+    );
+    toast.success("Affiliate account reactivated!");
+  };
+
+  const handleSuspendAffiliate = (id: string) => {
+    setAffiliatesList((prev) =>
+      prev.map((aff) => (aff.id === id ? { ...aff, status: "suspended" } : aff))
+    );
+    toast.success("Affiliate account suspended.");
+  };
+
+  const handleAssignManager = (id: string, managerName: string) => {
+    setAffiliatesList((prev) =>
+      prev.map((aff) => (aff.id === id ? { ...aff, manager: managerName } : aff))
+    );
+    toast.success(`Assigned ${managerName} as affiliate manager.`);
+  };
+
+  const handleCopyAffCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedAffCode(code);
+    toast.success(`Referral code "${code}" copied to clipboard`);
+    setTimeout(() => setCopiedAffCode(null), 2000);
+  };
+
+  const selectedAffiliate = affiliatesList.find((a) => a.id === selectedAffiliateId);
+
+  const filteredAffiliates = affiliatesList.filter((aff) => {
+    const matchSearch =
+      aff.name.toLowerCase().includes(affiliateSearch.toLowerCase()) ||
+      aff.company.toLowerCase().includes(affiliateSearch.toLowerCase()) ||
+      aff.code.toLowerCase().includes(affiliateSearch.toLowerCase()) ||
+      aff.email.toLowerCase().includes(affiliateSearch.toLowerCase());
+    const matchStatus = affiliateStatusFilter === "all" || aff.status === affiliateStatusFilter;
+    return matchSearch && matchStatus;
+  });
+
+  const affiliateTotals = {
+    total: affiliatesList.length,
+    pending: affiliatesList.filter((a) => a.status === "pending").length,
+    approved: affiliatesList.filter((a) => a.status === "approved").length,
+    suspended: affiliatesList.filter((a) => a.status === "suspended").length,
+    totalReferrals: affiliatesList.reduce((sum, a) => sum + a.stats.referrals, 0),
+    totalEarnings: affiliatesList.reduce((sum, a) => sum + a.stats.totalEarned, 0),
+    totalPending: affiliatesList.reduce((sum, a) => sum + a.stats.pendingPayout, 0),
   };
 
   // Check if current user is listed in platform_admins
@@ -659,10 +791,11 @@ export default function SuperadminDashboard() {
 
         {/* Superadmin Tab Section */}
         <Tabs defaultValue="tenants" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-[500px] bg-background border border-border/50 shadow-sm">
+          <TabsList className="grid w-full grid-cols-4 max-w-[680px] bg-background border border-border/50 shadow-sm">
             <TabsTrigger value="tenants" className="text-xs font-bold">Companies (Tenants)</TabsTrigger>
             <TabsTrigger value="users" className="text-xs font-bold">Platform Users</TabsTrigger>
             <TabsTrigger value="admins" className="text-xs font-bold">System Admins</TabsTrigger>
+            <TabsTrigger value="affiliates" className="text-xs font-bold">Affiliates & Partners</TabsTrigger>
           </TabsList>
 
           {/* Tenants tab */}
@@ -1038,6 +1171,444 @@ export default function SuperadminDashboard() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Affiliates & Partners Tab */}
+          <TabsContent value="affiliates">
+            <div className="space-y-6">
+
+              {/* ─── Affiliate Program KPI Summary ─── */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { label: "Total Partners", value: affiliateTotals.total, icon: Users, color: "text-blue-500", bg: "bg-blue-500/10" },
+                  { label: "Pending Applications", value: affiliateTotals.pending, icon: Clock, color: "text-amber-500", bg: "bg-amber-500/10" },
+                  { label: "Total Referrals Made", value: affiliateTotals.totalReferrals, icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+                  { label: "Total Commissions Paid", value: `$${affiliateTotals.totalEarnings.toLocaleString()}`, icon: DollarSign, color: "text-purple-500", bg: "bg-purple-500/10" },
+                ].map(({ label, value, icon: Icon, color, bg }) => (
+                  <Card key={label} className="border-border/50 shadow-sm bg-card hover:shadow-md transition-shadow">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider">{label}</CardTitle>
+                      <div className={`p-2 rounded-lg ${bg} ${color}`}>
+                        <Icon className="h-4 w-4" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-black text-foreground">{value}</div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* ─── Affiliate Partner Management Table ─── */}
+              <Card className="border-border/50 shadow-sm">
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 gap-4 border-b">
+                  <div>
+                    <CardTitle className="text-base font-bold flex items-center gap-2">
+                      <Users className="h-5 w-5 text-primary" />
+                      Affiliate & Referral Partner Network
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Review applications, view partner performance, track referrals, manage commissions, and assign managers.
+                    </CardDescription>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                      <Input
+                        placeholder="Search partners..."
+                        value={affiliateSearch}
+                        onChange={(e) => setAffiliateSearch(e.target.value)}
+                        className="pl-9 h-9 text-xs w-full sm:w-56"
+                      />
+                    </div>
+                    <div className="flex gap-1">
+                      {[
+                        { id: "all", label: "All" },
+                        { id: "pending", label: `Pending (${affiliateTotals.pending})` },
+                        { id: "approved", label: "Active" },
+                        { id: "suspended", label: "Suspended" },
+                      ].map((f) => (
+                        <button
+                          key={f.id}
+                          onClick={() => setAffiliateStatusFilter(f.id)}
+                          className={`px-2.5 py-1.5 text-[10px] font-bold rounded-lg whitespace-nowrap transition-all ${
+                            affiliateStatusFilter === f.id
+                              ? "bg-primary text-primary-foreground shadow-sm"
+                              : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                          }`}
+                        >
+                          {f.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="overflow-auto" style={{ maxHeight: "calc(100vh - 480px)", minHeight: "280px" }}>
+                    <Table>
+                      <TableHeader className="bg-muted/30 sticky top-0 z-10">
+                        <TableRow>
+                          <TableHead className="font-bold text-[10px] uppercase tracking-wider pl-5">Partner</TableHead>
+                          <TableHead className="font-bold text-[10px] uppercase tracking-wider">Promo Code</TableHead>
+                          <TableHead className="font-bold text-[10px] uppercase tracking-wider">Status</TableHead>
+                          <TableHead className="font-bold text-[10px] uppercase tracking-wider text-center">Referrals</TableHead>
+                          <TableHead className="font-bold text-[10px] uppercase tracking-wider text-center">Clicks</TableHead>
+                          <TableHead className="font-bold text-[10px] uppercase tracking-wider text-right">Earned</TableHead>
+                          <TableHead className="font-bold text-[10px] uppercase tracking-wider">Manager</TableHead>
+                          <TableHead className="font-bold text-[10px] uppercase tracking-wider text-right pr-5">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredAffiliates.map((aff) => (
+                          <TableRow key={aff.id} className="hover:bg-muted/20 transition-colors group cursor-pointer" onClick={() => setSelectedAffiliateId(aff.id)}>
+                            <TableCell className="pl-5">
+                              <div className="flex items-center gap-3">
+                                <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[10px] font-bold ${aff.avatarBg} group-hover:scale-105 transition-transform`}>
+                                  {aff.avatar}
+                                </span>
+                                <div className="min-w-0">
+                                  <span className="font-bold text-xs text-foreground block truncate max-w-[160px]">{aff.name}</span>
+                                  <span className="text-[10px] text-muted-foreground truncate block max-w-[160px]">{aff.company}</span>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] font-mono font-bold bg-amber-50 text-amber-800 border border-amber-200/50 px-2 py-0.5 rounded">
+                                  {aff.code}
+                                </span>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleCopyAffCode(aff.code); }}
+                                  className="h-5 w-5 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                >
+                                  {copiedAffCode === aff.code ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />}
+                                </button>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {aff.status === "approved" ? (
+                                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[9px] font-bold uppercase tracking-wider">
+                                  Active
+                                </Badge>
+                              ) : aff.status === "pending" ? (
+                                <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-[9px] font-bold uppercase tracking-wider animate-pulse">
+                                  Pending
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-rose-50 text-rose-700 border-rose-200 text-[9px] font-bold uppercase tracking-wider">
+                                  Suspended
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className="inline-flex items-center justify-center h-7 min-w-[28px] px-1 rounded-lg bg-muted/50 border border-border/40 text-xs font-bold text-foreground">
+                                {aff.stats.referrals}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className="text-xs font-semibold text-muted-foreground">{aff.stats.clicks.toLocaleString()}</span>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <span className={`text-xs font-bold ${aff.stats.totalEarned > 0 ? "text-emerald-600" : "text-muted-foreground"}`}>
+                                ${aff.stats.totalEarned.toLocaleString()}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <div className="w-40" onClick={(e) => e.stopPropagation()}>
+                                <Select
+                                  value={aff.manager}
+                                  onValueChange={(val) => handleAssignManager(aff.id, val)}
+                                >
+                                  <SelectTrigger className="h-7 text-[10px] border-stone-200 focus:ring-primary rounded-lg">
+                                    <SelectValue placeholder="Assign..." />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-background border-stone-200">
+                                    <SelectItem value="Unassigned">Unassigned</SelectItem>
+                                    <SelectItem value="Operator Admin">Operator Admin</SelectItem>
+                                    <SelectItem value="Lead Account Manager">Lead Account Manager</SelectItem>
+                                    <SelectItem value="Head of Partnerships">Head of Partnerships</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right pr-5">
+                              <div className="flex justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setSelectedAffiliateId(aff.id)}
+                                  className="h-7 px-2 text-[10px] font-semibold rounded-lg gap-1"
+                                >
+                                  <Eye className="h-3 w-3" /> View
+                                </Button>
+                                {aff.status === "pending" && (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleApproveAffiliate(aff.id)}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-semibold rounded-lg h-7 px-2.5"
+                                  >
+                                    Approve
+                                  </Button>
+                                )}
+                                {aff.status === "approved" && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleSuspendAffiliate(aff.id)}
+                                    className="border-stone-200 text-rose-600 hover:bg-rose-50 text-[10px] font-semibold rounded-lg h-7 px-2.5"
+                                  >
+                                    Suspend
+                                  </Button>
+                                )}
+                                {aff.status === "suspended" && (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleReactivateAffiliate(aff.id)}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-semibold rounded-lg h-7 px-2.5"
+                                  >
+                                    Reactivate
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {filteredAffiliates.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={8} className="text-center py-12">
+                              <div className="space-y-2">
+                                <Users className="h-8 w-8 text-muted-foreground/30 mx-auto" />
+                                <p className="text-sm font-semibold text-muted-foreground">No affiliates match your search</p>
+                                <p className="text-xs text-muted-foreground/60">Try adjusting filters or search terms</p>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <div className="border-t border-border/40 px-5 py-3 flex items-center justify-between bg-muted/20">
+                    <span className="text-[10px] text-muted-foreground font-semibold">
+                      Showing {filteredAffiliates.length} of {affiliatesList.length} partners ·
+                      Total pending payout: <span className="text-amber-600 font-bold">${affiliateTotals.totalPending.toLocaleString()}</span>
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* ─── Affiliate Detail View Dialog ─── */}
+            <Dialog open={!!selectedAffiliateId} onOpenChange={(open) => !open && setSelectedAffiliateId(null)}>
+              <DialogContent className="sm:max-w-3xl bg-background max-h-[90vh] overflow-hidden flex flex-col">
+                {selectedAffiliate && (
+                  <>
+                    <DialogHeader className="pb-4 border-b shrink-0">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${selectedAffiliate.avatarBg}`}>
+                            {selectedAffiliate.avatar}
+                          </span>
+                          <div>
+                            <DialogTitle className="text-base font-bold">{selectedAffiliate.name}</DialogTitle>
+                            <DialogDescription className="text-xs">
+                              {selectedAffiliate.company} · {selectedAffiliate.email}
+                            </DialogDescription>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {selectedAffiliate.status === "approved" ? (
+                            <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-bold uppercase">Active</Badge>
+                          ) : selectedAffiliate.status === "pending" ? (
+                            <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold uppercase">Pending</Badge>
+                          ) : (
+                            <Badge className="bg-rose-50 text-rose-700 border-rose-200 text-[10px] font-bold uppercase">Suspended</Badge>
+                          )}
+                        </div>
+                      </div>
+                    </DialogHeader>
+
+                    <div className="overflow-y-auto flex-1 space-y-5 py-4 pr-1">
+                      {/* Partner Info Row */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div className="bg-muted/30 rounded-xl p-3 space-y-1">
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Promo Code</span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-mono font-bold text-amber-700">{selectedAffiliate.code}</span>
+                            <button onClick={() => handleCopyAffCode(selectedAffiliate.code)} className="text-muted-foreground hover:text-foreground">
+                              {copiedAffCode === selectedAffiliate.code ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="bg-muted/30 rounded-xl p-3 space-y-1">
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Commission Rate</span>
+                          <span className="text-xs font-bold text-foreground block">{selectedAffiliate.commissionRate}%</span>
+                        </div>
+                        <div className="bg-muted/30 rounded-xl p-3 space-y-1">
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Joined</span>
+                          <span className="text-xs font-semibold text-foreground block">{format(new Date(selectedAffiliate.created_at), "MMM dd, yyyy")}</span>
+                        </div>
+                        <div className="bg-muted/30 rounded-xl p-3 space-y-1">
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Website</span>
+                          <a href={selectedAffiliate.website} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-primary flex items-center gap-1 hover:underline truncate">
+                            {selectedAffiliate.website.replace("https://", "")} <ExternalLink className="h-2.5 w-2.5 shrink-0" />
+                          </a>
+                        </div>
+                      </div>
+
+                      {/* Performance KPIs */}
+                      <div>
+                        <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5 mb-3">
+                          <BarChart3 className="h-3.5 w-3.5 text-primary" /> Performance Metrics
+                        </h4>
+                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                          {[
+                            { label: "Clicks", value: selectedAffiliate.stats.clicks.toLocaleString(), icon: MousePointer },
+                            { label: "Referrals", value: selectedAffiliate.stats.referrals, icon: Users },
+                            { label: "Active Paid", value: selectedAffiliate.stats.activePaid, icon: UserCheck },
+                            { label: "Conv. Rate", value: `${selectedAffiliate.stats.conversionRate}%`, icon: TrendingUp },
+                            { label: "Total Earned", value: `$${selectedAffiliate.stats.totalEarned.toLocaleString()}`, icon: DollarSign },
+                            { label: "Pending", value: `$${selectedAffiliate.stats.pendingPayout.toLocaleString()}`, icon: Clock },
+                          ].map(({ label, value, icon: Icon }) => (
+                            <div key={label} className="bg-muted/20 border border-border/40 rounded-xl p-2.5 text-center space-y-1">
+                              <Icon className="h-3.5 w-3.5 text-muted-foreground mx-auto" />
+                              <div className="text-sm font-black text-foreground">{value}</div>
+                              <span className="text-[8px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Referred Crews Table */}
+                      <div>
+                        <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5 mb-3">
+                          <Building2 className="h-3.5 w-3.5 text-primary" /> Referred Crews ({selectedAffiliate.referredCrews.length})
+                        </h4>
+                        {selectedAffiliate.referredCrews.length > 0 ? (
+                          <div className="rounded-xl border border-border/40 overflow-hidden">
+                            <div className="overflow-auto" style={{ maxHeight: "300px" }}>
+                              <Table>
+                                <TableHeader className="bg-muted/30 sticky top-0 z-10">
+                                  <TableRow>
+                                    <TableHead className="text-[9px] font-bold uppercase tracking-wider">Crew Name</TableHead>
+                                    <TableHead className="text-[9px] font-bold uppercase tracking-wider">Trade</TableHead>
+                                    <TableHead className="text-[9px] font-bold uppercase tracking-wider">Date</TableHead>
+                                    <TableHead className="text-[9px] font-bold uppercase tracking-wider">Plan</TableHead>
+                                    <TableHead className="text-[9px] font-bold uppercase tracking-wider text-center">Seats</TableHead>
+                                    <TableHead className="text-[9px] font-bold uppercase tracking-wider">Status</TableHead>
+                                    <TableHead className="text-[9px] font-bold uppercase tracking-wider text-right">Commission</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {selectedAffiliate.referredCrews.map((crew, idx) => (
+                                    <TableRow key={idx} className="hover:bg-muted/10">
+                                      <TableCell className="font-semibold text-xs text-foreground">{crew.name}</TableCell>
+                                      <TableCell>
+                                        <span className="text-[9px] font-semibold bg-muted/50 text-muted-foreground px-1.5 py-0.5 rounded">{crew.trade}</span>
+                                      </TableCell>
+                                      <TableCell className="text-xs text-muted-foreground">{crew.date}</TableCell>
+                                      <TableCell>
+                                        <span className="text-[9px] font-bold text-foreground">{crew.plan}</span>
+                                      </TableCell>
+                                      <TableCell className="text-center">
+                                        <span className="inline-flex items-center justify-center h-5 w-5 rounded bg-muted/50 text-[9px] font-bold">{crew.seats}</span>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge className={`text-[8px] font-bold uppercase tracking-wider ${
+                                          crew.status === "Active Paid" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                                          crew.status === "Trial Period" ? "bg-indigo-50 text-indigo-700 border-indigo-200" :
+                                          crew.status === "Pending Setup" ? "bg-amber-50 text-amber-700 border-amber-200" :
+                                          "bg-rose-50 text-rose-600 border-rose-200"
+                                        }`}>
+                                          {crew.status}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        <span className={`text-xs font-bold ${
+                                          crew.commission.startsWith("+") ? "text-emerald-600" :
+                                          crew.commission === "Voided" ? "text-rose-400 line-through" :
+                                          "text-muted-foreground"
+                                        }`}>
+                                          {crew.commission}
+                                        </span>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="border border-border/40 rounded-xl py-8 text-center">
+                            <Users className="h-6 w-6 text-muted-foreground/30 mx-auto mb-2" />
+                            <p className="text-xs font-semibold text-muted-foreground">No referrals yet</p>
+                            <p className="text-[10px] text-muted-foreground/60">{selectedAffiliate.status === "pending" ? "This partner's application hasn't been approved yet" : "This partner hasn't made any referrals"}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Management Actions */}
+                      <div className="border-t border-border/40 pt-4">
+                        <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5 mb-3">
+                          <Settings className="h-3.5 w-3.5 text-primary" /> Management Controls
+                        </h4>
+                        <div className="grid sm:grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Assigned Manager</label>
+                            <Select
+                              value={selectedAffiliate.manager}
+                              onValueChange={(val) => handleAssignManager(selectedAffiliate.id, val)}
+                            >
+                              <SelectTrigger className="h-9 text-xs">
+                                <SelectValue placeholder="Assign manager..." />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background">
+                                <SelectItem value="Unassigned">Unassigned</SelectItem>
+                                <SelectItem value="Operator Admin">Operator Admin</SelectItem>
+                                <SelectItem value="Lead Account Manager">Lead Account Manager</SelectItem>
+                                <SelectItem value="Head of Partnerships">Head of Partnerships</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Partner Status</label>
+                            <div className="flex gap-2">
+                              {selectedAffiliate.status !== "approved" && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => { handleApproveAffiliate(selectedAffiliate.id); }}
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg flex-1 h-9"
+                                >
+                                  <UserCheck className="h-3.5 w-3.5 mr-1" /> Approve
+                                </Button>
+                              )}
+                              {selectedAffiliate.status === "approved" && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => { handleSuspendAffiliate(selectedAffiliate.id); }}
+                                  className="border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-semibold rounded-lg flex-1 h-9"
+                                >
+                                  <AlertTriangle className="h-3.5 w-3.5 mr-1" /> Suspend
+                                </Button>
+                              )}
+                              {selectedAffiliate.status === "suspended" && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => { handleReactivateAffiliate(selectedAffiliate.id); }}
+                                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg flex-1 h-9"
+                                >
+                                  <UserCheck className="h-3.5 w-3.5 mr-1" /> Reactivate
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </DialogContent>
+            </Dialog>
           </TabsContent>
         </Tabs>
       </main>

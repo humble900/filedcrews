@@ -207,6 +207,13 @@ const marqueeCSS = `
 }
 .marquee-track { will-change: transform; }
 .marquee-wrap:hover .marquee-track { animation-play-state: paused; }
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
   .marquee-track { animation: none !important; transform: none !important; }
@@ -461,10 +468,16 @@ export default function LandingPage() {
           <InteractiveMoon mouseX={mx} mouseY={my} top="50%" left="1%" size={130} color="rgba(20, 184, 166, 0.18)" delay={1.2} />
           <InteractiveMoon mouseX={mx} mouseY={my} top="25%" left="93%" size={80} color="rgba(245, 158, 11, 0.15)" delay={2.5} />
 
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 pt-6 pb-12 md:pt-10 md:pb-16 lg:pt-12 lg:pb-20">
-            <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-16 items-center">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 pt-6 pb-12 md:pt-10 md:pb-16 lg:pt-12 lg:pb-20 overflow-hidden">
+            {/* Horizontal touch scroll wrapper on mobile, standard grid on desktop */}
+            <div className="flex flex-row overflow-x-auto snap-x snap-mandatory scrollbar-none gap-8 pb-6 lg:grid lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:items-center lg:overflow-visible lg:pb-0">
+              
               {/* Left Column: Text & CTAs */}
-              <motion.div initial="hidden" animate="visible" className="space-y-8">
+              <motion.div 
+                initial="hidden" 
+                animate="visible" 
+                className="space-y-8 w-[88vw] sm:w-[80vw] md:w-[70vw] shrink-0 snap-start lg:w-auto lg:shrink-0 lg:snap-align-none"
+              >
                 <motion.div variants={fadeUp} custom={0} className="space-y-5">
                   <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.1] tracking-tight text-slate-900">
                     The simplest way to run<br />
@@ -505,7 +518,7 @@ export default function LandingPage() {
                 initial={{ opacity: 0, x: 40 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.7, delay: 0.2 }}
-                className="relative"
+                className="relative w-[88vw] sm:w-[80vw] md:w-[70vw] shrink-0 snap-start lg:w-auto lg:shrink-0 lg:snap-align-none"
               >
                 <div className="rounded-2xl overflow-hidden shadow-[0_24px_60px_-15px_rgba(15,118,110,0.12)] border border-stone-200/80 ring-1 ring-slate-900/5">
                   <img src={heroDashboard} alt="FiledCrews FSM admin dashboard live map view" width={1920} height={1080} className="w-full h-auto" />
@@ -1613,8 +1626,9 @@ export default function LandingPage() {
                 <img src="/favicon.png" alt="FiledCrews" className="h-6 w-6 rounded-md" />
                 <span className="font-semibold text-slate-900">FiledCrews</span>
               </div>
-              <nav className="flex flex-wrap justify-center gap-x-4 sm:gap-x-6 gap-y-2 text-sm text-slate-500">
+              <nav className="flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-2 text-sm text-slate-500">
                 <Link to="/about" className="hover:text-slate-900 transition-colors">About</Link>
+                <Link to="/affiliates" className="hover:text-teal-700 hover:border-teal-300 text-teal-600 bg-teal-50/80 px-2.5 py-0.5 rounded-full border border-teal-200/50 transition-all font-semibold text-xs uppercase tracking-wider">Partner Program</Link>
                 <Link to="/privacy" className="hover:text-slate-900 transition-colors">Privacy Policy</Link>
                 <Link to="/terms" className="hover:text-slate-900 transition-colors">Terms of Service</Link>
                 <Link to="/support" className="hover:text-slate-900 transition-colors">Support</Link>

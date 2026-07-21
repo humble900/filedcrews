@@ -44,6 +44,7 @@ const CompliancePage = lazy(() => import("./pages/CompliancePage"));
 const PortalPage = lazy(() => import("./pages/PortalPage"));
 const OnlineBookingPage = lazy(() => import("./pages/OnlineBookingPage"));
 const InventoryPage = lazy(() => import("./pages/InventoryPage"));
+const AffiliatePortal = lazy(() => import("./pages/AffiliatePortal"));
 
 // ─── Page loading skeleton ─────────────────────────────────────────
 function PageSkeleton() {
@@ -202,6 +203,7 @@ const App = () => (
               <Route path="/pay/:invoiceId" element={<PublicPayPage />} />
               <Route path="/portal" element={<PortalPage />} />
               <Route path="/book/:prefix" element={<OnlineBookingPage />} />
+              <Route path="/affiliates" element={<AffiliatePortal />} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>
