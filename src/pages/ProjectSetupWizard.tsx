@@ -269,7 +269,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
   const computePrefix = (name: string) => {
     const clean = name.toUpperCase().replace(/[^A-Z]/g, "");
-    return clean.slice(0, 5) || "ONST";
+    return clean.slice(0, 3).padEnd(3, "X");
   };
 
   const applyVerticalPresets = (val: string) => {
@@ -678,8 +678,8 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
           toast.error("Company Name is required");
           return false;
         }
-        if (companyPrefix.length !== 5 || !/^[A-Z]{5}$/.test(companyPrefix)) {
-          toast.error("Prefix must be exactly 5 letters (A-Z)");
+        if (companyPrefix.length !== 3 || !/^[A-Z]{3}$/.test(companyPrefix)) {
+          toast.error("Prefix must be exactly 3 letters (A-Z)");
           return false;
         }
         return true;
@@ -765,11 +765,22 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
       if (existingComp) {
         activeCompanyId = existingComp.id;
       } else {
+        const prefixToUse = companyPrefix.toUpperCase();
+        const { data: existingPrefixComp } = await supabase
+          .from("companies")
+          .select("id")
+          .eq("prefix", prefixToUse)
+          .maybeSingle();
+
+        if (existingPrefixComp) {
+          throw new Error(`The prefix "${prefixToUse}" is already in use by another company. Please change your company prefix.`);
+        }
+
         const { data: comp, error: compErr } = await supabase
           .from("companies")
           .insert({
             name: companyName.trim(),
-            prefix: companyPrefix.toUpperCase(),
+            prefix: prefixToUse,
             auth_user_id: userId,
             currency: currencyCode,
             industry: companyVertical,
@@ -1824,6 +1835,20 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
                       setSaving(true);
                       try {
+                        // 0. Verify the prefix is unique before creating the account!
+                        const prefixToUse = companyPrefix.toUpperCase();
+                        const { data: existingPrefixComp } = await supabase
+                          .from("companies")
+                          .select("id")
+                          .eq("prefix", prefixToUse)
+                          .maybeSingle();
+
+                        if (existingPrefixComp) {
+                          toast.error(`The prefix "${prefixToUse}" is already in use by another company. Please go back and change your company name slightly.`);
+                          setSaving(false);
+                          return;
+                        }
+
                         // 1. Sign up the user account
                         const { data: authData, error: authErr } = await supabase.auth.signUp({
                           email: adminEmail.trim(),
