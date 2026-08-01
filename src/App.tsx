@@ -5,17 +5,18 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Loader2 } from "lucide-react";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./hooks/useAuth";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
-// ─── Eagerly loaded (small, always-needed) ─────────────────────────
+// ─── Eagerly loaded (instant render, no loading fallbacks) ───────────
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import LandingPage from "./pages/LandingPage";
+import HomePage from "./pages/HomePage";
 
-// ─── Lazy loaded (large pages, loaded on demand) ───────────────────
-const HomePage = lazy(() => import("./pages/HomePage"));
+// ─── Lazy loaded (large secondary pages, loaded on demand) ─────────
 const FaceVerification = lazy(() => import("./pages/FaceVerification"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
@@ -36,7 +37,6 @@ const ReportsPage = lazy(() => import("./pages/ReportsPage"));
 const ProjectSetupWizard = lazy(() => import("./pages/ProjectSetupWizard"));
 const ProjectDetailWorkspace = lazy(() => import("./pages/ProjectDetailWorkspace"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
-const LandingPage = lazy(() => import("./pages/LandingPage"));
 const PublicApprovalPage = lazy(() => import("./pages/PublicApprovalPage"));
 const PublicPayPage = lazy(() => import("./pages/PublicPayPage"));
 const TimesheetsPage = lazy(() => import("./pages/TimesheetsPage"));
@@ -54,45 +54,14 @@ const AIAgentPage = lazy(() => import("./pages/AIAgentPage"));
 const ActionInboxPage = lazy(() => import("./pages/ActionInboxPage"));
 const KnowledgeBasePage = lazy(() => import("./pages/KnowledgeBasePage"));
 
-// ─── Page loading skeleton ─────────────────────────────────────────
+// ─── Page loading fallback ─────────────────────────────────────────
 function PageSkeleton() {
   return (
-    <div className="min-h-screen bg-background p-6 space-y-6 animate-in fade-in duration-300">
-      {/* Header skeleton */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-64 rounded-lg" />
-          <Skeleton className="h-4 w-96 rounded-md" />
-        </div>
-        <div className="flex gap-2">
-          <Skeleton className="h-10 w-32 rounded-lg" />
-          <Skeleton className="h-10 w-10 rounded-lg" />
-        </div>
-      </div>
-      {/* KPI cards skeleton */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="border border-border/40 rounded-xl p-4 space-y-3 bg-card/50">
-            <Skeleton className="h-3 w-20 rounded" />
-            <Skeleton className="h-7 w-28 rounded-md" />
-            <Skeleton className="h-2 w-16 rounded" />
-          </div>
-        ))}
-      </div>
-      {/* Table skeleton */}
-      <div className="border border-border/40 rounded-xl overflow-hidden bg-card/50">
-        <div className="p-4 border-b border-border/30">
-          <Skeleton className="h-5 w-40 rounded-md" />
-        </div>
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-4 px-4 py-3 border-b border-border/20 last:border-b-0">
-            <Skeleton className="h-4 w-4 rounded" />
-            <Skeleton className="h-4 flex-1 max-w-48 rounded" />
-            <Skeleton className="h-4 w-24 rounded" />
-            <Skeleton className="h-6 w-20 rounded-full" />
-            <Skeleton className="h-4 w-16 rounded" />
-          </div>
-        ))}
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-3 animate-in fade-in duration-200">
+      <img src="/favicon.png" alt="FiledCrews" className="h-10 w-10 animate-pulse rounded-lg shadow-sm" />
+      <div className="flex items-center gap-2 text-slate-400 text-sm font-medium">
+        <Loader2 className="h-4 w-4 animate-spin text-teal-600" />
+        <span>Loading...</span>
       </div>
     </div>
   );

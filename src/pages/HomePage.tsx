@@ -83,21 +83,23 @@ const HomePage = () => {
     [geofenceEditing]
   );
 
-  // Not logged in → render landing page immediately
-  if (!user && !loading) {
+  // Check if there is any Supabase session in localStorage
+  const hasStoredSession = typeof window !== 'undefined' && Object.keys(localStorage).some(key => key.includes("sb-") && key.includes("-auth-token"));
+
+  // Not logged in (or no stored session) → render LandingPage instantly without any loading screen delay
+  if (!user && !hasStoredSession) {
     return <LandingPage />;
   }
 
-  // Check if there is any Supabase session in localStorage
-  const hasStoredSession = typeof window !== 'undefined' && Object.keys(localStorage).some(key => key.includes("sb-") && key.includes("-auth-token"));
-  if (!user && !hasStoredSession) {
+  if (!user && !loading) {
     return <LandingPage />;
   }
 
   if (loading || (user && loadingAdmin)) {
     return (
-      <div className="min-h-screen bg-[#070b14] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-3">
+        <img src="/favicon.png" alt="FiledCrews" className="h-10 w-10 animate-pulse rounded-lg shadow-sm" />
+        <Loader2 className="h-5 w-5 animate-spin text-teal-600" />
       </div>
     );
   }

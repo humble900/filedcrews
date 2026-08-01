@@ -65,6 +65,11 @@ export default defineConfig(({ mode }) => ({
     })
   ].filter(Boolean),
   build: {
+    target: 'es2022',
+    cssCodeSplit: true,
+    cssMinify: true,
+    assetsInlineLimit: 4096,
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -80,6 +85,12 @@ export default defineConfig(({ mode }) => ({
             }
             if (id.includes("framer-motion")) {
               return "vendor-motion";
+            }
+            if (id.includes("@tanstack") || id.includes("@radix-ui")) {
+              return "vendor-ui";
+            }
+            if (id.includes("@supabase")) {
+              return "vendor-supabase";
             }
           }
         }
