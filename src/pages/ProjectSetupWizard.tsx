@@ -709,11 +709,15 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
           }
           return true;
         }
-        // Sub-step 2: Project Specifications
-        if (!projectName.trim()) {
-          toast.error("Project Title is required");
-          return false;
+        if (subStep === 2) {
+          // Sub-step 2: Project Specifications
+          if (!projectName.trim()) {
+            toast.error("Project Title is required");
+            return false;
+          }
+          return true;
         }
+        // Sub-step 3: Planned Budgets & Cost Categories (Optional)
         return true;
       case 3:
         if (!geofenceName.trim()) {
@@ -763,20 +767,30 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
   const handleNext = () => {
     if (validateStep()) {
-      if (step === 2 && subStep === 1) {
-        // Move from Client Info sub-step to Project Specs sub-step
-        setSubStep(2);
+      if (step === 2) {
+        if (subStep === 1) {
+          setSubStep(2);
+        } else if (subStep === 2) {
+          setSubStep(3);
+        } else {
+          setSubStep(1);
+          setStep(3);
+        }
       } else {
-        if (step === 2) setSubStep(1); // Reset sub-step when leaving step 2
         setStep((prev) => prev + 1);
       }
     }
   };
 
   const handleBack = () => {
-    if (step === 2 && subStep === 2) {
-      // Go back from Project Specs to Client Info
-      setSubStep(1);
+    if (step === 2) {
+      if (subStep === 3) {
+        setSubStep(2);
+      } else if (subStep === 2) {
+        setSubStep(1);
+      } else {
+        setStep(1);
+      }
     } else {
       setStep((prev) => prev - 1);
     }
@@ -2644,14 +2658,14 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                   <div className="space-y-2.5 mb-2">
                     <div className="flex justify-end items-center text-xs font-black font-mono text-amber-500 tracking-wider">
                       <span>
-                        {Math.min(100, Math.round((((step + (step === 2 && subStep === 2 ? 0.5 : 0)) - (wizardMode === "new-project" ? 1 : 0)) / (wizardMode === "new-project" ? 5 : 6)) * 100))}% COMPLETE
+                        {Math.min(100, Math.round((((step + (step === 2 ? (subStep === 2 ? 0.33 : subStep === 3 ? 0.67 : 0) : 0)) - (wizardMode === "new-project" ? 1 : 0)) / (wizardMode === "new-project" ? 5 : 6)) * 100))}% COMPLETE
                       </span>
                     </div>
                     <div className="h-2 w-full bg-slate-100 rounded-full border border-amber-500/20 p-0.5 overflow-hidden shadow-inner">
                       <div
                         className="h-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-400 rounded-full transition-all duration-500 ease-out shadow-[0_0_12px_rgba(249,115,22,0.85)]"
                         style={{
-                          width: `${Math.min(100, Math.round((((step + (step === 2 && subStep === 2 ? 0.5 : 0)) - (wizardMode === "new-project" ? 1 : 0)) / (wizardMode === "new-project" ? 5 : 6)) * 100))}%`
+                          width: `${Math.min(100, Math.round((((step + (step === 2 ? (subStep === 2 ? 0.33 : subStep === 3 ? 0.67 : 0) : 0)) - (wizardMode === "new-project" ? 1 : 0)) / (wizardMode === "new-project" ? 5 : 6)) * 100))}%`
                         }}
                       />
                     </div>
@@ -2679,9 +2693,18 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
                   {step === 2 && subStep === 2 && (
                     <div className="space-y-2 pt-2">
-                      <CardTitle className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Project Specifications & Budget</CardTitle>
+                      <CardTitle className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Project Specifications</CardTitle>
                       <CardDescription className="text-slate-600 text-sm leading-relaxed">
-                        Define the job site title, contract value, and budget allocations for this project.
+                        Enter your project site title, contract value, dates, and work scope details.
+                      </CardDescription>
+                    </div>
+                  )}
+
+                  {step === 2 && subStep === 3 && (
+                    <div className="space-y-2 pt-2">
+                      <CardTitle className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Planned Budgets & Cost Categories</CardTitle>
+                      <CardDescription className="text-slate-600 text-sm leading-relaxed">
+                        Configure planned budgets for specific cost categories (e.g. Marketing, Foundation, Materials, Transportation) during this project setup.
                       </CardDescription>
                     </div>
                   )}
@@ -2723,354 +2746,344 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                 </CardHeader>
 
                 <CardContent className="pt-6 space-y-6">
-                  {/* STEP 2: Customer & Project Form */}
-                  {step === 2 && (
-                    <div className="space-y-6">
-                      {/* Section A: Customer Details */}
-                      <div className="space-y-4 border-b border-slate-300/40 pb-4">
-                        <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider">Client Information</h4>
+                  {/* STEP 2 - SUBSTEP 1: Client Information */}
+                  {step === 2 && subStep === 1 && (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="customer-name" className="text-sm font-semibold text-slate-700">Client / Customer Name</Label>
+                        <Input
+                          id="customer-name"
+                          placeholder="e.g. Chevron Nigeria Limited"
+                          value={customerName}
+                          onChange={(e) => {
+                            setCustomerName(e.target.value);
+                            saveSandboxProgress({ customerName: e.target.value });
+                          }}
+                          className="bg-slate-50 border-slate-300 text-slate-900"
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="customer-name" className="text-sm font-semibold text-slate-700">Client / Customer Name</Label>
+                          <Label htmlFor="customer-email" className="text-sm font-semibold text-slate-700">Client Email (Optional)</Label>
                           <Input
-                            id="customer-name"
-                            placeholder="e.g. Chevron Nigeria Limited"
-                            value={customerName}
+                            id="customer-email"
+                            type="email"
+                            placeholder="e.g. contact@client.com"
+                            value={customerEmail}
                             onChange={(e) => {
-                              setCustomerName(e.target.value);
-                              saveSandboxProgress({ customerName: e.target.value });
+                              setCustomerEmail(e.target.value);
+                              saveSandboxProgress({ customerEmail: e.target.value });
                             }}
                             className="bg-slate-50 border-slate-300 text-slate-900"
                           />
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="customer-email" className="text-sm font-semibold text-slate-700">Client Email (Optional)</Label>
+                        <div className="space-y-2">
+                          <Label htmlFor="customer-phone" className="text-sm font-semibold text-slate-700">Client Phone (Optional)</Label>
+                          <div className="flex gap-2">
+                            <div className="flex items-center bg-slate-50 border border-slate-300 rounded-md pl-1.5 pr-0.5 w-[82px] shrink-0 focus-within:ring-2 focus-within:ring-blue-500">
+                              <span className="mr-0.5 select-none text-base">{getFlagFromDialCode(phoneDialCode)}</span>
+                              <Input
+                                type="text"
+                                placeholder="+1"
+                                value={phoneDialCode}
+                                onChange={(e) => {
+                                  let val = e.target.value;
+                                  if (val.length > 0 && !val.startsWith("+")) {
+                                    val = "+" + val.replace(/[^0-9]/g, "");
+                                  } else {
+                                    val = "+" + val.slice(1).replace(/[^0-9]/g, "");
+                                  }
+                                  setPhoneDialCode(val);
+                                  saveSandboxProgress({ phoneDialCode: val });
+                                }}
+                                className="bg-transparent border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-slate-900 font-mono text-xs w-full"
+                              />
+                              <Popover open={phoneOpen} onOpenChange={setPhoneOpen}>
+                                <PopoverTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-5 w-5 text-slate-500 hover:text-slate-900 p-0 shrink-0">
+                                    <ChevronDown className="h-3 w-3" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[280px] p-0 bg-white border-slate-300 text-slate-900">
+                                  <Command className="bg-transparent text-slate-900">
+                                    <CommandInput placeholder="Search country or code..." className="border-0 focus:ring-0 text-slate-900 bg-slate-50" />
+                                    <CommandEmpty className="py-2 text-center text-xs text-slate-500">No country found.</CommandEmpty>
+                                    <CommandGroup>
+                                      <CommandList className="max-h-[220px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                                        {countriesList.map((c) => (
+                                          <CommandItem
+                                            key={c.code}
+                                            value={c.name + " " + c.dial_code}
+                                            onSelect={() => {
+                                              setPhoneDialCode(c.dial_code);
+                                              setPhoneOpen(false);
+                                              saveSandboxProgress({ phoneDialCode: c.dial_code });
+                                            }}
+                                            className="hover:bg-[#1f355c] cursor-pointer py-2 px-3 text-xs flex justify-between items-center"
+                                          >
+                                            <span className="flex items-center gap-2">
+                                              <span>{c.flag}</span>
+                                              <span className="text-slate-700 font-sans truncate max-w-[120px]">{c.name}</span>
+                                            </span>
+                                            <span className="font-mono text-slate-500 font-semibold">{c.dial_code}</span>
+                                          </CommandItem>
+                                        ))}
+                                      </CommandList>
+                                    </CommandGroup>
+                                  </Command>
+                                </PopoverContent>
+                              </Popover>
+                            </div>
                             <Input
-                              id="customer-email"
-                              type="email"
-                              placeholder="e.g. contact@client.com"
-                              value={customerEmail}
+                              id="customer-phone"
+                              type="tel"
+                              placeholder="e.g. 803 123 4567"
+                              value={customerPhone}
                               onChange={(e) => {
-                                setCustomerEmail(e.target.value);
-                                saveSandboxProgress({ customerEmail: e.target.value });
+                                setCustomerPhone(e.target.value);
+                                saveSandboxProgress({ customerPhone: e.target.value });
                               }}
-                              className="bg-slate-50 border-slate-300 text-slate-900"
+                              className="bg-slate-50 border-slate-300 text-slate-900 flex-1"
                             />
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="customer-phone" className="text-sm font-semibold text-slate-700">Client Phone (Optional)</Label>
-                            <div className="flex gap-2">
-                              <div className="flex items-center bg-slate-50 border border-slate-300 rounded-md pl-1.5 pr-0.5 w-[82px] shrink-0 focus-within:ring-2 focus-within:ring-blue-500">
-                                <span className="mr-0.5 select-none text-base">{getFlagFromDialCode(phoneDialCode)}</span>
-                                <Input
-                                  type="text"
-                                  placeholder="+1"
-                                  value={phoneDialCode}
-                                  onChange={(e) => {
-                                    let val = e.target.value;
-                                    if (val.length > 0 && !val.startsWith("+")) {
-                                      val = "+" + val.replace(/[^0-9]/g, "");
-                                    } else {
-                                      val = "+" + val.slice(1).replace(/[^0-9]/g, "");
-                                    }
-                                    setPhoneDialCode(val);
-                                    saveSandboxProgress({ phoneDialCode: val });
-                                  }}
-                                  className="bg-transparent border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-slate-900 font-mono text-xs w-full"
-                                />
-                                <Popover open={phoneOpen} onOpenChange={setPhoneOpen}>
-                                  <PopoverTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-5 w-5 text-slate-500 hover:text-slate-900 p-0 shrink-0">
-                                      <ChevronDown className="h-3 w-3" />
-                                    </Button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-[280px] p-0 bg-white border-slate-300 text-slate-900">
-                                    <Command className="bg-transparent text-slate-900">
-                                      <CommandInput placeholder="Search country or code..." className="border-0 focus:ring-0 text-slate-900 bg-slate-50" />
-                                      <CommandEmpty className="py-2 text-center text-xs text-slate-500">No country found.</CommandEmpty>
-                                      <CommandGroup>
-                                        <CommandList className="max-h-[220px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                                          {countriesList.map((c) => (
-                                            <CommandItem
-                                              key={c.code}
-                                              value={c.name + " " + c.dial_code}
-                                              onSelect={() => {
-                                                setPhoneDialCode(c.dial_code);
-                                                setPhoneOpen(false);
-                                                saveSandboxProgress({ phoneDialCode: c.dial_code });
-                                              }}
-                                              className="hover:bg-[#1f355c] cursor-pointer py-2 px-3 text-xs flex justify-between items-center"
-                                            >
-                                              <span className="flex items-center gap-2">
-                                                <span>{c.flag}</span>
-                                                <span className="text-slate-700 font-sans truncate max-w-[120px]">{c.name}</span>
-                                              </span>
-                                              <span className="font-mono text-slate-500 font-semibold">{c.dial_code}</span>
-                                            </CommandItem>
-                                          ))}
-                                        </CommandList>
-                                      </CommandGroup>
-                                    </Command>
-                                  </PopoverContent>
-                                </Popover>
-                              </div>
-                              <Input
-                                id="customer-phone"
-                                type="tel"
-                                placeholder="e.g. 803 123 4567"
-                                value={customerPhone}
-                                onChange={(e) => {
-                                  setCustomerPhone(e.target.value);
-                                  saveSandboxProgress({ customerPhone: e.target.value });
-                                }}
-                                className="bg-slate-50 border-slate-300 text-slate-900 flex-1"
-                              />
-                            </div>
-                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="customer-address" className="text-sm font-semibold text-slate-700">Billing Address (Optional)</Label>
-                          <Input
-                            id="customer-address"
-                            ref={addressInputRef}
-                            placeholder="e.g. 123 Corporate Way, Lagos"
-                            value={customerBillingAddress}
-                            onChange={(e) => {
-                              setCustomerBillingAddress(e.target.value);
-                              saveSandboxProgress({ customerBillingAddress: e.target.value });
-                            }}
-                            className="bg-slate-50 border-slate-300 text-slate-900"
-                          />
-                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="customer-address" className="text-sm font-semibold text-slate-700">Billing Address (Optional)</Label>
+                        <Input
+                          id="customer-address"
+                          ref={addressInputRef}
+                          placeholder="e.g. 123 Corporate Way, Lagos"
+                          value={customerBillingAddress}
+                          onChange={(e) => {
+                            setCustomerBillingAddress(e.target.value);
+                            saveSandboxProgress({ customerBillingAddress: e.target.value });
+                          }}
+                          className="bg-slate-50 border-slate-300 text-slate-900"
+                        />
                       </div>
                     </div>
                   )}
 
-                  {/* STEP 2 - SUBSTEP 2: Project Specifications & Budget */}
+                  {/* STEP 2 - SUBSTEP 2: Project Specifications */}
                   {step === 2 && subStep === 2 && (
-                    <div className="space-y-6">
-                        <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider">Project Specifications</h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                          <div className="sm:col-span-2 space-y-2">
-                            <Label htmlFor="project-name" className="text-sm font-semibold text-slate-700">Project / Site Name</Label>
-                            <Input
-                              id="project-name"
-                              placeholder="e.g. Escravos Refinery Expansion"
-                              value={projectName}
-                              onChange={(e) => {
-                                setProjectName(e.target.value);
-                                saveSandboxProgress({ projectName: e.target.value });
-                              }}
-                              className="bg-slate-50 border-slate-300 text-slate-900"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="project-status" className="text-sm font-semibold text-slate-700">Project Status</Label>
-                            <Select
-                              value={projectStatus}
-                              onValueChange={(val) => {
-                                setProjectStatus(val);
-                                saveSandboxProgress({ projectStatus: val });
-                              }}
-                            >
-                              <SelectTrigger className="bg-slate-50 border-slate-300 text-slate-900">
-                                <SelectValue placeholder="Planning" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-slate-50 border-slate-300 text-slate-900">
-                                <SelectItem value="Planning" className="focus:bg-white focus:text-slate-900">Planning</SelectItem>
-                                <SelectItem value="Active" className="focus:bg-white focus:text-slate-900">Active</SelectItem>
-                                <SelectItem value="Completed" className="focus:bg-white focus:text-slate-900">Completed</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="contract-value" className="text-sm font-semibold text-slate-700">Contract Value ({getCurrencySymbol(currencyCode)})</Label>
-                            <Input
-                              id="contract-value"
-                              type="number"
-                              min="0"
-                              placeholder="0"
-                              value={contractValue}
-                              onChange={(e) => {
-                                setContractValue(e.target.value);
-                                saveSandboxProgress({ contractValue: e.target.value });
-                              }}
-                              className="bg-slate-50 border-slate-300 text-slate-900"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="labour-budget" className="text-sm font-semibold text-slate-700">Labor Budget Cost ({getCurrencySymbol(currencyCode)})</Label>
-                            <Input
-                              id="labour-budget"
-                              type="number"
-                              min="0"
-                              placeholder="0"
-                              value={budgetLabourCost}
-                              onChange={(e) => {
-                                setBudgetLabourCost(e.target.value);
-                                saveSandboxProgress({ budgetLabourCost: e.target.value });
-                              }}
-                              className="bg-slate-50 border-slate-300 text-slate-900"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="project-start-date" className="text-sm font-semibold text-slate-700">Project Start Date</Label>
-                            <div className="relative">
-                              <Calendar className="absolute left-3 top-3 h-4 w-4 text-slate-500 pointer-events-none" />
-                              <Input
-                                id="project-start-date"
-                                type="date"
-                                value={projectStartDate}
-                                onClick={(e) => {
-                                  try {
-                                    e.currentTarget.showPicker();
-                                  } catch (err) {
-                                    console.warn("showPicker is not supported", err);
-                                  }
-                                }}
-                                onChange={(e) => {
-                                  setProjectStartDate(e.target.value);
-                                  saveSandboxProgress({ projectStartDate: e.target.value });
-                                }}
-                                className="bg-slate-50 border-slate-300 text-slate-900 pl-10 cursor-pointer w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                              />
-                            </div>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="project-end-date" className="text-sm font-semibold text-slate-700">Project End Date</Label>
-                            <div className="relative">
-                              <Calendar className="absolute left-3 top-3 h-4 w-4 text-slate-500 pointer-events-none" />
-                              <Input
-                                id="project-end-date"
-                                type="date"
-                                value={projectEndDate}
-                                onClick={(e) => {
-                                  try {
-                                    e.currentTarget.showPicker();
-                                  } catch (err) {
-                                    console.warn("showPicker is not supported", err);
-                                  }
-                                }}
-                                onChange={(e) => {
-                                  setProjectEndDate(e.target.value);
-                                  saveSandboxProgress({ projectEndDate: e.target.value });
-                                }}
-                                className="bg-slate-50 border-slate-300 text-slate-900 pl-10 cursor-pointer w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="project-desc" className="text-sm font-semibold text-slate-700">Project Description (Optional)</Label>
-                          <Textarea
-                            id="project-desc"
-                            placeholder="Provide details about the work scope, safety compliance notes, etc."
-                            value={projectDescription}
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="sm:col-span-2 space-y-2">
+                          <Label htmlFor="project-name" className="text-sm font-semibold text-slate-700">Project / Site Name</Label>
+                          <Input
+                            id="project-name"
+                            placeholder="e.g. Escravos Refinery Expansion"
+                            value={projectName}
                             onChange={(e) => {
-                              setProjectDescription(e.target.value);
-                              saveSandboxProgress({ projectDescription: e.target.value });
+                              setProjectName(e.target.value);
+                              saveSandboxProgress({ projectName: e.target.value });
                             }}
-                            rows={2}
-                            className="bg-slate-50 border-slate-300 text-slate-900 focus:ring-indigo-600 focus:border-indigo-600"
+                            className="bg-slate-50 border-slate-300 text-slate-900"
                           />
                         </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="project-status" className="text-sm font-semibold text-slate-700">Project Status</Label>
+                          <Select
+                            value={projectStatus}
+                            onValueChange={(val) => {
+                              setProjectStatus(val);
+                              saveSandboxProgress({ projectStatus: val });
+                            }}
+                          >
+                            <SelectTrigger className="bg-slate-50 border-slate-300 text-slate-900">
+                              <SelectValue placeholder="Planning" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-slate-50 border-slate-300 text-slate-900">
+                              <SelectItem value="Planning" className="focus:bg-white focus:text-slate-900">Planning</SelectItem>
+                              <SelectItem value="Active" className="focus:bg-white focus:text-slate-900">Active</SelectItem>
+                              <SelectItem value="Completed" className="focus:bg-white focus:text-slate-900">Completed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
 
-                        {/* Custom Cost Categories & Budgets */}
-                        <div className="space-y-4 pt-4 border-t border-slate-300/40">
-                          <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
-                            <TrendingUp className="h-4 w-4 text-blue-400" /> Planned Budgets & Cost Categories
-                          </h4>
-                          <p className="text-[11px] text-slate-500 leading-relaxed">
-                            Configure planned budgets for specific cost categories (e.g. Marketing, Foundation, Materials, Transportation) during this project setup.
-                          </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="contract-value" className="text-sm font-semibold text-slate-700">Contract Value ({getCurrencySymbol(currencyCode)})</Label>
+                          <Input
+                            id="contract-value"
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                            value={contractValue}
+                            onChange={(e) => {
+                              setContractValue(e.target.value);
+                              saveSandboxProgress({ contractValue: e.target.value });
+                            }}
+                            className="bg-slate-50 border-slate-300 text-slate-900"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="labour-budget" className="text-sm font-semibold text-slate-700">Labor Budget Cost ({getCurrencySymbol(currencyCode)})</Label>
+                          <Input
+                            id="labour-budget"
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                            value={budgetLabourCost}
+                            onChange={(e) => {
+                              setBudgetLabourCost(e.target.value);
+                              saveSandboxProgress({ budgetLabourCost: e.target.value });
+                            }}
+                            className="bg-slate-50 border-slate-300 text-slate-900"
+                          />
+                        </div>
+                      </div>
 
-                          {wizardPlannedCosts.length > 0 && (
-                            <div className="space-y-2 max-h-48 overflow-y-auto">
-                              {wizardPlannedCosts.map((item, idx) => (
-                                <div key={idx} className="flex items-center justify-between text-xs p-2.5 rounded bg-[#070b13] border border-slate-200">
-                                  <div className="flex items-center gap-2">
-                                    <Badge className="bg-white text-blue-300 border-none text-[9px] font-mono uppercase">
-                                      {item.category}
-                                    </Badge>
-                                    <span className="font-semibold text-slate-800">{item.title}</span>
-                                  </div>
-                                  <div className="flex items-center gap-3">
-                                    <span className="font-mono font-bold text-slate-700">
-                                      ${item.budget_amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                                    </span>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-6 w-6 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 shrink-0"
-                                      onClick={() => {
-                                        setWizardPlannedCosts(prev => prev.filter((_, i) => i !== idx));
-                                      }}
-                                    >
-                                      <X className="h-3.5 w-3.5" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Quick Add Form Row */}
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="project-start-date" className="text-sm font-semibold text-slate-700">Project Start Date</Label>
+                          <div className="relative">
+                            <Calendar className="absolute left-3 top-3 h-4 w-4 text-slate-500 pointer-events-none" />
                             <Input
-                              placeholder="Category (e.g. Marketing)"
-                              value={newWizardCostCategory}
-                              onChange={(e) => setNewWizardCostCategory(e.target.value)}
-                              className="h-9 text-xs bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-500 focus-visible:ring-blue-500"
+                              id="project-start-date"
+                              type="date"
+                              value={projectStartDate}
+                              onClick={(e) => {
+                                try {
+                                  e.currentTarget.showPicker();
+                                } catch (err) {
+                                  console.warn("showPicker is not supported", err);
+                                }
+                              }}
+                              onChange={(e) => {
+                                setProjectStartDate(e.target.value);
+                                saveSandboxProgress({ projectStartDate: e.target.value });
+                              }}
+                              className="bg-slate-50 border-slate-300 text-slate-900 pl-10 cursor-pointer w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                             />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="project-end-date" className="text-sm font-semibold text-slate-700">Project End Date</Label>
+                          <div className="relative">
+                            <Calendar className="absolute left-3 top-3 h-4 w-4 text-slate-500 pointer-events-none" />
                             <Input
-                              placeholder="Description (e.g. Ad Campaign)"
-                              value={newWizardCostTitle}
-                              onChange={(e) => setNewWizardCostTitle(e.target.value)}
-                              className="h-9 text-xs bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-500 focus-visible:ring-blue-500"
+                              id="project-end-date"
+                              type="date"
+                              value={projectEndDate}
+                              onClick={(e) => {
+                                try {
+                                  e.currentTarget.showPicker();
+                                } catch (err) {
+                                  console.warn("showPicker is not supported", err);
+                                }
+                              }}
+                              onChange={(e) => {
+                                setProjectEndDate(e.target.value);
+                                saveSandboxProgress({ projectEndDate: e.target.value });
+                              }}
+                              className="bg-slate-50 border-slate-300 text-slate-900 pl-10 cursor-pointer w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                             />
-                            <div className="flex gap-2">
-                              <Input
-                                type="number"
-                                placeholder="Budget ($)"
-                                value={newWizardCostBudget}
-                                onChange={(e) => setNewWizardCostBudget(e.target.value)}
-                                className="h-9 text-xs bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-500 focus-visible:ring-blue-500 flex-1"
-                              />
-                              <Button
-                                type="button"
-                                onClick={() => {
-                                  if (!newWizardCostCategory.trim() || !newWizardCostTitle.trim()) {
-                                    toast.error("Category and description are required.");
-                                    return;
-                                  }
-                                  setWizardPlannedCosts(prev => [
-                                    ...prev,
-                                    {
-                                      category: newWizardCostCategory.trim(),
-                                      title: newWizardCostTitle.trim(),
-                                      budget_amount: Number(newWizardCostBudget) || 0.0,
-                                    }
-                                  ]);
-                                  setNewWizardCostCategory("");
-                                  setNewWizardCostTitle("");
-                                  setNewWizardCostBudget("");
-                                }}
-                                className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 shrink-0 rounded-md"
-                              >
-                                Add
-                              </Button>
-                            </div>
                           </div>
                         </div>
                       </div>
-                    )}
+
+                      <div className="space-y-2">
+                        <Label htmlFor="project-desc" className="text-sm font-semibold text-slate-700">Project Description (Optional)</Label>
+                        <Textarea
+                          id="project-desc"
+                          placeholder="Provide details about the work scope, safety compliance notes, etc."
+                          value={projectDescription}
+                          onChange={(e) => {
+                            setProjectDescription(e.target.value);
+                            saveSandboxProgress({ projectDescription: e.target.value });
+                          }}
+                          rows={2}
+                          className="bg-slate-50 border-slate-300 text-slate-900 focus:ring-indigo-600 focus:border-indigo-600"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STEP 2 - SUBSTEP 3: Planned Budgets & Cost Categories */}
+                  {step === 2 && subStep === 3 && (
+                    <div className="space-y-4">
+                      {wizardPlannedCosts.length > 0 && (
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {wizardPlannedCosts.map((item, idx) => (
+                            <div key={idx} className="flex items-center justify-between text-xs p-2.5 rounded bg-slate-100 border border-slate-200">
+                              <div className="flex items-center gap-2">
+                                <Badge className="bg-slate-800 text-white border-none text-[9px] font-mono uppercase">
+                                  {item.category}
+                                </Badge>
+                                <span className="font-semibold text-slate-800">{item.title}</span>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className="font-mono font-bold text-slate-700">
+                                  ${item.budget_amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                                </span>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-rose-500 hover:text-rose-700 hover:bg-rose-100 shrink-0"
+                                  onClick={() => {
+                                    setWizardPlannedCosts(prev => prev.filter((_, i) => i !== idx));
+                                  }}
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Quick Add Form Row */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <Input
+                          placeholder="Category (e.g. Marketing)"
+                          value={newWizardCostCategory}
+                          onChange={(e) => setNewWizardCostCategory(e.target.value)}
+                          className="h-9 text-xs bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-500 focus-visible:ring-blue-500"
+                        />
+                        <Input
+                          placeholder="Description (e.g. Ad Campaign)"
+                          value={newWizardCostTitle}
+                          onChange={(e) => setNewWizardCostTitle(e.target.value)}
+                          className="h-9 text-xs bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-500 focus-visible:ring-blue-500"
+                        />
+                        <div className="flex gap-2">
+                          <Input
+                            type="number"
+                            placeholder="Budget ($)"
+                            value={newWizardCostBudget}
+                            onChange={(e) => setNewWizardCostBudget(e.target.value)}
+                            className="h-9 text-xs bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-500 focus-visible:ring-blue-500 flex-1"
+                          />
+                          <Button
+                            type="button"
+                            onClick={() => {
+                              if (!newWizardCostCategory.trim() || !newWizardCostTitle.trim()) {
+                                toast.error("Category and description are required.");
+                                return;
+                              }
+                              setWizardPlannedCosts(prev => [
+                                ...prev,
+                                {
+                                  category: newWizardCostCategory.trim(),
+                                  title: newWizardCostTitle.trim(),
+                                  budget_amount: Number(newWizardCostBudget) || 0.0,
+                                }
+                              ]);
+                              setNewWizardCostCategory("");
+                              setNewWizardCostTitle("");
+                              setNewWizardCostBudget("");
+                            }}
+                            className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 shrink-0 rounded-md"
+                          >
+                            Add
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* STEP 3: Worksite Coordinates Form */}
                   {step === 3 && (
