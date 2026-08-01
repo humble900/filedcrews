@@ -272,8 +272,8 @@ export default function SettingsPage() {
   // ─── Computed ───
   const activeAdmins = staffList.filter((s: any) => ["Admin", "Finance", "Dispatcher"].includes(s.global_role)).length;
   const activeFieldCrew = staffList.filter((s: any) => s.global_role === "Field Crew").length;
-  const maxAdmins = company?.max_admin_seats ?? 3;
-  const maxFieldCrew = company?.max_field_crew_seats ?? 10;
+  const maxAdmins = company?.max_admin_seats ?? (isFoundingPartner ? 5 : (company?.subscription_tier === "growth" ? 3 : 1));
+  const maxFieldCrew = company?.max_field_crew_seats ?? (isFoundingPartner ? 15 : (company?.subscription_tier === "growth" ? 7 : 2));
   const isFoundingPartner = company?.subscription_tier === "Founding Partner";
   const adminPercent = Math.min((activeAdmins / maxAdmins) * 100, 100);
   const fieldPercent = Math.min((activeFieldCrew / maxFieldCrew) * 100, 100);
@@ -558,13 +558,14 @@ export default function SettingsPage() {
     {
       id: "launch" as const,
       name: "Free Trial",
+      titleGradient: "from-emerald-400 via-teal-400 to-emerald-500 drop-shadow-[0_2px_8px_rgba(16,185,129,0.45)]",
       price: "$0",
       period: "/ 14 days",
       description: "14 days full access for new business accounts — set up your team and explore all platform features.",
       specs: [
-        "👤 1 Office Staff (Account Creator)",
-        "👷 2 Field Crew Members",
-        "⏳ 14 Days Trial Duration"
+        "1 Office Staff (Account Creator)",
+        "2 Field Crew Members",
+        "14 Days Trial Duration"
       ],
       features: [
         "Run unlimited projects with Worksite Map",
@@ -577,13 +578,13 @@ export default function SettingsPage() {
     {
       id: "growth" as const,
       name: "Growth",
+      titleGradient: "from-amber-400 via-orange-500 to-amber-500 drop-shadow-[0_2px_8px_rgba(245,158,11,0.45)]",
       price: "$495",
       period: "/mo",
       description: "Supercharge your company with 10 total seats, AI dispatching, and safety hub compliance.",
       specs: [
-        "👤 3 Office Staff",
-        "👷 7 Field Crew Members",
-        "👥 10 Total Seats Included"
+        "3 Office Staff",
+        "7 Field Crew Members"
       ],
       features: [
         "Everything in Free Trial plus...",
@@ -597,13 +598,14 @@ export default function SettingsPage() {
     {
       id: "enterprise" as const,
       name: "Founding Partner",
+      titleGradient: "from-purple-400 via-indigo-500 to-purple-500 drop-shadow-[0_2px_8px_rgba(168,85,247,0.45)]",
       price: "$2,899",
       period: "/yr",
       description: "VIP annual charter for growing enterprises with custom seats and direct roadmap co-design.",
       specs: [
-        "⚡ Custom Office Seats",
-        "👷 Custom Field Crew Seats",
-        "👑 VIP Charter Co-Design"
+        "Custom Office Seats",
+        "Custom Field Crew Seats",
+        "VIP Charter Co-Design"
       ],
       features: [
         "Everything in Growth plus...",
@@ -732,7 +734,7 @@ export default function SettingsPage() {
                       </div>
                     </div>
 
-                    <h3 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 drop-shadow-[0_2px_8px_rgba(245,158,11,0.45)] dark:drop-shadow-[0_2px_12px_rgba(245,158,11,0.6)]">
+                    <h3 className={cn("text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r", p.titleGradient)}>
                       {p.name}
                     </h3>
                     <div className="flex items-baseline gap-1 mt-2 mb-3">
@@ -744,10 +746,11 @@ export default function SettingsPage() {
                       {p.description}
                     </p>
 
-                    {/* Spec Pill Dropdown Visuals */}
+                    {/* Specs Clean List (No inner frames, no emojis) */}
                     <div className="space-y-2 mb-6">
                       {p.specs.map((spec, i) => (
-                        <div key={i} className="flex items-center justify-between px-3 py-2 rounded-lg border border-border/50 bg-muted/40 text-xs font-medium text-foreground">
+                        <div key={i} className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
                           <span>{spec}</span>
                         </div>
                       ))}

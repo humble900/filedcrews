@@ -69,7 +69,7 @@ export default function AIAgentPricingPage() {
           {/* Free Trial Card */}
           <Card className="relative border-slate-200 p-6 flex flex-col justify-between">
             <CardHeader className="p-0 mb-4">
-              <CardTitle className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 drop-shadow-[0_2px_8px_rgba(245,158,11,0.4)]">
+              <CardTitle className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 drop-shadow-[0_2px_8px_rgba(16,185,129,0.4)]">
                 Free Trial
               </CardTitle>
               <CardDescription className="mt-2">
@@ -115,7 +115,6 @@ export default function AIAgentPricingPage() {
                 {[
                   "3 Office Staff",
                   "7 Field Crew Members",
-                  "10 Total Seats Included",
                   "AI Agent Autonomous Dispatcher",
                   "Safety Hub & Compliance"
                 ].map((feature, i) => (
@@ -139,7 +138,7 @@ export default function AIAgentPricingPage() {
           {/* Founding Partner Card */}
           <Card className="relative border-slate-200 p-6 flex flex-col justify-between">
             <CardHeader className="p-0 mb-4">
-              <CardTitle className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 drop-shadow-[0_2px_8px_rgba(245,158,11,0.4)]">
+              <CardTitle className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-indigo-500 to-purple-500 drop-shadow-[0_2px_8px_rgba(168,85,247,0.4)]">
                 Founding Partner
               </CardTitle>
               <CardDescription className="mt-2">

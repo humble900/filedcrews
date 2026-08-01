@@ -838,6 +838,8 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
             website: companyWebsite.trim() || null,
             staff_count: companyStaffCount.trim() || null,
             annual_revenue: companyAnnualRevenue.trim() || null,
+            max_admin_seats: 1,
+            max_field_crew_seats: 2,
           })
           .select()
           .single();
@@ -1412,10 +1414,10 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl w-full">
               
               {/* Plan 1: 14-Day Free Trial */}
-              <div className="bg-white rounded-2xl border-2 border-slate-200 hover:border-amber-500/60 p-6 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
+              <div className="bg-white rounded-2xl border-2 border-slate-200 hover:border-emerald-500/60 p-6 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
                 <div className="space-y-4">
                   <div>
-                    <h2 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 drop-shadow-[0_2px_8px_rgba(245,158,11,0.4)]">
+                    <h2 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 drop-shadow-[0_2px_8px_rgba(16,185,129,0.4)]">
                       Free Trial
                     </h2>
                     <div className="text-3xl font-black text-slate-900 mt-2">
@@ -1455,7 +1457,9 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                       if (comp) {
                         await (supabase as any).from("companies").update({
                           subscription_tier: "free_trial",
-                          subscription_status: "trialing"
+                          subscription_status: "trialing",
+                          max_admin_seats: 1,
+                          max_field_crew_seats: 2
                         }).eq("id", comp.id);
                       }
                     }
@@ -1496,10 +1500,6 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                      <span><strong>10 Total Seats Included</strong></span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
                       <span>AI Dispatcher & Safety Hub</span>
                     </li>
                   </ul>
@@ -1514,7 +1514,9 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                       if (comp) {
                         await (supabase as any).from("companies").update({
                           subscription_tier: "growth",
-                          subscription_status: "pending_activation"
+                          subscription_status: "pending_activation",
+                          max_admin_seats: 3,
+                          max_field_crew_seats: 7
                         }).eq("id", comp.id);
                       }
                     }
@@ -1528,10 +1530,10 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
               </div>
 
               {/* Plan 3: Founding Partner Program */}
-              <div className="bg-white rounded-2xl border-2 border-slate-200 hover:border-amber-500/60 p-6 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
+              <div className="bg-white rounded-2xl border-2 border-slate-200 hover:border-purple-500/60 p-6 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
                 <div className="space-y-4">
                   <div>
-                    <h2 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 drop-shadow-[0_2px_8px_rgba(245,158,11,0.4)]">
+                    <h2 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-indigo-500 to-purple-500 drop-shadow-[0_2px_8px_rgba(168,85,247,0.4)]">
                       Founding Partner
                     </h2>
                     <div className="text-3xl font-black text-slate-900 mt-2">
