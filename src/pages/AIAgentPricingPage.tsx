@@ -67,72 +67,69 @@ export default function AIAgentPricingPage() {
         
         <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
           {/* Free Trial Card */}
-          <Card className="relative opacity-75 border-slate-200">
-            <CardHeader>
-              <div className="flex justify-between items-center mb-2">
-                <CardTitle className="text-xl">14-Day Free Trial</CardTitle>
-                {subscriptionTier === "free_trial" && (
-                  <Badge variant="secondary">Current Plan</Badge>
-                )}
-              </div>
-              <CardDescription>
-                <span className="text-3xl font-bold text-slate-900">$0</span>
-                <span className="text-slate-500 ml-1">/ 14 days</span>
+          <Card className="relative border-slate-200 p-6 flex flex-col justify-between">
+            <CardHeader className="p-0 mb-4">
+              <CardTitle className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 drop-shadow-[0_2px_8px_rgba(245,158,11,0.4)]">
+                Free Trial
+              </CardTitle>
+              <CardDescription className="mt-2">
+                <span className="text-3xl font-black text-slate-900">$0</span>
+                <span className="text-slate-500 ml-1 font-medium">/ 14 days</span>
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <ul className="space-y-3">
+            <CardContent className="p-0 mb-6">
+              <ul className="space-y-3 text-xs">
                 {[
-                  "5 Field Crew Seats",
-                  "Live GPS",
-                  "Timesheets",
-                  "Job Checklists"
+                  "1 Office Staff (Account Creator)",
+                  "2 Field Crew Members",
+                  "14 Days Full Access",
+                  "GPS Map & Checklists"
                 ].map((feature, i) => (
-                  <li key={i} className="flex items-center text-slate-600">
-                    <CheckCircle2 className="w-5 h-5 mr-3 text-slate-400" />
+                  <li key={i} className="flex items-center text-slate-700">
+                    <CheckCircle2 className="w-4 h-4 mr-2.5 text-emerald-500 shrink-0" />
                     <span>{feature}</span>
                   </li>
                 ))}
               </ul>
             </CardContent>
-            <CardFooter>
-              <Button variant="outline" className="w-full" disabled>
-                Your Current Plan
+            <CardFooter className="p-0">
+              <Button variant="outline" className="w-full text-xs font-semibold" disabled>
+                {subscriptionTier === "free_trial" ? "Your Current Plan" : "Included in Trial"}
               </Button>
             </CardFooter>
           </Card>
           
           {/* Growth Plan Card */}
-          <Card className="relative border-emerald-500 shadow-sm border-2">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
-              <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white border-0">AI Agent Included</Badge>
-            </div>
-            <CardHeader className="pt-8">
-              <CardTitle className="text-xl mb-2">Growth Plan</CardTitle>
-              <CardDescription>
-                <span className="text-3xl font-bold text-slate-900">$29</span>
-                <span className="text-slate-500 ml-1">/ seat / mo</span>
+          <Card className="relative border-amber-500/50 shadow-md border-2 p-6 flex flex-col justify-between">
+            <CardHeader className="p-0 mb-4">
+              <CardTitle className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 drop-shadow-[0_2px_8px_rgba(245,158,11,0.4)]">
+                Growth
+              </CardTitle>
+              <CardDescription className="mt-2">
+                <span className="text-3xl font-black text-slate-900">$495</span>
+                <span className="text-slate-500 ml-1 font-medium">/ mo</span>
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <ul className="space-y-3">
+            <CardContent className="p-0 mb-6">
+              <ul className="space-y-3 text-xs">
                 {[
-                  "Unlimited Crew Seats",
-                  "Dispatch & Quote Engine",
-                  "Client Portal",
-                  "AI Agent Add-on"
+                  "3 Office Staff",
+                  "7 Field Crew Members",
+                  "10 Total Seats Included",
+                  "AI Agent Autonomous Dispatcher",
+                  "Safety Hub & Compliance"
                 ].map((feature, i) => (
                   <li key={i} className="flex items-center text-slate-700">
-                    <CheckCircle2 className="w-5 h-5 mr-3 text-emerald-500" />
-                    <span className={feature === "AI Agent Add-on" ? "font-medium" : ""}>{feature}</span>
+                    <CheckCircle2 className="w-4 h-4 mr-2.5 text-emerald-500 shrink-0" />
+                    <span className={feature.includes("AI Agent") ? "font-bold text-slate-900" : ""}>{feature}</span>
                   </li>
                 ))}
               </ul>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="p-0">
               <Button 
                 onClick={handleGrowthUpgrade}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="w-full bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold"
               >
                 Activate via WhatsApp →
               </Button>
@@ -140,36 +137,36 @@ export default function AIAgentPricingPage() {
           </Card>
           
           {/* Founding Partner Card */}
-          <Card className="relative border-slate-200">
-            <CardHeader>
-              <div className="flex justify-between items-center mb-2">
-                <CardTitle className="text-xl">Founding Partner</CardTitle>
-                <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-0">AI Agent Included</Badge>
-              </div>
-              <CardDescription>
-                <span className="text-2xl font-bold text-slate-900">Yearly Charter</span>
-                <span className="text-slate-500 ml-1">/ annual</span>
+          <Card className="relative border-slate-200 p-6 flex flex-col justify-between">
+            <CardHeader className="p-0 mb-4">
+              <CardTitle className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 drop-shadow-[0_2px_8px_rgba(245,158,11,0.4)]">
+                Founding Partner
+              </CardTitle>
+              <CardDescription className="mt-2">
+                <span className="text-3xl font-black text-slate-900">$2,899</span>
+                <span className="text-slate-500 ml-1 font-medium">/ yr</span>
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <ul className="space-y-3">
+            <CardContent className="p-0 mb-6">
+              <ul className="space-y-3 text-xs">
                 {[
-                  "Yearly VIP Charter",
+                  "Custom Office Seats",
+                  "Custom Field Crew Seats",
+                  "Yearly VIP Charter License",
                   "White-Glove Migration",
-                  "Direct Co-Design Access",
-                  "AI Agent Add-on"
+                  "Direct Product Co-Design Access"
                 ].map((feature, i) => (
                   <li key={i} className="flex items-center text-slate-700">
-                    <CheckCircle2 className="w-5 h-5 mr-3 text-blue-500" />
-                    <span className={feature === "AI Agent Add-on" ? "font-medium" : ""}>{feature}</span>
+                    <CheckCircle2 className="w-4 h-4 mr-2.5 text-blue-500 shrink-0" />
+                    <span>{feature}</span>
                   </li>
                 ))}
               </ul>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="p-0">
               <Button 
                 onClick={handleFoundingPartnerUpgrade}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                className="w-full bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold"
               >
                 Join Yearly Charter →
               </Button>
