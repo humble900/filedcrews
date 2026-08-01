@@ -407,6 +407,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
   const [staffName, setStaffName] = useState("");
   const [staffUsernameSuffix, setStaffUsernameSuffix] = useState("");
   const [staffPassword, setStaffPassword] = useState("");
+  const [staffRole, setStaffRole] = useState("Field Crew");
 
   // Step 4 crew selection expansion
   const [crewMode, setCrewMode] = useState<"create" | "select">("create");
@@ -607,6 +608,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
           setStaffName(parsed.staffName || "");
           setStaffUsernameSuffix(parsed.staffUsernameSuffix || "");
           setStaffPassword(parsed.staffPassword || "");
+          setStaffRole(parsed.staffRole || "Field Crew");
           setJobTitle(parsed.jobTitle || "");
           setJobDescription(parsed.jobDescription || "");
           setJobStart(parsed.jobStart || "");
@@ -979,7 +981,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
             password: staffPassword,
             company_id: activeCompanyId,
             isActive: true,
-            global_role: "Field Crew",
+            global_role: staffRole || "Field Crew",
             email: crewEmail.trim() || null,
             phone: crewPhone.trim() ? (crewPhoneDialCode + " " + crewPhone.trim()) : null,
           },
@@ -3320,32 +3322,74 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                               </div>
                             </div>
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="staff-pass" className="text-sm font-semibold text-slate-700">Password</Label>
-                            <div className="relative">
-                              <Input
-                                id="staff-pass"
-                                type={showCrewPassword ? "text" : "password"}
-                                placeholder="At least 6 characters"
-                                value={staffPassword}
-                                onChange={(e) => {
-                                  setStaffPassword(e.target.value);
-                                  saveSandboxProgress({ staffPassword: e.target.value });
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="staff-pass" className="text-sm font-semibold text-slate-700">Password</Label>
+                              <div className="relative">
+                                <Input
+                                  id="staff-pass"
+                                  type={showCrewPassword ? "text" : "password"}
+                                  placeholder="At least 6 characters"
+                                  value={staffPassword}
+                                  onChange={(e) => {
+                                    setStaffPassword(e.target.value);
+                                    saveSandboxProgress({ staffPassword: e.target.value });
+                                  }}
+                                  className="bg-slate-50 border-slate-300 text-slate-900 font-mono pr-10"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowCrewPassword(!showCrewPassword)}
+                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800 transition-colors focus:outline-none"
+                                  tabIndex={-1}
+                                >
+                                  {showCrewPassword ? (
+                                    <EyeOff className="h-4 w-4 shrink-0" />
+                                  ) : (
+                                    <Eye className="h-4 w-4 shrink-0" />
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="staff-role" className="text-sm font-semibold text-slate-700">Assign Role</Label>
+                              <Select
+                                value={staffRole}
+                                onValueChange={(val) => {
+                                  setStaffRole(val);
+                                  saveSandboxProgress({ staffRole: val });
                                 }}
-                                className="bg-slate-50 border-slate-300 text-slate-900 font-mono pr-10"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowCrewPassword(!showCrewPassword)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800 transition-colors focus:outline-none"
-                                tabIndex={-1}
                               >
-                                {showCrewPassword ? (
-                                  <EyeOff className="h-4 w-4 shrink-0" />
-                                ) : (
-                                  <Eye className="h-4 w-4 shrink-0" />
-                                )}
-                              </button>
+                                <SelectTrigger className="bg-slate-50 border-slate-300 text-slate-900">
+                                  <SelectValue placeholder="Select a role" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-slate-50 border-slate-300 text-slate-900">
+                                  <SelectItem value="Field Crew" className="focus:bg-white focus:text-slate-900">
+                                    <span className="flex items-center gap-2">
+                                      <span className="inline-flex items-center text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-blue-300 bg-blue-50 text-blue-700">Field Crew</span>
+                                      <span className="text-[10px] text-slate-500">On-site worker</span>
+                                    </span>
+                                  </SelectItem>
+                                  <SelectItem value="Dispatcher" className="focus:bg-white focus:text-slate-900">
+                                    <span className="flex items-center gap-2">
+                                      <span className="inline-flex items-center text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-amber-300 bg-amber-50 text-amber-700">Dispatcher</span>
+                                      <span className="text-[10px] text-slate-500">Assigns jobs</span>
+                                    </span>
+                                  </SelectItem>
+                                  <SelectItem value="Finance" className="focus:bg-white focus:text-slate-900">
+                                    <span className="flex items-center gap-2">
+                                      <span className="inline-flex items-center text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-emerald-300 bg-emerald-50 text-emerald-700">Finance</span>
+                                      <span className="text-[10px] text-slate-500">Billing & invoices</span>
+                                    </span>
+                                  </SelectItem>
+                                  <SelectItem value="Admin" className="focus:bg-white focus:text-slate-900">
+                                    <span className="flex items-center gap-2">
+                                      <span className="inline-flex items-center text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-purple-300 bg-purple-50 text-purple-700">Admin</span>
+                                      <span className="text-[10px] text-slate-500">Full access</span>
+                                    </span>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
                             </div>
                           </div>
                         </>
