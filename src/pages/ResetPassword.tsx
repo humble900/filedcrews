@@ -68,13 +68,13 @@ const ResetPassword = () => {
   if (!isRecovery && isExpired) {
     return (
       <>
-        <SEO title="Reset Password" description="Reset your OnSite Crew Manager password." path="/reset-password" noIndex />
+        <SEO title="Reset Password" description="Reset your FiledCrews password." path="/reset-password" noIndex />
         <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:p-8">
           <Card className="w-full max-w-md">
             <CardHeader>
               <div className="flex items-center gap-2 mb-4">
-                <img src="/favicon.png" alt="Ocrem" className="h-9 w-9 rounded-xl" />
-                <h1 className="text-2xl font-bold text-primary">OnSite Crew Manager</h1>
+                <img src="/favicon.png" alt="FiledCrews" className="h-9 w-9 rounded-xl" />
+                <h1 className="text-2xl font-bold text-primary">FiledCrews</h1>
               </div>
               <CardTitle>Link Invalid or Expired</CardTitle>
               <CardDescription>We couldn't verify your password reset link.</CardDescription>
@@ -105,13 +105,13 @@ const ResetPassword = () => {
   if (!isRecovery) {
     return (
       <>
-        <SEO title="Reset Password" description="Reset your OnSite Crew Manager password." path="/reset-password" noIndex />
+        <SEO title="Reset Password" description="Reset your FiledCrews password." path="/reset-password" noIndex />
         <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:p-8">
           <Card className="w-full max-w-md">
             <CardHeader>
               <div className="flex items-center gap-2 mb-4">
-                <img src="/favicon.png" alt="Ocrem" className="h-9 w-9 rounded-xl" />
-                <h1 className="text-2xl font-bold text-primary">OnSite Crew Manager</h1>
+                <img src="/favicon.png" alt="FiledCrews" className="h-9 w-9 rounded-xl" />
+                <h1 className="text-2xl font-bold text-primary">FiledCrews</h1>
               </div>
               <CardTitle>Verifying...</CardTitle>
               <CardDescription>Please wait while we verify your reset link.</CardDescription>
@@ -124,13 +124,13 @@ const ResetPassword = () => {
 
   return (
     <>
-      <SEO title="Reset Password" description="Reset your OnSite Crew Manager password." path="/reset-password" noIndex />
+      <SEO title="Reset Password" description="Reset your FiledCrews password." path="/reset-password" noIndex />
       <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:p-8">
         <Card className="w-full max-w-md card-shadow-lg border-border/50">
           <CardHeader>
             <div className="flex items-center gap-2 mb-4">
-              <img src="/favicon.png" alt="Ocrem" className="h-9 w-9 rounded-xl" />
-              <h1 className="text-2xl font-bold text-primary">OnSite Crew Manager</h1>
+              <img src="/favicon.png" alt="FiledCrews" className="h-9 w-9 rounded-xl" />
+              <h1 className="text-2xl font-bold text-primary">FiledCrews</h1>
             </div>
             <CardTitle className="text-2xl font-bold">Set New Password</CardTitle>
             <CardDescription>Enter your new password below</CardDescription>

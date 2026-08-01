@@ -114,8 +114,21 @@ export function usePermissions() {
     ? dbRoles.find((role: any) => role.name === staffProfile?.global_role)
     : null;
 
+  const tier = company?.subscription_tier || 'free_trial';
+  const isFoundingPartner = tier === 'founding_partner' || tier === 'Founding Partner';
+
+  /** Check if a feature is unlocked under the company's current subscription tier */
+  const canAccessFeatureByTier = (feature: Feature): boolean => {
+    // AI Agent requires Growth, Founding Partner, or Enterprise plan
+    if (feature === 'ai-agent') {
+      return tier === 'growth' || isFoundingPartner || tier === 'enterprise';
+    }
+    return true;
+  };
+
   /** Full or read-only access to a feature */
   const getPermission = (feature: Feature): boolean | 'read' => {
+    if (!canAccessFeatureByTier(feature)) return false;
     if (userRole === 'Owner') return true;
     if (matchedCustomRole) {
       const allowedFeatures = Array.isArray(matchedCustomRole.permissions)
@@ -135,6 +148,10 @@ export function usePermissions() {
   /** Has full write access to a feature */
   const hasFullAccess = (feature: Feature): boolean =>
     getPermission(feature) === true;
+
+  /** Calculated seat quotas for current company tier */
+  const maxAdminSeats = company?.max_admin_seats ?? (tier === 'growth' ? 3 : (isFoundingPartner ? 5 : (tier === 'enterprise' ? 50 : 1)));
+  const maxFieldCrewSeats = company?.max_field_crew_seats ?? (tier === 'growth' ? 7 : (isFoundingPartner ? 15 : (tier === 'enterprise' ? 100 : 2)));
 
   /**
    * Whether this user can access the admin dashboard (DashboardLayout)
@@ -159,6 +176,9 @@ export function usePermissions() {
 
   return {
     userRole,
+    subscriptionTier: tier,
+    maxAdminSeats,
+    maxFieldCrewSeats,
     isOwner,
     canAccessDashboard,
     canManageRoles,
@@ -166,6 +186,7 @@ export function usePermissions() {
     hasPermission,
     hasFullAccess,
     getPermission,
+    canAccessFeatureByTier,
     ROLE_COLORS,
   };
 }

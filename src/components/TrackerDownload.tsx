@@ -26,7 +26,7 @@ const TrackerDownload = () => {
           <div className="mx-auto bg-primary/10 p-3 rounded-full w-12 h-12 flex items-center justify-center mb-2">
             <Smartphone className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle className="text-xl sm:text-2xl font-bold text-white">Install OnSite Crew Manager</CardTitle>
+          <CardTitle className="text-xl sm:text-2xl font-bold text-white">Install FiledCrews App</CardTitle>
           <CardDescription className="text-sm text-slate-400 mt-1">
             This platform is optimized to run as a Progressive Web App (PWA) directly on any smartphone with zero store downloads required.
           </CardDescription>
@@ -82,7 +82,7 @@ const TrackerDownload = () => {
                   "Open Safari on your iPhone and navigate to this website.",
                   "Tap the Share button at the bottom center of the screen (a box with an arrow pointing up).",
                   "Scroll down the menu list and tap 'Add to Home Screen'.",
-                  "Give the shortcut a name (e.g. 'OnSite Crew') and tap 'Add' in the top-right corner.",
+                  "Give the shortcut a name (e.g. 'FiledCrews') and tap 'Add' in the top-right corner.",
                 ].map((step, idx) => (
                   <div key={idx} className="flex gap-3 items-start text-xs sm:text-sm">
                     <div className="h-6 w-6 rounded-full bg-blue-900/40 border border-blue-500/30 text-blue-400 font-bold text-xs flex items-center justify-center shrink-0">

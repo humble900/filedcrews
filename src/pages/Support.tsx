@@ -16,13 +16,13 @@ const faqItems = [
     icon: MapPin,
     title: "Location Permissions",
     content:
-      'For the tracker to work correctly, you must grant "Always Allow" (or "Allow all the time") location permission when the app requests it. If you selected a different option, go to your phone\'s Settings → Apps → OnSite Crew Manager → Permissions → Location, and change it to "Allow all the time." Without this permission, background tracking will not function.',
+      'For the tracker to work correctly, you must grant "Always Allow" (or "Allow all the time") location permission when the app requests it. If you selected a different option, go to your phone\'s Settings → Apps → FiledCrews → Permissions → Location, and change it to "Allow all the time." Without this permission, background tracking will not function.',
   },
   {
     icon: Bell,
     title: "Push Notifications",
     content:
-      "If you are not receiving notifications, ensure notifications are enabled for the OnSite Crew Manager app in your device settings. Also check that your device is connected to the internet. If notifications are still not arriving, try signing out and signing back in to refresh your notification token.",
+      "If you are not receiving notifications, ensure notifications are enabled for the FiledCrews app in your device settings. Also check that your device is connected to the internet. If notifications are still not arriving, try signing out and signing back in to refresh your notification token.",
   },
   {
     icon: Camera,
@@ -37,25 +37,25 @@ export default function Support() {
     <PublicPageLayout>
       <SEO
         title="Support"
-        description="Get help with the OnSite Crew Manager mobile app and admin dashboard."
+        description="Get help with the FiledCrews mobile app and admin dashboard."
         path="/support"
       />
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Support</h1>
           <p className="mt-2 text-muted-foreground text-lg">
-            Need help with OnSite Crew Manager? Find answers below or contact us directly.
+            Need help with FiledCrews? Find answers below or contact us directly.
           </p>
         </div>
 
-        {/* What is OnSite Crew Manager */}
+        {/* What is FiledCrews */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">What is OnSite Crew Manager?</CardTitle>
+            <CardTitle className="text-lg">What is FiledCrews?</CardTitle>
           </CardHeader>
           <CardContent className="text-foreground/90 space-y-2">
             <p>
-              OnSite Crew Manager is a workforce location management service. It consists of a <strong>mobile app</strong> used
+              FiledCrews is a workforce location management service. It consists of a <strong>mobile app</strong> used
               by staff members to share their live location during work sessions, and an <strong>admin dashboard</strong>{" "}
               used by company supervisors to monitor attendance, manage geofenced work sites, and verify staff presence.
             </p>

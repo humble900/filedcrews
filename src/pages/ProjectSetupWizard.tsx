@@ -206,6 +206,60 @@ function MapHandler({ center }: MapHandlerProps) {
   return null;
 }
 
+function DashboardOverlayBackdrop({ children, companyName, companyPrefix }: { children: React.ReactNode; companyName?: string; companyPrefix?: string }) {
+  return (
+    <div className="relative min-h-screen w-full bg-slate-950 text-slate-100 font-sans overflow-hidden select-none">
+      {/* Background Live Dashboard Preview */}
+      <div className="flex h-screen w-full filter blur-[4px] opacity-35 pointer-events-none select-none">
+        {/* Sidebar */}
+        <div className="w-64 bg-slate-950 border-r border-slate-800/80 p-5 flex flex-col justify-between shrink-0">
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <img src="/favicon.png" alt="FiledCrews" className="h-7 w-7 rounded-lg shadow-sm" />
+              <span className="font-black text-lg text-white">{companyName || "FiledCrews"}</span>
+            </div>
+            <div className="space-y-1 text-xs font-medium text-slate-400">
+              <div className="p-2.5 rounded-lg bg-blue-600/20 text-blue-400 font-bold flex items-center gap-2.5">
+                <Home className="h-4 w-4" /> Action Inbox
+              </div>
+              <div className="p-2.5 rounded-lg flex items-center gap-2.5"><Briefcase className="h-4 w-4" /> Projects</div>
+              <div className="p-2.5 rounded-lg flex items-center gap-2.5"><ClipboardList className="h-4 w-4" /> Work Orders</div>
+              <div className="p-2.5 rounded-lg flex items-center gap-2.5"><MapPin className="h-4 w-4" /> Map & Geofence</div>
+              <div className="p-2.5 rounded-lg flex items-center gap-2.5"><Building2 className="h-4 w-4" /> CRM & Assets</div>
+              <div className="p-2.5 rounded-lg flex items-center gap-2.5"><Users className="h-4 w-4" /> Staff Profiles</div>
+              <div className="p-2.5 rounded-lg flex items-center gap-2.5"><Clock className="h-4 w-4" /> Timesheets</div>
+              <div className="p-2.5 rounded-lg flex items-center gap-2.5"><Settings className="h-4 w-4" /> Settings</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Workspace Preview */}
+        <div className="flex-1 flex flex-col bg-slate-900/90">
+          <div className="h-14 border-b border-slate-800 px-6 flex items-center justify-between">
+            <div className="text-xs text-slate-400 font-mono">Workspace / {companyPrefix || "ORGANIZATION"}</div>
+            <div className="flex items-center gap-3 text-xs text-slate-400">
+              <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">A</div>
+            </div>
+          </div>
+          <div className="p-8 space-y-6">
+            <div className="h-28 bg-slate-800/40 rounded-2xl border border-slate-800/60" />
+            <div className="grid grid-cols-3 gap-6">
+              <div className="h-48 bg-slate-800/40 rounded-2xl border border-slate-800/60" />
+              <div className="h-48 bg-slate-800/40 rounded-2xl border border-slate-800/60" />
+              <div className="h-48 bg-slate-800/40 rounded-2xl border border-slate-800/60" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Dimmed Overlay Backdrop containing the floating Modal Dialog */}
+      <div className="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
   const { user, company, loading, createCompany, signOut } = useAuth();
   const navigate = useNavigate();
@@ -463,6 +517,28 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
   const [mapSearchAutocomplete, setMapSearchAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
 
 
+
+  // Auto-capture Name & Email from Google OAuth user_metadata
+  useEffect(() => {
+    if (user) {
+      const meta = user.user_metadata || {};
+      const fullName = meta.full_name || meta.name || "";
+      const email = user.email || meta.email || "";
+
+      if (email) {
+        setAdminEmail((prev) => prev || email);
+        setSignupEmail((prev) => prev || email);
+      }
+
+      if (fullName) {
+        const parts = fullName.trim().split(" ");
+        const first = meta.given_name || parts[0] || "";
+        const last = meta.family_name || parts.slice(1).join(" ") || "";
+        setAdminFirstName((prev) => prev || first);
+        setAdminLastName((prev) => prev || last);
+      }
+    }
+  }, [user]);
 
   // Synchronize state with DOM input values for Google Autocomplete compatibility
   useEffect(() => {
@@ -1368,6 +1444,38 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
   }
 
   if (wizardMode === "public-sandbox" && introStep === 6) {
+    const handlePlanSelection = async (tier: "free_trial" | "growth" | "founding_partner" | "enterprise") => {
+      const activeUserRes = await supabase.auth.getUser();
+      const activeUserId = activeUserRes.data.user?.id || user?.id;
+      if (activeUserId) {
+        const { data: comp } = await supabase.from("companies").select("id").eq("auth_user_id", activeUserId).maybeSingle();
+        if (comp) {
+          await (supabase as any).from("companies").update({
+            subscription_tier: tier,
+            subscription_status: tier === "free_trial" ? "trialing" : "pending_activation",
+            max_admin_seats: tier === "growth" ? 3 : (tier === "founding_partner" ? 5 : (tier === "enterprise" ? 50 : 1)),
+            max_field_crew_seats: tier === "growth" ? 7 : (tier === "founding_partner" ? 15 : (tier === "enterprise" ? 100 : 2))
+          }).eq("id", comp.id);
+        }
+      }
+
+      if (tier === "growth") {
+        const text = encodeURIComponent(`Hi there! I just registered ${companyName || 'our company'} on FiledCrew and would like to activate our Growth Plan ($495/mo, 10 seats). Please assist with account activation.`);
+        window.open(`https://wa.me/14094229714?text=${text}`, "_blank");
+      } else if (tier === "founding_partner") {
+        const text = encodeURIComponent(`Hi there! We are interested in enrolling ${companyName || 'our company'} in the Yearly Founding Partner Charter for FiledCrew ($2,899/yr, 20 seats). Please send us details on how we can customize our 20 seats.`);
+        window.open(`https://wa.me/14094229714?text=${text}`, "_blank");
+      } else if (tier === "enterprise") {
+        const text = encodeURIComponent(`Hi there! We are interested in an Enterprise Custom Plan for ${companyName || 'our company'} on FiledCrew. Please connect us with an Enterprise Account Manager.`);
+        window.open(`https://wa.me/14094229714?text=${text}`, "_blank");
+      }
+
+      // Advance to Welcome Page (step 1)
+      setStep(1);
+      setIntroStep(7);
+      saveSandboxProgress({ step: 1, introStep: 7, selectedPlan: tier });
+    };
+
     return (
       <>
         <SEO
@@ -1376,219 +1484,227 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
           path="/wizard"
           noIndex
         />
-        <div className="min-h-screen bg-slate-50 flex flex-col font-sans select-none relative overflow-x-hidden">
-          {/* Full Width Top Header Bar */}
-          <header className="bg-white border-b border-slate-200 py-4 px-6 sm:px-12 flex items-center justify-between sticky top-0 z-30 shadow-sm">
-            <div className="flex items-center gap-3">
-              <img src="/favicon.png" alt="FiledCrew Logo" className="h-8 w-8 rounded-lg shadow-sm" />
-              <span className="text-xl font-black text-slate-900 tracking-tight">FiledCrew</span>
-            </div>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setIntroStep(5);
-                saveSandboxProgress({ introStep: 5 });
-              }}
-              className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1.5"
-            >
-              <ArrowLeft className="h-4 w-4" /> Back to Account Details
-            </Button>
-          </header>
-
-          {/* Main Full-Width Content Container */}
-          <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-8 py-10 flex flex-col items-center justify-center">
-            {/* Header Hero Section */}
-            <div className="text-center max-w-2xl mx-auto space-y-3 mb-10">
-              <div className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-primary bg-primary/10 px-3 py-1 rounded-full uppercase tracking-wider">
-                <Sparkles className="h-3.5 w-3.5" /> Workspace Registration Complete
+        <DashboardOverlayBackdrop companyName={companyName} companyPrefix={companyPrefix}>
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200/90 w-full max-w-6xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[92vh]">
+            {/* Sticky Header Bar */}
+            <header className="bg-white border-b border-slate-100 py-4 px-6 sm:px-8 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <img src="/favicon.png" alt="FiledCrew Logo" className="h-8 w-8 rounded-lg shadow-sm" />
+                <span className="text-xl font-black text-slate-900 tracking-tight">FiledCrew</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
-                Select Your Subscription Plan
-              </h1>
-              <p className="text-slate-500 text-sm leading-relaxed">
-                Your company profile <span className="font-bold text-slate-800">{companyName || "Organization"}</span> and administrator account are registered. Choose a plan to activate your workspace.
-              </p>
-            </div>
-
-            {/* 3 Neutral Equal Plan Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl w-full">
-              
-              {/* Plan 1: 14-Day Free Trial */}
-              <div className="bg-white rounded-2xl border-2 border-slate-200 hover:border-emerald-500/60 p-6 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
-                <div className="space-y-4">
-                  <div>
-                    <h2 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 drop-shadow-[0_2px_8px_rgba(16,185,129,0.4)]">
-                      Free Trial
-                    </h2>
-                    <div className="text-3xl font-black text-slate-900 mt-2">
-                      $0 <span className="text-xs font-normal text-slate-500">/ 14 days</span>
-                    </div>
-                    <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                      14 days full access for new business accounts — set up your team and explore all platform features. No credit card required.
-                    </p>
-                  </div>
-
-                  <ul className="text-xs text-slate-600 space-y-2.5 pt-4 border-t border-slate-100">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                      <span><strong>1 Office Staff (Account Creator)</strong></span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                      <span><strong>2 Field Crew Members</strong></span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                      <span>14 Days Full Platform Access</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                      <span>Live GPS Map & Worksite Geofences</span>
-                    </li>
-                  </ul>
-                </div>
-
+              <div className="flex items-center gap-3">
                 <Button
-                  onClick={async () => {
-                    const activeUserRes = await supabase.auth.getUser();
-                    const activeUserId = activeUserRes.data.user?.id || user?.id;
-                    if (activeUserId) {
-                      const { data: comp } = await supabase.from("companies").select("id").eq("auth_user_id", activeUserId).maybeSingle();
-                      if (comp) {
-                        await (supabase as any).from("companies").update({
-                          subscription_tier: "free_trial",
-                          subscription_status: "trialing",
-                          max_admin_seats: 1,
-                          max_field_crew_seats: 2
-                        }).eq("id", comp.id);
-                      }
-                    }
-                    // Launch 2nd flow of onboarding (Add Client, Project, Geofence, Crew, Job)
-                    setStep(2);
-                    setIntroStep(7);
-                    saveSandboxProgress({ step: 2, introStep: 7, selectedPlan: "free_trial" });
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setIntroStep(5);
+                    saveSandboxProgress({ introStep: 5 });
                   }}
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs h-11 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                  className="text-xs font-bold text-slate-500 hover:text-slate-900"
                 >
-                  Start 14-Day Free Trial <ArrowRight className="h-4 w-4" />
+                  <ArrowLeft className="h-4 w-4 mr-1" /> Back
+                </Button>
+                <Button
+                  onClick={() => handlePlanSelection("free_trial")}
+                  className="bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs px-4 h-9 rounded-xl shadow-sm transition-all flex items-center gap-1.5"
+                >
+                  Skip to setup (Free Trial) <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </div>
+            </header>
 
-              {/* Plan 2: Growth Plan */}
-              <div className="bg-white rounded-2xl border-2 border-slate-200 hover:border-amber-500/60 p-6 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
-                <div className="space-y-4">
-                  <div>
-                    <h2 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 drop-shadow-[0_2px_8px_rgba(245,158,11,0.4)]">
-                      Growth
-                    </h2>
-                    <div className="text-3xl font-black text-slate-900 mt-2">
-                      $495 <span className="text-xs font-normal text-slate-500">/ mo</span>
-                    </div>
-                    <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                      Supercharge your company with 10 total seats, AI dispatching, and safety compliance.
-                    </p>
-                  </div>
-
-                  <ul className="text-xs text-slate-600 space-y-2.5 pt-4 border-t border-slate-100">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                      <span><strong>3 Office Staff</strong></span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                      <span><strong>7 Field Crew Members</strong></span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                      <span>AI Dispatcher & Safety Hub</span>
-                    </li>
-                  </ul>
+            {/* Scrollable Content Container */}
+            <main className="p-6 sm:p-8 overflow-y-auto space-y-8">
+              {/* Header Hero Section */}
+              <div className="text-center max-w-2xl mx-auto space-y-2">
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-primary bg-primary/10 px-3 py-1 rounded-full uppercase tracking-wider">
+                  <Sparkles className="h-3.5 w-3.5" /> Workspace Account Registered
                 </div>
-
-                <Button
-                  onClick={async () => {
-                    const activeUserRes = await supabase.auth.getUser();
-                    const activeUserId = activeUserRes.data.user?.id || user?.id;
-                    if (activeUserId) {
-                      const { data: comp } = await supabase.from("companies").select("id").eq("auth_user_id", activeUserId).maybeSingle();
-                      if (comp) {
-                        await (supabase as any).from("companies").update({
-                          subscription_tier: "growth",
-                          subscription_status: "pending_activation",
-                          max_admin_seats: 3,
-                          max_field_crew_seats: 7
-                        }).eq("id", comp.id);
-                      }
-                    }
-                    const text = encodeURIComponent(`Hi there! I just registered ${companyName || 'our company'} on FiledCrew and would like to activate our Growth Plan ($495/mo, 10 seats). Please assist with account activation.`);
-                    window.open(`https://wa.me/14094229714?text=${text}`, "_blank");
-                  }}
-                  className="w-full bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs h-11 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
-                >
-                  Activate via WhatsApp ➔
-                </Button>
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                  Choose Your Workspace Plan
+                </h1>
+                <p className="text-slate-500 text-xs sm:text-sm leading-relaxed">
+                  Select a subscription tier for <span className="font-bold text-slate-800">{companyName || "Organization"}</span> or skip to proceed on the 14-day Free Trial.
+                </p>
               </div>
 
-              {/* Plan 3: Founding Partner Program */}
-              <div className="bg-white rounded-2xl border-2 border-slate-200 hover:border-purple-500/60 p-6 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
-                <div className="space-y-4">
-                  <div>
-                    <h2 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-indigo-500 to-purple-500 drop-shadow-[0_2px_8px_rgba(168,85,247,0.4)]">
-                      Founding Partner
-                    </h2>
-                    <div className="text-3xl font-black text-slate-900 mt-2">
-                      $2,899 <span className="text-xs font-normal text-slate-500">/ yr</span>
+              {/* 4 Pricing Cards Responsive Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl w-full mx-auto">
+                {/* Plan 1: 14-Day Free Trial */}
+                <div className="bg-white rounded-2xl border-2 border-slate-200 hover:border-emerald-500/60 p-5 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
+                  <div className="space-y-4">
+                    <div>
+                      <h2 className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 drop-shadow-[0_2px_8px_rgba(16,185,129,0.4)]">
+                        Free Trial
+                      </h2>
+                      <div className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">
+                        $0 <span className="text-xs font-normal text-slate-500">/ 14 days</span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                        14 days full access for new business accounts — set up your team and explore all features.
+                      </p>
                     </div>
-                    <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                      VIP annual charter for growing enterprises with custom seats and direct roadmap co-design.
-                    </p>
+
+                    <ul className="text-xs text-slate-600 space-y-2.5 pt-4 border-t border-slate-100">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                        <span><strong>1 Office Staff</strong></span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                        <span><strong>2 Field Crew Members</strong></span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                        <span>14 Days Full Access</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                        <span>Live GPS Map & Geofences</span>
+                      </li>
+                    </ul>
                   </div>
 
-                  <ul className="text-xs text-slate-600 space-y-2.5 pt-4 border-t border-slate-100">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                      <span><strong>Custom Office Seats</strong></span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                      <span><strong>Custom Field Crew Seats</strong></span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                      <span>Yearly VIP Charter License</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                      <span>Direct Product Co-Design Access</span>
-                    </li>
-                  </ul>
+                  <Button
+                    onClick={() => handlePlanSelection("free_trial")}
+                    className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs h-10 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+                  >
+                    Start Free Trial <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
 
-                <Button
-                  onClick={async () => {
-                    const activeUserRes = await supabase.auth.getUser();
-                    const activeUserId = activeUserRes.data.user?.id || user?.id;
-                    if (activeUserId) {
-                      const { data: comp } = await supabase.from("companies").select("id").eq("auth_user_id", activeUserId).maybeSingle();
-                      if (comp) {
-                        await (supabase as any).from("companies").update({
-                          subscription_tier: "founding_partner",
-                          subscription_status: "pending_charter"
-                        }).eq("id", comp.id);
-                      }
-                    }
-                    const text = encodeURIComponent(`Hi there! We are interested in enrolling ${companyName || 'our company'} in the Yearly Founding Partner Charter for FiledCrew ($2,899/yr). Please send us details on how we can get started.`);
-                    window.open(`https://wa.me/14094229714?text=${text}`, "_blank");
-                  }}
-                  className="w-full bg-purple-700 hover:bg-purple-800 text-white font-extrabold text-xs h-11 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
-                >
-                  Join Yearly Charter ➔
-                </Button>
-              </div>
+                {/* Plan 2: Growth Plan */}
+                <div className="bg-white rounded-2xl border-2 border-slate-200 hover:border-amber-500/60 p-5 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
+                  <div className="space-y-4">
+                    <div>
+                      <h2 className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 drop-shadow-[0_2px_8px_rgba(245,158,11,0.4)]">
+                        Growth
+                      </h2>
+                      <div className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">
+                        $495 <span className="text-xs font-normal text-slate-500">/ mo</span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                        Supercharge your company with 10 total seats, AI dispatching, and safety compliance.
+                      </p>
+                    </div>
 
-            </div>
-          </main>
-        </div>
+                    <ul className="text-xs text-slate-600 space-y-2.5 pt-4 border-t border-slate-100">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                        <span><strong>3 Office Staff</strong></span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                        <span><strong>7 Field Crew Members</strong></span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                        <span>AI Dispatcher & Safety Hub</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                        <span>Priority Phone Support</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <Button
+                    onClick={() => handlePlanSelection("growth")}
+                    className="w-full bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs h-10 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+                  >
+                    Activate via WhatsApp ➔
+                  </Button>
+                </div>
+
+                {/* Plan 3: Founding Partner Program */}
+                <div className="bg-white rounded-2xl border-2 border-slate-200 hover:border-purple-500/60 p-5 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
+                  <div className="space-y-4">
+                    <div>
+                      <h2 className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-indigo-500 to-purple-500 drop-shadow-[0_2px_8px_rgba(168,85,247,0.4)]">
+                        Founding Partner
+                      </h2>
+                      <div className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">
+                        $2,899 <span className="text-xs font-normal text-slate-500">/ yr</span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                        VIP annual charter with 20 seats included. Customize your field vs office seat split.
+                      </p>
+                    </div>
+
+                    <ul className="text-xs text-slate-600 space-y-2.5 pt-4 border-t border-slate-100">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                        <span><strong>20 Total Seats Included</strong></span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                        <span>Custom Office vs Field Split</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                        <span>Yearly VIP Charter License</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                        <span>Direct Roadmap Co-Design</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <Button
+                    onClick={() => handlePlanSelection("founding_partner")}
+                    className="w-full bg-purple-700 hover:bg-purple-800 text-white font-extrabold text-xs h-10 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+                  >
+                    Join Yearly Charter ➔
+                  </Button>
+                </div>
+
+                {/* Plan 4: Enterprise Plan */}
+                <div className="bg-white rounded-2xl border-2 border-slate-200 hover:border-cyan-500/60 p-5 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
+                  <div className="space-y-4">
+                    <div>
+                      <h2 className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 drop-shadow-[0_2px_8px_rgba(6,182,212,0.4)]">
+                        Enterprise
+                      </h2>
+                      <div className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">
+                        Custom
+                      </div>
+                      <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                        Custom tailored deployment for large multi-site enterprises with unlimited seat requirements.
+                      </p>
+                    </div>
+
+                    <ul className="text-xs text-slate-600 space-y-2.5 pt-4 border-t border-slate-100">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                        <span><strong>Custom Unlimited Seats</strong></span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                        <span>Dedicated Infrastructure & SLA</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                        <span>Custom API & Webhooks</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                        <span>Dedicated Account Manager</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <Button
+                    onClick={() => handlePlanSelection("enterprise")}
+                    className="w-full bg-cyan-700 hover:bg-cyan-800 text-white font-extrabold text-xs h-10 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+                  >
+                    Contact Sales ➔
+                  </Button>
+                </div>
+              </div>
+            </main>
+          </div>
+        </DashboardOverlayBackdrop>
       </>
     );
   }
@@ -2641,20 +2757,33 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
         noIndex
       />
 
-      <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans antialiased">
-        {/* Sticky Logo Bar — always visible, never scrolls */}
-        <div className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-sm border-b border-slate-100 px-4 sm:px-6 py-3.5">
-          <div className="max-w-2xl mx-auto flex items-center gap-3">
-            <img src="/favicon.png" alt="FiledCrews Logo" className="h-8 w-8 rounded-lg shadow-sm" />
-            <span className="text-xl font-black tracking-tight text-slate-900">FiledCrews</span>
+      <DashboardOverlayBackdrop companyName={companyName} companyPrefix={companyPrefix}>
+        <div className="w-full max-w-2xl sm:max-w-3xl bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] flex flex-col">
+          {/* Modal Header */}
+          <div className="bg-slate-50/95 border-b border-slate-100 px-6 py-3.5 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-3">
+              <img src="/favicon.png" alt="FiledCrews Logo" className="h-8 w-8 rounded-lg shadow-sm" />
+              <span className="text-xl font-black tracking-tight text-slate-900">FiledCrews</span>
+            </div>
+            {wizardMode === "public-sandbox" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setIntroStep(6);
+                  saveSandboxProgress({ introStep: 6 });
+                }}
+                className="text-xs text-slate-500 hover:text-slate-900 font-semibold"
+              >
+                <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Change Plan
+              </Button>
+            )}
           </div>
-        </div>
 
-        {/* Scrollable Content Area */}
-        <div className="flex-1 flex flex-col items-center pt-6 md:pt-10 p-4 overflow-y-auto">
-          <div className="w-full max-w-2xl">
+          {/* Modal Body */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
             {step <= 6 && (
-              <Card className="border border-slate-200/80 shadow-xl bg-white text-slate-900 rounded-2xl overflow-hidden">
+              <Card className="border-0 shadow-none bg-white text-slate-900 rounded-none overflow-hidden">
                 <CardHeader className="pb-6 pt-8 px-6 sm:px-8 border-b border-slate-100">
                   <div className="space-y-2.5 mb-2">
                     <div className="flex justify-end items-center text-xs font-black font-mono text-amber-500 tracking-wider">
@@ -3868,7 +3997,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
             )}
           </div>
         </div>
-      </div>
+      </DashboardOverlayBackdrop>
     </>
   );
 }

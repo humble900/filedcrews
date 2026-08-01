@@ -10,17 +10,21 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Loader2, Bot } from "lucide-react";
 
+import AIKeyActivationModal from "@/components/AIKeyActivationModal";
+
 export default function AITermsPage() {
   const { company, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [accepted, setAccepted] = useState(false);
-  const [isActivating, setIsActivating] = useState(false);
+  const [showKeyModal, setShowKeyModal] = useState(false);
 
   useEffect(() => {
     if (!authLoading && company) {
       if (
         company.subscription_tier !== "growth" &&
-        company.subscription_tier !== "founding_partner"
+        company.subscription_tier !== "founding_partner" &&
+        company.subscription_tier !== "Founding Partner" &&
+        company.subscription_tier !== "enterprise"
       ) {
         navigate("/marketplace/ai-agent");
       } else if (company.ai_agent_enabled) {
@@ -29,27 +33,9 @@ export default function AITermsPage() {
     }
   }, [company, authLoading, navigate]);
 
-  const handleAccept = async () => {
+  const handleAccept = () => {
     if (!company) return;
-    setIsActivating(true);
-    try {
-      const { error } = await (supabase as any)
-        .from("companies")
-        .update({
-          ai_agent_enabled: true,
-          ai_agent_terms_accepted_at: new Date().toISOString(),
-        })
-        .eq("id", company.id);
-
-      if (error) throw error;
-
-      toast.success("AI Agent activated successfully");
-      navigate("/ai-agent");
-    } catch (error: any) {
-      console.error("Error activating AI agent:", error);
-      toast.error(error.message || "Failed to activate AI Agent");
-      setIsActivating(false);
-    }
+    setShowKeyModal(true);
   };
 
   if (authLoading || !company) {
@@ -264,20 +250,24 @@ export default function AITermsPage() {
           <Button
             size="lg"
             onClick={handleAccept}
-            disabled={!accepted || isActivating}
-            className="w-full sm:w-auto"
+            disabled={!accepted}
+            className="w-full sm:w-auto font-bold shadow-md"
           >
-            {isActivating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Activating...
-              </>
-            ) : (
-              "Accept & Activate AI Agent"
-            )}
+            Accept & Activate AI Agent
           </Button>
         </div>
       </div>
+
+      {company && (
+        <AIKeyActivationModal
+          open={showKeyModal}
+          onOpenChange={setShowKeyModal}
+          companyId={company.id}
+          existingApiKey={company.ai_api_key}
+          existingProvider={company.ai_provider}
+          onSuccess={() => navigate("/ai-agent")}
+        />
+      )}
     </DashboardLayout>
   );
 }

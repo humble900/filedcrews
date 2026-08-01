@@ -81,6 +81,11 @@ export default function SettingsPage() {
     qbIntegration.client_secret_masked || (autoSettings.quickbooks_client_secret ? maskApiKey(autoSettings.quickbooks_client_secret) : "")
   );
 
+  const [aiProvider, setAiProvider] = useState(company?.ai_provider || "openai");
+  const [aiApiKey, setAiApiKey] = useState(
+    company?.ai_api_key || (company?.id ? localStorage.getItem(`fc_ai_key_${company.id}`) : "") || "sk-filedcrews-ai-seeded-v1-prod-key"
+  );
+
   const [savingBYOK, setSavingBYOK] = useState(false);
   const [testingStripe, setTestingStripe] = useState(false);
   const [testingQB, setTestingQB] = useState(false);
@@ -109,7 +114,16 @@ export default function SettingsPage() {
         );
       }
 
-      toast({ title: "BYOK Credentials Saved", description: "Integration API credentials saved securely and masked." });
+      if (aiApiKey.trim()) {
+        await (supabase as any)
+          .from("companies")
+          .update({ ai_api_key: aiApiKey.trim(), ai_provider: aiProvider })
+          .eq("id", company.id);
+        localStorage.setItem(`fc_ai_key_${company.id}`, aiApiKey.trim());
+        localStorage.setItem(`fc_ai_provider_${company.id}`, aiProvider);
+      }
+
+      toast({ title: "BYOK Credentials Saved", description: "All custom API credentials & AI keys saved securely." });
       refetchCompany();
     } catch (err: any) {
       toast({ title: "Failed to save API keys", description: err.message, variant: "destructive" });
@@ -277,7 +291,7 @@ export default function SettingsPage() {
   const isFoundingPartner = company?.subscription_tier === "Founding Partner";
   const adminPercent = Math.min((activeAdmins / maxAdmins) * 100, 100);
   const fieldPercent = Math.min((activeFieldCrew / maxFieldCrew) * 100, 100);
-  const whatsappMessage = encodeURIComponent("Hi there! We are interested in joining the Founding Partner Charter for OnSite Crew Manager.");
+  const whatsappMessage = encodeURIComponent("Hi there! We are interested in joining the Founding Partner Charter for FiledCrews.");
   const whatsappUrl = `https://wa.me/14094229714?text=${whatsappMessage}`;
 
   // ─── Handlers ───
@@ -538,6 +552,43 @@ export default function SettingsPage() {
             </div>
           </div>
 
+          {/* AI Agent BYOK Section */}
+          <div className="space-y-4 pt-4 border-t border-border/40">
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <Bot className="h-4 w-4 text-blue-600" /> AI Agent LLM Model Credentials
+              </h4>
+              <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/20 gap-1 text-[10px]">
+                <ShieldCheck className="h-3 w-3" /> Pre-Seeded Default
+              </Badge>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 max-w-xl">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground">AI Provider</label>
+                <select
+                  value={aiProvider}
+                  onChange={(e) => setAiProvider(e.target.value)}
+                  className="w-full h-9 px-3 rounded-md border border-input bg-background text-xs"
+                >
+                  <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
+                  <option value="gemini">Google Gemini 1.5 Pro</option>
+                  <option value="anthropic">Anthropic Claude 3.5 Sonnet</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground">AI API Key (Custom or Seeded)</label>
+                <Input
+                  type="password"
+                  placeholder="sk-proj-..."
+                  value={aiApiKey}
+                  onChange={(e) => setAiApiKey(e.target.value)}
+                  className="font-mono text-xs"
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="pt-4 border-t border-border/40 flex justify-between items-center">
             <Button onClick={handleSaveBYOKKeys} disabled={savingBYOK} size="sm" className="font-semibold shadow-sm">
               {savingBYOK ? <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> Saving Credentials...</> : "Save Custom API Credentials"}
@@ -549,14 +600,14 @@ export default function SettingsPage() {
   );
 
   // ─── Billing & Plans Tab State & UI ───
-  const [selectedPlanId, setSelectedPlanId] = useState<"launch" | "growth" | "enterprise">("launch");
+  const [selectedPlanId, setSelectedPlanId] = useState<"free_trial" | "growth" | "founding_partner" | "enterprise">("free_trial");
   const [billingViewMode, setBillingViewMode] = useState<"select" | "review">("select");
   const [businessTaxId, setBusinessTaxId] = useState("");
   const [billingAddress, setBillingAddress] = useState(company?.address || "");
 
   const plans = [
     {
-      id: "launch" as const,
+      id: "free_trial" as const,
       name: "Free Trial",
       titleGradient: "from-emerald-400 via-teal-400 to-emerald-500 drop-shadow-[0_2px_8px_rgba(16,185,129,0.45)]",
       price: "$0",
@@ -584,7 +635,8 @@ export default function SettingsPage() {
       description: "Supercharge your company with 10 total seats, AI dispatching, and safety hub compliance.",
       specs: [
         "3 Office Staff",
-        "7 Field Crew Members"
+        "7 Field Crew Members",
+        "10 Total Seats Included"
       ],
       features: [
         "Everything in Free Trial plus...",
@@ -596,24 +648,44 @@ export default function SettingsPage() {
       ]
     },
     {
-      id: "enterprise" as const,
+      id: "founding_partner" as const,
       name: "Founding Partner",
       titleGradient: "from-purple-400 via-indigo-500 to-purple-500 drop-shadow-[0_2px_8px_rgba(168,85,247,0.45)]",
       price: "$2,899",
       period: "/yr",
-      description: "VIP annual charter for growing enterprises with custom seats and direct roadmap co-design.",
+      description: "VIP annual charter with 20 seats included. Customize your field vs office seat split.",
       specs: [
-        "Custom Office Seats",
-        "Custom Field Crew Seats",
-        "VIP Charter Co-Design"
+        "20 Total Seats Included",
+        "Customizable Office vs Field Split",
+        "Yearly VIP Charter License"
       ],
       features: [
         "Everything in Growth plus...",
-        "Unlimited custom seat allocation",
+        "20 Seats with custom role allocation",
         "Founding Partner VIP Charter membership",
         "White-glove data migration & setup",
-        "Dedicated Growth Strategist & Account Manager",
-        "Custom API & ERP Integrations"
+        "Direct Roadmap Co-Design & Access",
+        "Priority VIP WhatsApp Line"
+      ]
+    },
+    {
+      id: "enterprise" as const,
+      name: "Enterprise",
+      titleGradient: "from-cyan-500 via-blue-600 to-indigo-600 drop-shadow-[0_2px_8px_rgba(6,182,212,0.45)]",
+      price: "Custom",
+      period: "",
+      description: "Custom tailored deployment for large multi-site enterprises with unlimited seat requirements.",
+      specs: [
+        "Custom Unlimited Seats",
+        "Dedicated Infrastructure & SLA",
+        "Dedicated Account Manager"
+      ],
+      features: [
+        "Everything in Founding Partner plus...",
+        "Unlimited seat scaling across teams",
+        "Custom API & ERP Integrations",
+        "Custom SLA & Uptime Guarantee",
+        "24/7 Dedicated Account Manager"
       ]
     }
   ];
@@ -709,7 +781,7 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             {plans.map((p) => {
               const isSelected = selectedPlanId === p.id;
               return (

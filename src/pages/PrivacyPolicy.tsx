@@ -10,16 +10,16 @@ export default function PrivacyPolicy() {
     <PublicPageLayout>
       <SEO
         title="Privacy Policy"
-        description="Privacy Policy for OnSite Crew Manager — mobile app and admin dashboard."
+        description="Privacy Policy for FiledCrews — mobile app and admin dashboard."
         path="/privacy"
       />
       <article className="prose prose-sm sm:prose max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground/90 prose-li:text-foreground/90 prose-strong:text-foreground prose-a:text-primary">
         <h1>Privacy Policy</h1>
         <p className="text-muted-foreground text-sm">Effective date: {EFFECTIVE_DATE}</p>
         <p>
-          This Privacy Policy describes how OnSite Crew Manager ("we", "us", or "our") collects, uses, and shares information
-          in connection with the <strong>OnSite Crew Manager mobile application</strong> (the "App") and the
-          <strong> OnSite Crew Manager admin dashboard</strong> (the "Dashboard"), collectively the "Service," accessible at{" "}
+          This Privacy Policy describes how FiledCrews ("we", "us", or "our") collects, uses, and shares information
+          in connection with the <strong>FiledCrews mobile application</strong> (the "App") and the
+          <strong> FiledCrews admin dashboard</strong> (the "Dashboard"), collectively the "Service," accessible at{" "}
           <a href={WEBSITE_URL} target="_blank" rel="noopener noreferrer">{WEBSITE_URL}</a>.
         </p>
 
@@ -134,7 +134,7 @@ export default function PrivacyPolicy() {
 
         <hr />
         <p className="text-sm text-muted-foreground">
-          This Privacy Policy applies to the OnSite Crew Manager mobile application and the OnSite Crew Manager admin
+          This Privacy Policy applies to the FiledCrews mobile application and the FiledCrews admin
           dashboard at <a href={WEBSITE_URL}>{WEBSITE_URL}</a>.
         </p>
       </article>

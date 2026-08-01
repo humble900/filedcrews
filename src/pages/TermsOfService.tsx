@@ -9,15 +9,15 @@ export default function TermsOfService() {
     <PublicPageLayout>
       <SEO
         title="Terms of Service"
-        description="Terms of Service for OnSite Crew Manager — mobile app and admin dashboard."
+        description="Terms of Service for FiledCrews — mobile app and admin dashboard."
         path="/terms"
       />
       <article className="prose prose-sm sm:prose max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground/90 prose-li:text-foreground/90 prose-strong:text-foreground prose-a:text-primary">
         <h1>Terms of Service</h1>
         <p className="text-muted-foreground text-sm">Effective date: {EFFECTIVE_DATE}</p>
         <p>
-          These Terms of Service ("Terms") govern your use of the OnSite Crew Manager mobile application and the
-          OnSite Crew Manager admin dashboard (collectively, the "Service") provided by OnSite Crew Manager ("we",
+          These Terms of Service ("Terms") govern your use of the FiledCrews mobile application and the
+          FiledCrews admin dashboard (collectively, the "Service") provided by FiledCrews ("we",
           "us", or "our"). By accessing or using the Service, you agree to these Terms.
         </p>
 

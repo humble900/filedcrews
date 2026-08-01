@@ -47,6 +47,7 @@ interface AuthContextType extends AuthState {
   daysRemaining: number;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithGoogle: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   createCompany: (name: string, prefix: string) => Promise<{ data?: any; error?: any }>;
   refetchCompany: () => Promise<void>;
@@ -189,6 +190,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   }, []);
 
+  const signInWithGoogle = useCallback(async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/wizard`,
+        queryParams: {
+          access_type: "offline",
+          prompt: "consent",
+        },
+      },
+    });
+    return { error };
+  }, []);
+
   const signOut = useCallback(async () => {
     await supabase.auth.signOut({ scope: 'local' });
   }, []);
@@ -240,6 +255,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     daysRemaining,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut,
     createCompany,
     refetchCompany,

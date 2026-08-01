@@ -46,7 +46,7 @@ export default function MarketplacePage() {
 
   return (
     <DashboardLayout activeTab="marketplace">
-      <SEO title="App Marketplace | OnSite Crew Manager" />
+      <SEO title="App Marketplace | FiledCrews" />
       
       <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 pb-12">
         {/* Header */}

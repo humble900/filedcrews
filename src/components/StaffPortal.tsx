@@ -1071,7 +1071,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
           <div className="space-y-2 max-w-sm">
             <h3 className="text-xl font-black text-foreground">Trial Period Expired</h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Your company's trial period for <strong>OnSite Crew Manager</strong> has ended. Please contact your company administrator to upgrade the account and resume access.
+              Your company's trial period for <strong>FiledCrews</strong> has ended. Please contact your company administrator to upgrade the account and resume access.
             </p>
           </div>
           <Button onClick={onSignOut} variant="outline" className="w-full max-w-[200px] border-border/60 hover:bg-muted font-bold text-xs gap-1.5 h-9">

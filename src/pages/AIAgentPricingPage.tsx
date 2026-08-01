@@ -65,22 +65,22 @@ export default function AIAgentPricingPage() {
           </p>
         </div>
         
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
           {/* Free Trial Card */}
           <Card className="relative border-slate-200 p-6 flex flex-col justify-between">
             <CardHeader className="p-0 mb-4">
-              <CardTitle className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 drop-shadow-[0_2px_8px_rgba(16,185,129,0.4)]">
+              <CardTitle className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 drop-shadow-[0_2px_8px_rgba(16,185,129,0.4)]">
                 Free Trial
               </CardTitle>
               <CardDescription className="mt-2">
-                <span className="text-3xl font-black text-slate-900">$0</span>
-                <span className="text-slate-500 ml-1 font-medium">/ 14 days</span>
+                <span className="text-2xl sm:text-3xl font-black text-slate-900">$0</span>
+                <span className="text-slate-500 ml-1 font-medium text-xs">/ 14 days</span>
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0 mb-6">
               <ul className="space-y-3 text-xs">
                 {[
-                  "1 Office Staff (Account Creator)",
+                  "1 Office Staff",
                   "2 Field Crew Members",
                   "14 Days Full Access",
                   "GPS Map & Checklists"
@@ -102,12 +102,12 @@ export default function AIAgentPricingPage() {
           {/* Growth Plan Card */}
           <Card className="relative border-amber-500/50 shadow-md border-2 p-6 flex flex-col justify-between">
             <CardHeader className="p-0 mb-4">
-              <CardTitle className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 drop-shadow-[0_2px_8px_rgba(245,158,11,0.4)]">
+              <CardTitle className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 drop-shadow-[0_2px_8px_rgba(245,158,11,0.4)]">
                 Growth
               </CardTitle>
               <CardDescription className="mt-2">
-                <span className="text-3xl font-black text-slate-900">$495</span>
-                <span className="text-slate-500 ml-1 font-medium">/ mo</span>
+                <span className="text-2xl sm:text-3xl font-black text-slate-900">$495</span>
+                <span className="text-slate-500 ml-1 font-medium text-xs">/ mo</span>
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0 mb-6">
@@ -115,7 +115,7 @@ export default function AIAgentPricingPage() {
                 {[
                   "3 Office Staff",
                   "7 Field Crew Members",
-                  "AI Agent Autonomous Dispatcher",
+                  "AI Agent Dispatcher",
                   "Safety Hub & Compliance"
                 ].map((feature, i) => (
                   <li key={i} className="flex items-center text-slate-700">
@@ -136,27 +136,26 @@ export default function AIAgentPricingPage() {
           </Card>
           
           {/* Founding Partner Card */}
-          <Card className="relative border-slate-200 p-6 flex flex-col justify-between">
+          <Card className="relative border-purple-500/50 shadow-md border-2 p-6 flex flex-col justify-between">
             <CardHeader className="p-0 mb-4">
-              <CardTitle className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-indigo-500 to-purple-500 drop-shadow-[0_2px_8px_rgba(168,85,247,0.4)]">
+              <CardTitle className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-indigo-500 to-purple-500 drop-shadow-[0_2px_8px_rgba(168,85,247,0.4)]">
                 Founding Partner
               </CardTitle>
               <CardDescription className="mt-2">
-                <span className="text-3xl font-black text-slate-900">$2,899</span>
-                <span className="text-slate-500 ml-1 font-medium">/ yr</span>
+                <span className="text-2xl sm:text-3xl font-black text-slate-900">$2,899</span>
+                <span className="text-slate-500 ml-1 font-medium text-xs">/ yr</span>
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0 mb-6">
               <ul className="space-y-3 text-xs">
                 {[
-                  "Custom Office Seats",
-                  "Custom Field Crew Seats",
+                  "20 Total Seats Included",
+                  "Custom Office vs Field Split",
                   "Yearly VIP Charter License",
-                  "White-Glove Migration",
-                  "Direct Product Co-Design Access"
+                  "Direct Roadmap Co-Design"
                 ].map((feature, i) => (
                   <li key={i} className="flex items-center text-slate-700">
-                    <CheckCircle2 className="w-4 h-4 mr-2.5 text-blue-500 shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 mr-2.5 text-purple-500 shrink-0" />
                     <span>{feature}</span>
                   </li>
                 ))}
@@ -168,6 +167,44 @@ export default function AIAgentPricingPage() {
                 className="w-full bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold"
               >
                 Join Yearly Charter →
+              </Button>
+            </CardFooter>
+          </Card>
+
+          {/* Enterprise Card */}
+          <Card className="relative border-cyan-500/50 p-6 flex flex-col justify-between">
+            <CardHeader className="p-0 mb-4">
+              <CardTitle className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 drop-shadow-[0_2px_8px_rgba(6,182,212,0.4)]">
+                Enterprise
+              </CardTitle>
+              <CardDescription className="mt-2">
+                <span className="text-2xl sm:text-3xl font-black text-slate-900">Custom</span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0 mb-6">
+              <ul className="space-y-3 text-xs">
+                {[
+                  "Custom Unlimited Seats",
+                  "Dedicated SLA Guarantee",
+                  "Custom API Integrations",
+                  "24/7 Account Manager"
+                ].map((feature, i) => (
+                  <li key={i} className="flex items-center text-slate-700">
+                    <CheckCircle2 className="w-4 h-4 mr-2.5 text-cyan-500 shrink-0" />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+            <CardFooter className="p-0">
+              <Button 
+                onClick={() => {
+                  const text = encodeURIComponent("Hi there! We are interested in an Enterprise Custom Plan on FiledCrew. Please connect us with an Account Manager.");
+                  window.open(`https://wa.me/14094229714?text=${text}`, "_blank");
+                }}
+                className="w-full bg-cyan-700 hover:bg-cyan-800 text-white text-xs font-bold"
+              >
+                Contact Sales →
               </Button>
             </CardFooter>
           </Card>

@@ -10,14 +10,14 @@ export default function AccountDeletion() {
     <PublicPageLayout>
       <SEO
         title="Account & Data Deletion"
-        description="Request deletion of your OnSite Crew Manager account and associated data."
+        description="Request deletion of your FiledCrews account and associated data."
         path="/account-deletion"
       />
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Account & Data Deletion</h1>
           <p className="mt-2 text-muted-foreground text-lg">
-            You have the right to request deletion of your account and personal data from OnSite Crew Manager.
+            You have the right to request deletion of your account and personal data from FiledCrews.
           </p>
         </div>
 

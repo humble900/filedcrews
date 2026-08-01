@@ -1,5 +1,5 @@
-// OnSite Crew Manager - Production PWA Service Worker
-const CACHE_NAME = 'onsite-crew-v1';
+// FiledCrews - Production PWA Service Worker
+const CACHE_NAME = 'filedcrews-v1';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',

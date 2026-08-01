@@ -1346,7 +1346,7 @@ export default function InvoicesPage({ projectId }: { projectId?: string }) {
               {/* Header Info */}
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="text-2xl font-black text-primary tracking-tight">{company?.name || "OnSite Coordinator"}</h3>
+                  <h3 className="text-2xl font-black text-primary tracking-tight">{company?.name || "FiledCrews"}</h3>
                   <p className="text-xs text-muted-foreground mt-1">Ref Prefix: {company?.prefix}</p>
                 </div>
                 <div className="text-right">

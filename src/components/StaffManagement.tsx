@@ -465,7 +465,7 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
   ).length;
 
   const whatsappMessage = encodeURIComponent(
-    `Hi there! We have reached our seat limit for ${limitWarningRole} on OnSite Crew Manager. Please send us details on how we can top up or upgrade.`
+    `Hi there! We have reached our seat limit for ${limitWarningRole} on FiledCrews. Please send us details on how we can top up or upgrade.`
   );
   const whatsappUrl = `https://wa.me/14094229714?text=${whatsappMessage}`;
 
@@ -505,17 +505,18 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
     const computedFullName = [firstName, lastName].filter(Boolean).join(" ");
     if (!username || !computedFullName || !password) return;
 
-    // Check seat limits (Enforced for all tiers, including Founding Partner Charter)
-    const isFoundingPartner = company?.subscription_tier === "Founding Partner";
+    // Check seat limits (Enforced for all tiers based on DB quota or plan tier fallback)
+    const tier = company?.subscription_tier || "free_trial";
+    const isFP = tier === "founding_partner" || tier === "Founding Partner";
     if (newStaffRole === "Field Crew") {
-      const maxFieldCrew = company?.max_field_crew_seats ?? (isFoundingPartner ? 15 : 10);
+      const maxFieldCrew = company?.max_field_crew_seats ?? (tier === "growth" ? 7 : (isFP ? 15 : (tier === "enterprise" ? 100 : 2)));
       if (activeFieldCrew >= maxFieldCrew) {
         setLimitWarningRole("Field Crew");
         setShowLimitWarning(true);
         return;
       }
     } else {
-      const maxAdmins = company?.max_admin_seats ?? (isFoundingPartner ? 5 : 3);
+      const maxAdmins = company?.max_admin_seats ?? (tier === "growth" ? 3 : (isFP ? 5 : (tier === "enterprise" ? 50 : 1)));
       if (activeAdmins >= maxAdmins) {
         setLimitWarningRole("Office Seat");
         setShowLimitWarning(true);

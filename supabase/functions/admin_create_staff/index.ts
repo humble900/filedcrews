@@ -47,10 +47,10 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Fetch the company to validate the prefix
+    // Fetch the company to validate prefix and seat limits
     const { data: company, error: companyError } = await supabaseAdmin
       .from("companies")
-      .select("prefix")
+      .select("prefix, subscription_tier, max_admin_seats, max_field_crew_seats")
       .eq("id", company_id)
       .single();
 
@@ -67,6 +67,32 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: `Username must start with your company prefix: ${company.prefix}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Server-side Seat Limit Enforcement
+    const isFieldCrew = global_role === "Field Crew";
+    const tier = company.subscription_tier || "free_trial";
+    const maxAllowedSeats = isFieldCrew
+      ? (company.max_field_crew_seats ?? (tier === "growth" ? 7 : (tier === "founding_partner" ? 15 : (tier === "enterprise" ? 100 : 2))))
+      : (company.max_admin_seats ?? (tier === "growth" ? 3 : (tier === "founding_partner" ? 5 : (tier === "enterprise" ? 50 : 1))));
+
+    const { data: existingStaff } = await supabaseAdmin
+      .from("staff_profiles")
+      .select("global_role")
+      .eq("company_id", company_id)
+      .eq("is_active", true);
+
+    if (existingStaff) {
+      const currentRoleCount = existingStaff.filter((s: { global_role: string }) =>
+        isFieldCrew ? s.global_role === "Field Crew" : s.global_role !== "Field Crew"
+      ).length;
+
+      if (currentRoleCount >= maxAllowedSeats) {
+        return new Response(
+          JSON.stringify({ error: `Seat limit reached (${currentRoleCount}/${maxAllowedSeats}) for ${isFieldCrew ? "Field Crew" : "Office Staff"} on your plan. Please upgrade your subscription in Settings.` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // ── Authorization check ────────────────────────────────────────────────

@@ -46,7 +46,7 @@ const CompanySetup = ({ onCreate, onSignOut }: CompanySetupProps) => {
       <div className="w-full max-w-md">
         <div className="flex items-center gap-2 mb-8 justify-center">
           <img src="/favicon.png" alt="Ocrem" className="h-10 w-10 rounded-xl" />
-          <h1 className="text-2xl font-bold text-primary">OnSite Crew Manager</h1>
+          <h1 className="text-2xl font-bold text-primary">FiledCrews</h1>
         </div>
 
         <Card className="card-shadow-lg border-border/50">

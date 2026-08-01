@@ -14,8 +14,8 @@ const Index = () => {
   return (
     <>
       <SEO
-        title="OnSite Crew Manager — Sign In or Create Account"
-        description="Sign in to your OnSite Crew Manager dashboard or create a new account."
+        title="FiledCrews — Sign In or Create Account"
+        description="Sign in to your FiledCrews dashboard or create a new account."
         path="/auth"
       />
       <AuthPage onSignIn={signIn} onSignUp={signUp} />
