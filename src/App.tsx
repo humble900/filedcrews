@@ -130,6 +130,7 @@ const App = () => (
             <Suspense fallback={<PageSkeleton />}>
             <Routes>
               <Route path="/" element={<HomePage />} />
+              <Route path="/landing" element={<LandingPage />} />
               <Route path="/auth" element={<Index />} />
               <Route path="/wizard" element={<ProjectSetupWizard />} />
               <Route path="/inbox" element={

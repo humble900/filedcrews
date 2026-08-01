@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useLocation, Navigate } from "react-router-dom";
 import { APIProvider } from "@vis.gl/react-google-maps";
 
-const LandingPage = lazy(() => import("./LandingPage"));
+import LandingPage from "./LandingPage";
 
 const HomePage = () => {
   const { user, company, staffProfile, loading, signOut } = useAuth();
@@ -83,25 +83,27 @@ const HomePage = () => {
     [geofenceEditing]
   );
 
+  // Not logged in → render landing page immediately
+  if (!user && !loading) {
+    return <LandingPage />;
+  }
+
+  // Check if there is any Supabase session in localStorage
+  const hasStoredSession = typeof window !== 'undefined' && Object.keys(localStorage).some(key => key.includes("sb-") && key.includes("-auth-token"));
+  if (!user && !hasStoredSession) {
+    return <LandingPage />;
+  }
+
   if (loading || (user && loadingAdmin)) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="min-h-screen bg-[#070b14] flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  // Not logged in → show landing page
   if (!user) {
-    return (
-      <Suspense fallback={
-        <div className="flex min-h-screen items-center justify-center bg-[#0c121f]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      }>
-        <LandingPage />
-      </Suspense>
-    );
+    return <LandingPage />;
   }
 
   // Logged in as staff member

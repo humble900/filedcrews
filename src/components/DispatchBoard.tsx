@@ -155,6 +155,8 @@ export default function DispatchBoard({ companyId, projectId }: DispatchBoardPro
     }
   };
 
+  const [mobileTab, setMobileTab] = useState<"unassigned" | "staff" | "dispatched">("unassigned");
+
   if (isLoadingStaff || isLoadingJobs) {
     return (
       <div className="flex justify-center items-center py-24">
@@ -187,11 +189,42 @@ export default function DispatchBoard({ companyId, projectId }: DispatchBoardPro
         </div>
       </div>
 
-      {/* Main Board Layout */}
+      {/* Mobile-only Column Selector Tabs */}
+      <div className="flex lg:hidden bg-muted/40 p-1 rounded-xl border border-border/50 gap-1 text-xs">
+        <button
+          onClick={() => setMobileTab("unassigned")}
+          className={`flex-1 py-2 px-2 font-bold rounded-lg transition-all text-center flex items-center justify-center gap-1.5 ${
+            mobileTab === "unassigned" ? "bg-rose-500/20 text-rose-300 border border-rose-500/30 shadow-sm" : "text-muted-foreground hover:bg-muted/50"
+          }`}
+        >
+          <ClipboardList className="h-3.5 w-3.5" />
+          Unassigned ({unassignedOrders.length})
+        </button>
+        <button
+          onClick={() => setMobileTab("staff")}
+          className={`flex-1 py-2 px-2 font-bold rounded-lg transition-all text-center flex items-center justify-center gap-1.5 ${
+            mobileTab === "staff" ? "bg-primary/20 text-primary border border-primary/30 shadow-sm" : "text-muted-foreground hover:bg-muted/50"
+          }`}
+        >
+          <Users className="h-3.5 w-3.5" />
+          Staff ({staffList.length})
+        </button>
+        <button
+          onClick={() => setMobileTab("dispatched")}
+          className={`flex-1 py-2 px-2 font-bold rounded-lg transition-all text-center flex items-center justify-center gap-1.5 ${
+            mobileTab === "dispatched" ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-sm" : "text-muted-foreground hover:bg-muted/50"
+          }`}
+        >
+          <UserCheck className="h-3.5 w-3.5" />
+          Dispatched ({assignedOrders.length})
+        </button>
+      </div>
+
+      {/* Main Board Layout: Mobile Horizontal Sliding / Desktop 3-Column Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Column 1: Unassigned Work Orders */}
-        <div className="space-y-4">
+        <div className={`space-y-4 ${mobileTab === "unassigned" ? "block" : "hidden lg:block"}`}>
           <div className="flex items-center justify-between border-b pb-2">
             <h4 className="font-semibold text-sm flex items-center gap-2 text-rose-400">
               <ClipboardList className="h-4 w-4" />
@@ -296,7 +329,7 @@ export default function DispatchBoard({ companyId, projectId }: DispatchBoardPro
         </div>
 
         {/* Column 2: Staff Directory & Shift Status */}
-        <div className="space-y-4">
+        <div className={`space-y-4 ${mobileTab === "staff" ? "block" : "hidden lg:block"}`}>
           <div className="flex items-center justify-between border-b pb-2">
             <h4 className="font-semibold text-sm flex items-center gap-2 text-primary">
               <Users className="h-4 w-4" />
@@ -378,7 +411,7 @@ export default function DispatchBoard({ companyId, projectId }: DispatchBoardPro
         </div>
 
         {/* Column 3: Dispatched Work Orders */}
-        <div className="space-y-4">
+        <div className={`space-y-4 ${mobileTab === "dispatched" ? "block" : "hidden lg:block"}`}>
           <div className="flex items-center justify-between border-b pb-2">
             <h4 className="font-semibold text-sm flex items-center gap-2 text-emerald-400">
               <UserCheck className="h-4 w-4" />

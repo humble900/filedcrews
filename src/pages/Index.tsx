@@ -2,18 +2,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import AuthPage from "@/pages/AuthPage";
 import SEO from "@/components/SEO";
-import { Loader2 } from "lucide-react";
 
 const Index = () => {
-  const { user, loading, signIn, signUp } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  const { user, signIn, signUp } = useAuth();
 
   // Authenticated users should not stay on /auth — redirect to homepage
   if (user) {

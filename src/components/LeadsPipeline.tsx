@@ -446,13 +446,13 @@ export default function LeadsPipeline({ companyId }: LeadsPipelineProps) {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 overflow-x-auto pb-4">
+        <div className="flex md:grid md:grid-cols-5 gap-4 overflow-x-auto snap-x snap-mandatory pb-4 scrollbar-none">
           {LEAD_STATUSES.map((status) => {
             const statusLeads = filteredLeads.filter((l) => l.status === status);
             const statusTotalValue = statusLeads.reduce((sum, l) => sum + (l.estimated_value || 0), 0);
 
             return (
-              <div key={status} className="flex flex-col min-w-[250px] bg-muted/30 rounded-xl p-3 border border-border/40">
+              <div key={status} className="flex flex-col w-[85vw] sm:w-[320px] md:w-auto shrink-0 snap-center min-w-[270px] bg-muted/30 rounded-xl p-3 border border-border/40">
                 <div className="flex justify-between items-center mb-3">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-sm tracking-tight">{status}</span>

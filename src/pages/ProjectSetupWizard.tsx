@@ -1157,12 +1157,8 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
   // Adjust steps listing for all modes
   const activeStepsList = stepsList;
 
-  if (loading || !apiKey || (user && loadingAdmin)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+  if (loading || (user && loadingAdmin)) {
+    return <div className="min-h-screen bg-[#0a0f1d]" />;
   }
 
   if (company?.subscription_status === 'pending_approval' && !isSuperadmin) {
