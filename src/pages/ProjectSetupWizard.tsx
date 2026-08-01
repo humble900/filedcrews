@@ -701,10 +701,15 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
         }
         return true;
       case 2:
-        if (!customerName.trim()) {
-          toast.error("Client Name is required");
-          return false;
+        if (subStep === 1) {
+          // Sub-step 1: Client Information only
+          if (!customerName.trim()) {
+            toast.error("Client Name is required");
+            return false;
+          }
+          return true;
         }
+        // Sub-step 2: Project Specifications
         if (!projectName.trim()) {
           toast.error("Project Title is required");
           return false;
@@ -758,12 +763,23 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
   const handleNext = () => {
     if (validateStep()) {
-      setStep((prev) => prev + 1);
+      if (step === 2 && subStep === 1) {
+        // Move from Client Info sub-step to Project Specs sub-step
+        setSubStep(2);
+      } else {
+        if (step === 2) setSubStep(1); // Reset sub-step when leaving step 2
+        setStep((prev) => prev + 1);
+      }
     }
   };
 
   const handleBack = () => {
-    setStep((prev) => prev - 1);
+    if (step === 2 && subStep === 2) {
+      // Go back from Project Specs to Client Info
+      setSubStep(1);
+    } else {
+      setStep((prev) => prev - 1);
+    }
   };
 
   // Perform bulk inserts into Supabase
@@ -2611,26 +2627,16 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
       />
 
       <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans antialiased">
-        {/* Centered Minimalist Flow */}
-        <div className="flex-1 flex flex-col items-center pt-8 md:pt-16 p-4 overflow-y-auto">
-          {/* Progress Bar Header */}
-          <div className="w-full max-w-2xl mb-10 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img src="/favicon.png" alt="FiledCrews Logo" className="h-8 w-8 rounded-lg shadow-sm" />
-              <span className="text-xl font-black tracking-tight text-slate-900">FiledCrews</span>
-            </div>
-            {step > 1 && (
-              <Button variant="ghost" size="sm" onClick={() => {
-                if (step === 2 && subStep > 1) {
-                   setSubStep(subStep - 1);
-                } else {
-                   setStep(step - 1);
-                }
-              }} className="text-slate-500 hover:text-slate-900 font-semibold">
-                <ArrowLeft className="w-4 h-4 mr-2" /> Back
-              </Button>
-            )}
+        {/* Sticky Logo Bar — always visible, never scrolls */}
+        <div className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-sm border-b border-slate-100 px-4 sm:px-6 py-3.5">
+          <div className="max-w-2xl mx-auto flex items-center gap-3">
+            <img src="/favicon.png" alt="FiledCrews Logo" className="h-8 w-8 rounded-lg shadow-sm" />
+            <span className="text-xl font-black tracking-tight text-slate-900">FiledCrews</span>
           </div>
+        </div>
+
+        {/* Scrollable Content Area */}
+        <div className="flex-1 flex flex-col items-center pt-6 md:pt-10 p-4 overflow-y-auto">
           <div className="w-full max-w-2xl">
             {step <= 6 && (
               <Card className="border border-slate-200/80 shadow-xl bg-white text-slate-900 rounded-2xl overflow-hidden">
@@ -2638,14 +2644,14 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                   <div className="space-y-2.5 mb-2">
                     <div className="flex justify-end items-center text-xs font-black font-mono text-amber-500 tracking-wider">
                       <span>
-                        {Math.round(((step - (wizardMode === "new-project" ? 1 : 0)) / (wizardMode === "new-project" ? 5 : 6)) * 100)}% COMPLETE
+                        {Math.min(100, Math.round((((step + (step === 2 && subStep === 2 ? 0.5 : 0)) - (wizardMode === "new-project" ? 1 : 0)) / (wizardMode === "new-project" ? 5 : 6)) * 100))}% COMPLETE
                       </span>
                     </div>
                     <div className="h-2 w-full bg-slate-100 rounded-full border border-amber-500/20 p-0.5 overflow-hidden shadow-inner">
                       <div
                         className="h-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-400 rounded-full transition-all duration-500 ease-out shadow-[0_0_12px_rgba(249,115,22,0.85)]"
                         style={{
-                          width: `${Math.round(((step - (wizardMode === "new-project" ? 1 : 0)) / (wizardMode === "new-project" ? 5 : 6)) * 100)}%`
+                          width: `${Math.min(100, Math.round((((step + (step === 2 && subStep === 2 ? 0.5 : 0)) - (wizardMode === "new-project" ? 1 : 0)) / (wizardMode === "new-project" ? 5 : 6)) * 100))}%`
                         }}
                       />
                     </div>
@@ -2662,11 +2668,20 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                     </div>
                   )}
 
-                  {step === 2 && (
+                  {step === 2 && subStep === 1 && (
                     <div className="space-y-2 pt-2">
                       <CardTitle className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Who is your first client?</CardTitle>
                       <CardDescription className="text-slate-600 text-sm leading-relaxed">
                         Enter the details of the customer or project you are managing. You'll be able to attach multiple projects, invoices, and geofences to this client later.
+                      </CardDescription>
+                    </div>
+                  )}
+
+                  {step === 2 && subStep === 2 && (
+                    <div className="space-y-2 pt-2">
+                      <CardTitle className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Project Specifications & Budget</CardTitle>
+                      <CardDescription className="text-slate-600 text-sm leading-relaxed">
+                        Define the job site title, contract value, and budget allocations for this project.
                       </CardDescription>
                     </div>
                   )}
@@ -2828,9 +2843,12 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                           />
                         </div>
                       </div>
+                    </div>
+                  )}
 
-                      {/* Section B: Project Specifications */}
-                      <div className="space-y-4">
+                  {/* STEP 2 - SUBSTEP 2: Project Specifications & Budget */}
+                  {step === 2 && subStep === 2 && (
+                    <div className="space-y-6">
                         <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider">Project Specifications</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                           <div className="sm:col-span-2 space-y-2">
@@ -3052,8 +3070,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                           </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* STEP 3: Worksite Coordinates Form */}
                   {step === 3 && (
