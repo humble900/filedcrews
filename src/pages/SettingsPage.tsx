@@ -548,117 +548,428 @@ export default function SettingsPage() {
     </div>
   );
 
-  // ─── Billing Tab ───
+  // ─── Billing & Plans Tab State & UI ───
+  const [selectedPlanId, setSelectedPlanId] = useState<"launch" | "growth" | "enterprise">("launch");
+  const [billingViewMode, setBillingViewMode] = useState<"select" | "review">("select");
+  const [businessTaxId, setBusinessTaxId] = useState("");
+  const [billingAddress, setBillingAddress] = useState(company?.address || "");
+
+  const plans = [
+    {
+      id: "launch" as const,
+      name: "Launch",
+      badge: "Recommended",
+      badgeColor: "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-800",
+      price: "$185",
+      period: "/mo",
+      description: "Run your field operations — manage projects, track time, and coordinate crews in one platform.",
+      specs: [
+        "⚡ Up to 10 Office Seats",
+        "👷 Up to 25 Field Crew Seats"
+      ],
+      features: [
+        "Run unlimited projects with Worksite Map",
+        "Geofence time tracking & GPS logs",
+        "Track job costs and cost categories",
+        "Create & send digital Work Orders",
+        "Mobile App access for field crews"
+      ]
+    },
+    {
+      id: "growth" as const,
+      name: "Growth",
+      badge: isFoundingPartner ? "Current Plan" : "Popular",
+      badgeColor: "bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-950/50 dark:text-purple-400 dark:border-purple-800",
+      price: "$495",
+      period: "/mo",
+      description: "Supercharge your company with advanced AI dispatching, safety hub compliance, and automated timesheets.",
+      specs: [
+        "⚡ Up to 25 Office Seats",
+        "👷 Up to 75 Field Crew Seats"
+      ],
+      features: [
+        "Everything in Launch plus...",
+        "AI Agent Autonomous Dispatcher",
+        "Safety Hub & Compliance Forms",
+        "Auto-sync timesheets & payroll export",
+        "Change Orders & Client Approval Portal",
+        "Priority WhatsApp & phone support"
+      ]
+    },
+    {
+      id: "enterprise" as const,
+      name: "Enterprise",
+      badge: "Charter VIP",
+      badgeColor: "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800",
+      price: "$2,899",
+      period: "/yr",
+      description: "Orchestrate multi-site field operations with custom seats, white-glove onboarding, and dedicated support.",
+      specs: [
+        "⚡ Unlimited Office Seats",
+        "👷 Unlimited Field Crew Seats"
+      ],
+      features: [
+        "Everything in Growth plus...",
+        "Unlimited custom seat allocation",
+        "Founding Partner VIP Charter membership",
+        "White-glove data migration & setup",
+        "Dedicated Growth Strategist & Account Manager",
+        "Custom API & ERP Integrations"
+      ]
+    }
+  ];
+
+  const activeSelectedPlan = plans.find(p => p.id === selectedPlanId) || plans[0];
+
+  const handleConfirmPlanChange = () => {
+    toast.success(`Plan request submitted for ${activeSelectedPlan.name}! Our account manager will contact you via WhatsApp / Email for manual activation.`);
+    setBillingViewMode("select");
+  };
+
   const renderBilling = () => (
-    <div className="space-y-6">
-      {!isFoundingPartner && (
-        <Card className={cn("border-border/50", isTrialExpired ? "border-rose-500/30 bg-rose-500/5" : "border-blue-500/30 bg-blue-500/5")}>
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className={cn("p-2 rounded-lg", isTrialExpired ? "bg-rose-500/15" : "bg-blue-500/15")}>
-              <Clock className={cn("h-5 w-5", isTrialExpired ? "text-rose-500" : "text-blue-400")} />
-            </div>
-            <div className="flex-1">
-              <p className="font-bold text-sm">{isTrialExpired ? "Trial Expired" : `${daysRemaining} Days Remaining`}</p>
-              <p className="text-xs text-muted-foreground">{isTrialExpired ? "Upgrade to continue." : "Full access during trial."}</p>
-            </div>
-            {isTrialExpired && <Badge variant="destructive" className="text-[10px]">Expired</Badge>}
-          </CardContent>
-        </Card>
-      )}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
-          {isFoundingPartner ? (
-            <Card className="border-amber-500/30 bg-gradient-to-r from-amber-500/5 via-yellow-500/5 to-amber-500/5 shadow-lg relative overflow-hidden">
-              <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 rounded-full bg-amber-500/10 blur-xl pointer-events-none" />
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-amber-500/15 text-amber-500"><Crown className="h-6 w-6 animate-bounce" /></div>
+    <div className="space-y-8">
+      {/* Top Banner & License Usage Bar */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          {!isFoundingPartner ? (
+            <Card className={cn("border-border/50 shadow-sm", isTrialExpired ? "border-rose-500/30 bg-rose-500/5" : "border-blue-500/30 bg-blue-500/5")}>
+              <CardContent className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className={cn("p-2.5 rounded-xl shrink-0", isTrialExpired ? "bg-rose-500/15" : "bg-blue-500/15")}>
+                    <Clock className={cn("h-6 w-6", isTrialExpired ? "text-rose-500" : "text-blue-500")} />
+                  </div>
                   <div>
-                    <CardTitle className="text-xl font-extrabold">Founding Partner Membership</CardTitle>
-                    <CardDescription className="text-amber-500/80 font-semibold text-xs tracking-wider uppercase">VIP Charter · $2,899/yr Annual Plan</CardDescription>
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-base text-foreground">{isTrialExpired ? "Trial Expired" : `${daysRemaining} Days Remaining in Trial`}</p>
+                      {isTrialExpired && <Badge variant="destructive" className="text-[10px]">Action Required</Badge>}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {isTrialExpired ? "Please select a plan below to keep your workforce active." : "Full access to all platform features during your trial period."}
+                    </p>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-foreground/90">Your company is an official <strong>Founding Partner</strong> on the annual charter plan.</p>
-                <div className="grid gap-3 sm:grid-cols-2 pt-2">
-                  {[{ icon: CheckCircle, t: `Up to ${(company?.max_admin_seats ?? 5) + (company?.max_field_crew_seats ?? 15)} Total Seats` }, { icon: ShieldCheck, t: "Priority Roadmap Co-Design" }, { icon: Zap, t: "White-Glove Migrations" }, { icon: MessageSquare, t: "Direct WhatsApp Hotline" }].map(({ icon: I, t }) => (
-                    <div key={t} className="flex items-center gap-2.5 text-xs text-foreground/80 bg-background/50 p-3 rounded-lg border border-border/40"><I className="h-4 w-4 text-emerald-500 shrink-0" /><span>{t}</span></div>
-                  ))}
-                </div>
+                <Button size="sm" onClick={() => setBillingViewMode("select")} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shrink-0">
+                  Manage Plan Selection
+                </Button>
               </CardContent>
             </Card>
           ) : (
-            <Card className="border-[#233558]/80 bg-[#14223c]/40 backdrop-blur-sm shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 rounded-full bg-blue-500/10 blur-2xl pointer-events-none" />
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-lg bg-blue-500/15"><Crown className="h-5 w-5 text-blue-400" /></div>
-                  <div><CardTitle className="text-lg font-bold">Founding Partner Charter</CardTitle><CardDescription>$2,899/yr · 20 seats (field + office staff).</CardDescription></div>
+            <Card className="border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-amber-500/10 shadow-sm relative overflow-hidden">
+              <CardContent className="p-5 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-amber-500/15 text-amber-500">
+                    <Crown className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-base text-foreground">Founding Partner Charter VIP</p>
+                      <Badge className="bg-amber-500 text-slate-900 border-none text-[10px]">Active Member</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">Annual Plan ($2,899/yr) · Direct WhatsApp Roadmap Access</p>
+                  </div>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm text-muted-foreground">
-                <p>Join our closed cohort with an <strong>annual charter subscription</strong> and direct roadmap design input.</p>
-                <div className="space-y-2 border-y border-border/40 py-4">
-                  <h4 className="font-semibold text-foreground text-xs uppercase tracking-wider">Charter Privileges:</h4>
-                  <ul className="grid gap-2 sm:grid-cols-2 text-xs">
-                    {["$2,899/yr flat rate", "Up to 20 seats (field + office)", "Co-design feedback", "White-glove onboarding"].map(t => (
-                      <li key={t} className="flex items-center gap-2 text-foreground/90"><CheckCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />{t}</li>
-                    ))}
-                  </ul>
-                </div>
-                <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold" asChild>
-                  <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="gap-2"><MessageSquare className="h-4 w-4" /> Apply for Charter</a>
+                <Button size="sm" variant="outline" asChild className="border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 text-xs shrink-0">
+                  <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5">
+                    <MessageSquare className="h-3.5 w-3.5" /> VIP WhatsApp
+                  </a>
                 </Button>
               </CardContent>
             </Card>
           )}
-          <Card className="border-border/50">
-            <CardHeader><CardTitle className="text-base font-bold flex items-center gap-2"><Building className="h-4 w-4 text-primary" /> SaaS Pricing</CardTitle></CardHeader>
-            <CardContent>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="p-4 rounded-xl border border-border/50 bg-muted/20 space-y-1">
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Office Seats</p>
-                  <div className="flex items-baseline gap-1 pt-1"><span className="text-2xl font-black">$49</span><span className="text-xs text-muted-foreground">/ seat / month</span></div>
-                  <p className="text-xs text-muted-foreground pt-1.5">Admin, Finance, Dispatcher dashboard access.</p>
-                </div>
-                <div className="p-4 rounded-xl border border-border/50 bg-muted/20 space-y-1">
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Crew Seats</p>
-                  <div className="flex items-baseline gap-1 pt-1"><span className="text-2xl font-black">$19</span><span className="text-xs text-muted-foreground">/ seat / month</span></div>
-                  <p className="text-xs text-muted-foreground pt-1.5">Mobile checklists, location, face check.</p>
-                </div>
+        </div>
+
+        <div className="lg:col-span-1">
+          <Card className="border-border/50 shadow-sm h-full flex flex-col justify-center">
+            <CardContent className="p-5 space-y-3">
+              <div className="flex items-center justify-between text-xs font-semibold">
+                <span className="flex items-center gap-1.5 text-foreground"><Users className="h-3.5 w-3.5 text-blue-500" /> Office Seats</span>
+                <span className="text-muted-foreground">{activeAdmins} / {maxAdmins}</span>
+              </div>
+              <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                <div className="h-full bg-blue-600 rounded-full transition-all duration-500" style={{ width: `${adminPercent}%` }} />
+              </div>
+              <div className="flex items-center justify-between text-xs font-semibold pt-1">
+                <span className="flex items-center gap-1.5 text-foreground"><Building className="h-3.5 w-3.5 text-purple-500" /> Crew Seats</span>
+                <span className="text-muted-foreground">{activeFieldCrew} / {maxFieldCrew}</span>
+              </div>
+              <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                <div className="h-full bg-purple-600 rounded-full transition-all duration-500" style={{ width: `${fieldPercent}%` }} />
               </div>
             </CardContent>
           </Card>
         </div>
-        <div className="lg:col-span-1">
-          <Card className="border-border/50 h-full">
-            <CardHeader>
-              <CardTitle className="text-base font-bold flex items-center gap-2"><Users className="h-4 w-4 text-primary" /> License Usage</CardTitle>
-              <CardDescription>Active seats vs. plan limits.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {loadingStaff ? <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div> : (<>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs font-medium"><span>Office Seats</span><span className="font-semibold">{activeAdmins} / {maxAdmins}</span></div>
-                  <div className="w-full h-2.5 rounded-full bg-muted overflow-hidden border border-border/30"><div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${adminPercent}%` }} /></div>
-                  <p className="text-[10px] text-muted-foreground">Owner, Admin, Finance, Dispatcher.</p>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs font-medium"><span>Crew Seats</span><span className="font-semibold">{activeFieldCrew} / {maxFieldCrew}</span></div>
-                  <div className="w-full h-2.5 rounded-full bg-muted overflow-hidden border border-border/30"><div className="h-full bg-purple-500 rounded-full transition-all duration-500" style={{ width: `${fieldPercent}%` }} /></div>
-                  <p className="text-[10px] text-muted-foreground">Field crew mobile accounts.</p>
-                </div>
-                {(activeAdmins >= maxAdmins || activeFieldCrew >= maxFieldCrew) && (
-                  <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-lg flex gap-2.5 text-xs font-medium">
-                    <AlertTriangle className="h-4 w-4 shrink-0" /><div><p>Seat limit reached!</p><p className="text-[10px] text-rose-500/80 font-normal">Upgrade to add more.</p></div>
-                  </div>
-                )}
-              </>)}
-            </CardContent>
-          </Card>
-        </div>
       </div>
+
+      {billingViewMode === "select" ? (
+        /* STEP 1: PLAN SELECTION GRID */
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-foreground tracking-tight">Plan Selection</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Select the plan that best fits your business workforce size.</p>
+            </div>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-3">
+            {plans.map((p) => {
+              const isSelected = selectedPlanId === p.id;
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => setSelectedPlanId(p.id)}
+                  className={cn(
+                    "relative rounded-2xl border-2 transition-all cursor-pointer p-6 flex flex-col justify-between bg-card hover:shadow-lg",
+                    isSelected
+                      ? "border-blue-600 shadow-md ring-2 ring-blue-600/20 dark:border-blue-500"
+                      : "border-border/60 hover:border-border"
+                  )}
+                >
+                  {/* Top Header & Radio Badge */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-blue-600 dark:text-blue-400">
+                        {p.id === "launch" && <Zap className="h-6 w-6 text-emerald-500" />}
+                        {p.id === "growth" && <Crown className="h-6 w-6 text-purple-500" />}
+                        {p.id === "enterprise" && <ShieldCheck className="h-6 w-6 text-amber-500" />}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {p.badge && (
+                          <Badge variant="outline" className={cn("text-[10px] font-semibold px-2 py-0.5 border", p.badgeColor)}>
+                            {p.badge}
+                          </Badge>
+                        )}
+                        <div className={cn(
+                          "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
+                          isSelected ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300 dark:border-slate-600"
+                        )}>
+                          {isSelected && <CheckCircle className="h-4 w-4 fill-blue-600 text-white" />}
+                        </div>
+                      </div>
+                    </div>
+
+                    <h3 className="text-xl font-bold text-foreground">{p.name}</h3>
+                    <div className="flex items-baseline gap-1 mt-2 mb-3">
+                      <span className="text-3xl font-black text-foreground tracking-tight">{p.price}</span>
+                      <span className="text-xs text-muted-foreground font-medium">{p.period}</span>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground leading-relaxed mb-4 min-h-[36px]">
+                      {p.description}
+                    </p>
+
+                    {/* Spec Pill Dropdown Visuals */}
+                    <div className="space-y-2 mb-6">
+                      {p.specs.map((spec, i) => (
+                        <div key={i} className="flex items-center justify-between px-3 py-2 rounded-lg border border-border/50 bg-muted/40 text-xs font-medium text-foreground">
+                          <span>{spec}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Features List */}
+                    <div className="space-y-2.5 pt-4 border-t border-border/40">
+                      {p.features.map((feat, idx) => (
+                        <div key={idx} className="flex items-start gap-2 text-xs text-foreground/90">
+                          <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                          <span>{feat}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Card Select Button */}
+                  <div className="pt-6 mt-6 border-t border-border/30">
+                    <Button
+                      variant={isSelected ? "default" : "outline"}
+                      className={cn(
+                        "w-full text-xs font-bold rounded-xl h-10 transition-all",
+                        isSelected
+                          ? "bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                          : "border-border hover:bg-muted"
+                      )}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedPlanId(p.id);
+                        setBillingViewMode("review");
+                      }}
+                    >
+                      {isSelected ? "Review Plan Selection" : `Select ${p.name}`}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Bottom Action Footer Bar */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-border/40">
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 rounded-xl h-11 text-xs"
+              onClick={() => setBillingViewMode("review")}
+            >
+              Review Changes
+            </Button>
+          </div>
+        </div>
+      ) : (
+        /* STEP 2: REVIEW & MANUAL ACTIVATION CHECKOUT VIEW */
+        <div className="space-y-6 max-w-5xl mx-auto">
+          {/* Header Back Navigation */}
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setBillingViewMode("select")}
+              className="text-xs font-semibold text-muted-foreground hover:text-foreground gap-1.5 p-0 hover:bg-transparent"
+            >
+              ← Plan selection
+            </Button>
+          </div>
+
+          <div>
+            <h1 className="text-2xl font-black text-foreground tracking-tight">Checkout Review</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">Confirm your business plan request for manual account activation.</p>
+          </div>
+
+          <div className="grid gap-8 lg:grid-cols-12 items-start">
+            {/* Left Column: Form & Manual Payment Info */}
+            <div className="lg:col-span-7 space-y-6">
+              {/* Contact Information */}
+              <div className="space-y-3 p-5 rounded-2xl border border-border/60 bg-card">
+                <h3 className="text-sm font-bold text-foreground">Contact Information</h3>
+                <div className="space-y-1.5">
+                  <label className="text-xs text-muted-foreground font-medium">Work Email</label>
+                  <Input
+                    value={user?.email || ""}
+                    disabled
+                    className="bg-muted/40 border-border/50 text-foreground text-xs h-10"
+                  />
+                </div>
+              </div>
+
+              {/* Payment Date */}
+              <div className="space-y-3 p-5 rounded-2xl border border-border/60 bg-card">
+                <h3 className="text-sm font-bold text-foreground">Activation Schedule</h3>
+                <div className="p-3.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-800/60 text-xs">
+                  <p className="font-bold text-blue-900 dark:text-blue-300">Immediately (Today)</p>
+                  <p className="text-blue-700 dark:text-blue-400 mt-0.5 text-[11px]">
+                    Plan updates and seat quotas will take effect upon confirmation by your account manager.
+                  </p>
+                </div>
+              </div>
+
+              {/* Manual Activation Payment Notice (No Credit Card required) */}
+              <div className="space-y-3 p-5 rounded-2xl border border-border/60 bg-card">
+                <div className="flex items-center gap-2">
+                  <Building className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <h3 className="text-sm font-bold text-foreground">Payment Method & Activation</h3>
+                </div>
+
+                <div className="p-4 rounded-xl border border-dashed border-blue-300 dark:border-blue-700/60 bg-blue-50/40 dark:bg-blue-950/20 space-y-2 text-xs">
+                  <div className="flex items-center gap-2 text-blue-800 dark:text-blue-300 font-semibold">
+                    <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                    <span>Direct Invoicing / Manual Activation Mode</span>
+                  </div>
+                  <p className="text-muted-foreground text-[11px] leading-relaxed">
+                    We currently process payment activations directly via bank transfer / wire invoice. Submitting this request notifies your account specialist to provision your license limits without delay.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-muted-foreground font-medium">Business Name</label>
+                    <Input
+                      value={company?.name || ""}
+                      readOnly
+                      className="bg-muted/40 border-border/50 text-foreground text-xs h-10"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-muted-foreground font-medium">Tax ID / TIN (Optional)</label>
+                    <Input
+                      placeholder="e.g. 123456789"
+                      value={businessTaxId}
+                      onChange={(e) => setBusinessTaxId(e.target.value)}
+                      className="bg-card border-border/50 text-foreground text-xs h-10"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 pt-1">
+                  <label className="text-xs text-muted-foreground font-medium">Billing Address</label>
+                  <Input
+                    placeholder="Enter company billing address"
+                    value={billingAddress}
+                    onChange={(e) => setBillingAddress(e.target.value)}
+                    className="bg-card border-border/50 text-foreground text-xs h-10"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Summary Card Sidebar */}
+            <div className="lg:col-span-5 space-y-6">
+              <div className="p-6 rounded-2xl border border-border/60 bg-card shadow-sm space-y-6 sticky top-6">
+                {/* Plan Header */}
+                <div className="flex items-center gap-3.5 pb-4 border-b border-border/40">
+                  <div className="p-3 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                    <Crown className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">{activeSelectedPlan.name} Plan</h3>
+                    <p className="text-xs text-muted-foreground">Billed monthly / annual schedule</p>
+                  </div>
+                </div>
+
+                {/* Line Items */}
+                <div className="space-y-3 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground font-medium">Base Plan Subscription</span>
+                    <span className="font-bold text-foreground">{activeSelectedPlan.price}{activeSelectedPlan.period}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-muted-foreground">
+                    <span>Office & Crew Seat Quotas</span>
+                    <span className="text-foreground font-medium">Included</span>
+                  </div>
+                  <div className="flex items-center justify-between text-muted-foreground">
+                    <span>Setup & Onboarding Fee</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">$0.00 (Waived)</span>
+                  </div>
+                </div>
+
+                {/* Subtotal & Total */}
+                <div className="pt-4 border-t border-border/40 space-y-2">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Subtotal</span>
+                    <span>{activeSelectedPlan.price}.00</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Tax</span>
+                    <span className="text-[11px]">Calculated upon invoice</span>
+                  </div>
+                  <div className="flex items-baseline justify-between pt-2">
+                    <span className="text-sm font-bold text-foreground">Total due today</span>
+                    <span className="text-2xl font-black text-foreground">{activeSelectedPlan.price}.00</span>
+                  </div>
+                </div>
+
+                {/* Submit Action Button */}
+                <Button
+                  onClick={handleConfirmPlanChange}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-11 text-xs rounded-xl shadow-md transition-all"
+                >
+                  Submit Plan Activation Request
+                </Button>
+
+                <p className="text-[10px] text-center text-muted-foreground leading-relaxed px-2">
+                  By confirming, you submit a manual plan activation request to FiledCrews account operations. No auto-charge will occur until manual confirmation.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
