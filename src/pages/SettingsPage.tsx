@@ -557,15 +557,14 @@ export default function SettingsPage() {
   const plans = [
     {
       id: "launch" as const,
-      name: "Launch",
-      badge: "Recommended",
-      badgeColor: "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-800",
-      price: "$185",
-      period: "/mo",
-      description: "Run your field operations — manage projects, track time, and coordinate crews in one platform.",
+      name: "Free Trial",
+      price: "$0",
+      period: "/ 14 days",
+      description: "14 days full access for new business accounts — set up your team and explore all platform features.",
       specs: [
-        "⚡ Up to 10 Office Seats",
-        "👷 Up to 25 Field Crew Seats"
+        "👤 1 Office Staff (Account Creator)",
+        "👷 2 Field Crew Members",
+        "⏳ 14 Days Trial Duration"
       ],
       features: [
         "Run unlimited projects with Worksite Map",
@@ -578,17 +577,16 @@ export default function SettingsPage() {
     {
       id: "growth" as const,
       name: "Growth",
-      badge: isFoundingPartner ? "Current Plan" : "Popular",
-      badgeColor: "bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-950/50 dark:text-purple-400 dark:border-purple-800",
       price: "$495",
       period: "/mo",
-      description: "Supercharge your company with advanced AI dispatching, safety hub compliance, and automated timesheets.",
+      description: "Supercharge your company with 10 total seats, AI dispatching, and safety hub compliance.",
       specs: [
-        "⚡ Up to 25 Office Seats",
-        "👷 Up to 75 Field Crew Seats"
+        "👤 3 Office Staff",
+        "👷 7 Field Crew Members",
+        "👥 10 Total Seats Included"
       ],
       features: [
-        "Everything in Launch plus...",
+        "Everything in Free Trial plus...",
         "AI Agent Autonomous Dispatcher",
         "Safety Hub & Compliance Forms",
         "Auto-sync timesheets & payroll export",
@@ -598,15 +596,14 @@ export default function SettingsPage() {
     },
     {
       id: "enterprise" as const,
-      name: "Enterprise",
-      badge: "Charter VIP",
-      badgeColor: "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800",
+      name: "Founding Partner",
       price: "$2,899",
       period: "/yr",
-      description: "Orchestrate multi-site field operations with custom seats, white-glove onboarding, and dedicated support.",
+      description: "VIP annual charter for growing enterprises with custom seats and direct roadmap co-design.",
       specs: [
-        "⚡ Unlimited Office Seats",
-        "👷 Unlimited Field Crew Seats"
+        "⚡ Custom Office Seats",
+        "👷 Custom Field Crew Seats",
+        "👑 VIP Charter Co-Design"
       ],
       features: [
         "Everything in Growth plus...",
@@ -726,29 +723,18 @@ export default function SettingsPage() {
                 >
                   {/* Top Header & Radio Badge */}
                   <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-blue-600 dark:text-blue-400">
-                        {p.id === "launch" && <Zap className="h-6 w-6 text-emerald-500" />}
-                        {p.id === "growth" && <Crown className="h-6 w-6 text-purple-500" />}
-                        {p.id === "enterprise" && <ShieldCheck className="h-6 w-6 text-amber-500" />}
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        {p.badge && (
-                          <Badge variant="outline" className={cn("text-[10px] font-semibold px-2 py-0.5 border", p.badgeColor)}>
-                            {p.badge}
-                          </Badge>
-                        )}
-                        <div className={cn(
-                          "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
-                          isSelected ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300 dark:border-slate-600"
-                        )}>
-                          {isSelected && <CheckCircle className="h-4 w-4 fill-blue-600 text-white" />}
-                        </div>
+                    <div className="flex items-center justify-end mb-2">
+                      <div className={cn(
+                        "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
+                        isSelected ? "border-amber-500 bg-amber-500 text-white" : "border-slate-300 dark:border-slate-600"
+                      )}>
+                        {isSelected && <CheckCircle className="h-4 w-4 fill-amber-500 text-white" />}
                       </div>
                     </div>
 
-                    <h3 className="text-xl font-bold text-foreground">{p.name}</h3>
+                    <h3 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 drop-shadow-[0_2px_8px_rgba(245,158,11,0.45)] dark:drop-shadow-[0_2px_12px_rgba(245,158,11,0.6)]">
+                      {p.name}
+                    </h3>
                     <div className="flex items-baseline gap-1 mt-2 mb-3">
                       <span className="text-3xl font-black text-foreground tracking-tight">{p.price}</span>
                       <span className="text-xs text-muted-foreground font-medium">{p.period}</span>

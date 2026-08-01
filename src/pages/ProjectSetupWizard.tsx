@@ -1412,37 +1412,36 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl w-full">
               
               {/* Plan 1: 14-Day Free Trial */}
-              <div className="bg-white rounded-2xl border-2 border-slate-200 hover:border-primary/60 p-6 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
+              <div className="bg-white rounded-2xl border-2 border-slate-200 hover:border-amber-500/60 p-6 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
                 <div className="space-y-4">
                   <div>
-                    <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full uppercase tracking-wider">
-                      Self-Serve Trial
-                    </span>
-                    <h2 className="text-xl font-extrabold text-slate-900 mt-3">14-Day Free Trial</h2>
+                    <h2 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 drop-shadow-[0_2px_8px_rgba(245,158,11,0.4)]">
+                      Free Trial
+                    </h2>
                     <div className="text-3xl font-black text-slate-900 mt-2">
                       $0 <span className="text-xs font-normal text-slate-500">/ 14 days</span>
                     </div>
                     <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                      Start exploring immediately with 5 field crew seats & full platform access. No credit card required.
+                      14 days full access for new business accounts — set up your team and explore all platform features. No credit card required.
                     </p>
                   </div>
 
                   <ul className="text-xs text-slate-600 space-y-2.5 pt-4 border-t border-slate-100">
                     <li className="flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                      <span><strong>5 Field Crew Seats</strong></span>
+                      <span><strong>1 Office Staff (Account Creator)</strong></span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                      <span><strong>2 Field Crew Members</strong></span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                      <span>14 Days Full Platform Access</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
                       <span>Live GPS Map & Worksite Geofences</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                      <span>Digital Timesheets & Job Checklists</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                      <span>Guided Initial Setup Wizard</span>
                     </li>
                   </ul>
                 </div>
@@ -1467,42 +1466,41 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                   }}
                   className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs h-11 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
                 >
-                  Start Free Trial (5 Seats) <ArrowRight className="h-4 w-4" />
+                  Start 14-Day Free Trial <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
 
-              {/* Plan 2: Growth Plan (Per Seat) */}
+              {/* Plan 2: Growth Plan */}
               <div className="bg-white rounded-2xl border-2 border-slate-200 hover:border-amber-500/60 p-6 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
                 <div className="space-y-4">
                   <div>
-                    <span className="text-[10px] font-extrabold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full uppercase tracking-wider">
-                      Scalable Per-Seat
-                    </span>
-                    <h2 className="text-xl font-extrabold text-slate-900 mt-3">Growth Plan</h2>
+                    <h2 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 drop-shadow-[0_2px_8px_rgba(245,158,11,0.4)]">
+                      Growth
+                    </h2>
                     <div className="text-3xl font-black text-slate-900 mt-2">
-                      $29 <span className="text-xs font-normal text-slate-500">/ seat / mo</span>
+                      $495 <span className="text-xs font-normal text-slate-500">/ mo</span>
                     </div>
                     <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                      Pay as your crew expands. Direct WhatsApp activation with your dedicated admin support.
+                      Supercharge your company with 10 total seats, AI dispatching, and safety compliance.
                     </p>
                   </div>
 
                   <ul className="text-xs text-slate-600 space-y-2.5 pt-4 border-t border-slate-100">
                     <li className="flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                      <span><strong>Unlimited Crew Seats</strong></span>
+                      <span><strong>3 Office Staff</strong></span>
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                      <span>Dispatch Cost & Quote Engine</span>
+                      <span><strong>7 Field Crew Members</strong></span>
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                      <span>Client Portal Access & Instant Payments</span>
+                      <span><strong>10 Total Seats Included</strong></span>
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                      <span>Priority Admin Account Activation</span>
+                      <span>AI Dispatcher & Safety Hub</span>
                     </li>
                   </ul>
                 </div>
@@ -1520,7 +1518,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                         }).eq("id", comp.id);
                       }
                     }
-                    const text = encodeURIComponent(`Hi there! I just registered ${companyName || 'our company'} on FiledCrew and would like to activate our Growth Plan ($29/seat/mo). Please assist with account activation.`);
+                    const text = encodeURIComponent(`Hi there! I just registered ${companyName || 'our company'} on FiledCrew and would like to activate our Growth Plan ($495/mo, 10 seats). Please assist with account activation.`);
                     window.open(`https://wa.me/14094229714?text=${text}`, "_blank");
                   }}
                   className="w-full bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs h-11 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
@@ -1530,37 +1528,36 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
               </div>
 
               {/* Plan 3: Founding Partner Program */}
-              <div className="bg-white rounded-2xl border-2 border-slate-200 hover:border-purple-500/60 p-6 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
+              <div className="bg-white rounded-2xl border-2 border-slate-200 hover:border-amber-500/60 p-6 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
                 <div className="space-y-4">
                   <div>
-                    <span className="text-[10px] font-extrabold text-purple-700 bg-purple-100 px-2.5 py-1 rounded-full uppercase tracking-wider">
-                      Yearly Charter Access
-                    </span>
-                    <h2 className="text-xl font-extrabold text-slate-900 mt-3">Founding Partner</h2>
+                    <h2 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 drop-shadow-[0_2px_8px_rgba(245,158,11,0.4)]">
+                      Founding Partner
+                    </h2>
                     <div className="text-3xl font-black text-slate-900 mt-2">
-                      Yearly Charter <span className="text-xs font-normal text-slate-500">/ annual</span>
+                      $2,899 <span className="text-xs font-normal text-slate-500">/ yr</span>
                     </div>
                     <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                      Exclusive annual charter for field operators. Includes white-glove migration & direct co-design access.
+                      VIP annual charter for growing enterprises with custom seats and direct roadmap co-design.
                     </p>
                   </div>
 
                   <ul className="text-xs text-slate-600 space-y-2.5 pt-4 border-t border-slate-100">
                     <li className="flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                      <span><strong>Yearly VIP Charter License</strong></span>
+                      <span><strong>Custom Office Seats</strong></span>
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                      <span>White-Glove Database & Crew Migration</span>
+                      <span><strong>Custom Field Crew Seats</strong></span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                      <span>Yearly VIP Charter License</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
                       <span>Direct Product Co-Design Access</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                      <span>Dedicated Engineering WhatsApp Hotline</span>
                     </li>
                   </ul>
                 </div>
@@ -1578,7 +1575,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                         }).eq("id", comp.id);
                       }
                     }
-                    const text = encodeURIComponent(`Hi there! We are interested in enrolling ${companyName || 'our company'} in the Yearly Founding Partner Charter for FiledCrew. Please send us details on how we can get started.`);
+                    const text = encodeURIComponent(`Hi there! We are interested in enrolling ${companyName || 'our company'} in the Yearly Founding Partner Charter for FiledCrew ($2,899/yr). Please send us details on how we can get started.`);
                     window.open(`https://wa.me/14094229714?text=${text}`, "_blank");
                   }}
                   className="w-full bg-purple-700 hover:bg-purple-800 text-white font-extrabold text-xs h-11 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
