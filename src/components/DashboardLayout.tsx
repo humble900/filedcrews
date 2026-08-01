@@ -201,7 +201,7 @@ function SidebarContent({
           {!isCollapsed ? (
             <div className="flex items-center gap-2 truncate">
               <img src="/favicon.png" alt="Ocrem" className="h-7 w-7 rounded-lg shrink-0" />
-              <span className="text-sm font-bold text-white truncate">OnSite Crew Manager</span>
+              <span className="text-sm font-bold text-white truncate">FiledCrews</span>
             </div>
           ) : (
             <img src="/favicon.png" alt="Ocrem" className="h-7 w-7 rounded-lg mx-auto shrink-0" />
@@ -548,7 +548,7 @@ export default function DashboardLayout({
           <img src="/favicon.png" alt="Ocrem" className="h-7 w-7 rounded-lg" />
           <div>
             <span className="font-bold text-xs leading-tight block">{companyName}</span>
-            <span className="text-[9px] text-muted-foreground font-semibold">OnSite Crew Manager</span>
+            <span className="text-[9px] text-muted-foreground font-semibold">FiledCrews</span>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
@@ -598,7 +598,7 @@ export default function DashboardLayout({
               <div className="space-y-2">
                 <h2 className="text-2xl font-extrabold">Trial Period Expired</h2>
                 <p className="text-muted-foreground text-sm">
-                  Your 14-day free trial has ended. Upgrade to a paid plan or join our Founding Partner Charter ($2,899/yr for up to 20 seats) to continue using OnSite Crew Manager.
+                  Your 14-day free trial has ended. Upgrade to a paid plan or join our Founding Partner Charter ($2,899/yr for up to 20 seats) to continue using FiledCrews.
                 </p>
               </div>
               <Button onClick={() => navigate('/settings?tab=billing')} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500">

@@ -1566,7 +1566,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
     return (
       <>
         <SEO
-          title="Onboarding — OnSite Crew Manager"
+          title="Onboarding — FiledCrews"
           description="Clay-style enterprise onboarding wizard."
           path="/wizard"
           noIndex
@@ -2652,9 +2652,9 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                   </div>
                   {step === 1 && (
                     <>
-                      <CardTitle className="text-2xl font-bold mt-2 text-slate-900">Let's set up your company profile!</CardTitle>
+                      <CardTitle className="text-2xl font-bold mt-2 text-slate-900">Welcome to FiledCrews!</CardTitle>
                       <CardDescription className="text-slate-500 mt-1 text-sm leading-relaxed">
-                        Welcome to OnSite Crew Manager! Let's start by naming your company and choosing a short 5-letter prefix. This prefix helps your crew members log in easily from the mobile app (for example: @YOURCOMPANY_JOHN).
+                        Your company profile and prefix (<span className="font-mono text-teal-600 font-bold">@{companyPrefix || "PREFIX"}</span>) are already set up! Now, let's guide you step-by-step to onboard your first <strong>Client</strong>, <strong>Project Worksite</strong>, and <strong>Crew Member</strong>.
                       </CardDescription>
                     </>
                   )}
@@ -3676,7 +3676,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                       {/* WhatsApp */}
                       <a
                         href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                          `Hi ${staffName}, here are your login credentials for OnSite Crew Manager:\n\nUsername: ${formattedStaffUsername}\nPassword: ${staffPassword}\n\nDownload Link: ${window.location.origin}/downloads/Ocrem.apk`
+                          `Hi ${staffName}, here are your login credentials for FiledCrews:\n\nUsername: ${formattedStaffUsername}\nPassword: ${staffPassword}\n\nDownload Link: ${window.location.origin}/downloads/Ocrem.apk`
                         )}`}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -3695,7 +3695,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                       {/* Telegram */}
                       <a
                         href={`https://t.me/share/url?url=${encodeURIComponent(window.location.origin + "/downloads/Ocrem.apk")}&text=${encodeURIComponent(
-                          `Hi ${staffName}, here are your credentials for OnSite Crew Manager:\n\nUsername: ${formattedStaffUsername}\nPassword: ${staffPassword}`
+                          `Hi ${staffName}, here are your credentials for FiledCrews:\n\nUsername: ${formattedStaffUsername}\nPassword: ${staffPassword}`
                         )}`}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -3714,9 +3714,9 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                       {/* Email */}
                       <a
                         href={`mailto:?subject=${encodeURIComponent(
-                          "OnSite Crew Manager Login Credentials"
+                          "FiledCrews Login Credentials"
                         )}&body=${encodeURIComponent(
-                          `Hi ${staffName},\n\nHere are your login credentials for the OnSite Crew Manager app:\n\nUsername: ${formattedStaffUsername}\nPassword: ${staffPassword}\n\nDownload and install the app package here: ${window.location.origin}/downloads/Ocrem.apk\n\nBest regards,\nYour Operations Manager`
+                          `Hi ${staffName},\n\nHere are your login credentials for the FiledCrews app:\n\nUsername: ${formattedStaffUsername}\nPassword: ${staffPassword}\n\nDownload and install the app package here: ${window.location.origin}/downloads/Ocrem.apk\n\nBest regards,\nYour Operations Manager`
                         )}`}
                         className="w-full"
                       >
@@ -3735,7 +3735,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                         variant="outline"
                         size="sm"
                         onClick={async () => {
-                          const text = `Hi ${staffName}, here are your login credentials for OnSite Crew Manager:\n\nUsername: ${formattedStaffUsername}\nPassword: ${staffPassword}\n\nDownload Link: ${window.location.origin}/downloads/Ocrem.apk`;
+                          const text = `Hi ${staffName}, here are your login credentials for FiledCrews:\n\nUsername: ${formattedStaffUsername}\nPassword: ${staffPassword}\n\nDownload Link: ${window.location.origin}/downloads/Ocrem.apk`;
                           if (navigator.share) {
                             try {
                               await navigator.share({
