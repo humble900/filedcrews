@@ -393,54 +393,6 @@ export default function DashboardOverview({ companyId }: DashboardOverviewProps)
     },
   });
 
-  // Quick Seed Mutation to help managers test Action Inbox instantly
-  const seedActionItemsMutation = useMutation({
-    mutationFn: async () => {
-      // Find one job to link if possible
-      const { data: jobs } = await supabase.from("jobs").select("id").limit(1);
-      const linkedJobId = jobs?.[0]?.id || "00000000-0000-0000-0000-000000000000";
-
-      const demoItems = [
-        {
-          company_id: companyId,
-          type: "unassigned_job",
-          entity_type: "job",
-          entity_id: linkedJobId,
-          title: "Unassigned Dispatch Alert",
-          description: "This job is scheduled for tomorrow but has no crew member assigned.",
-          severity: "High",
-          action_url: "/work-orders",
-        },
-        {
-          company_id: companyId,
-          type: "overdue_invoice",
-          entity_type: "invoice",
-          entity_id: linkedJobId,
-          title: "Overdue Collection Warning",
-          description: "Invoice INV-2026-004 has been outstanding for over 14 days ($1,850.00).",
-          severity: "Critical",
-          action_url: "/invoices",
-        },
-        {
-          company_id: companyId,
-          type: "lead_follow_up",
-          entity_type: "lead",
-          entity_id: linkedJobId,
-          title: "Lead Follow-Up Required",
-          description: "Customer requested pricing validation call. No representative assigned.",
-          severity: "Medium",
-          action_url: "/crm",
-        }
-      ];
-
-      const { error } = await supabase.from("action_items").insert(demoItems);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["action_items", companyId] });
-      toast.success("Demo action items seeded successfully!");
-    },
-  });
 
   const getSeverityStyles = (severity: string) => {
     switch (severity) {
@@ -998,18 +950,6 @@ export default function DashboardOverview({ companyId }: DashboardOverviewProps)
                 System generated critical warnings and workflow resolution triggers.
               </CardDescription>
             </div>
-            {actionItems.length === 0 && (
-              <Button
-                variant="outline"
-                size="xs"
-                onClick={() => seedActionItemsMutation.mutate()}
-                disabled={seedActionItemsMutation.isPending}
-                className="text-xs gap-1"
-              >
-                <RefreshCcw className="h-3 w-3" />
-                Seed Demo Actions
-              </Button>
-            )}
           </CardHeader>
           <CardContent className="space-y-3">
             {itemsLoading ? (

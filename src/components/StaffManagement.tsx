@@ -197,6 +197,7 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
   const [staffAddress, setStaffAddress] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [password, setPassword] = useState("");
+  const [gasSafeRegistered, setGasSafeRegistered] = useState(false);
   const [newStaffRole, setNewStaffRole] = useState<string>("Field Crew");
   const [creating, setCreating] = useState(false);
   const [lastCreatedStaff, setLastCreatedStaff] = useState<CreatedStaff | null>(null);
@@ -219,6 +220,7 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
   const [editHourlyRate, setEditHourlyRate] = useState("");
   const [editRole, setEditRole] = useState("");
   const [editCanManageRoles, setEditCanManageRoles] = useState(false);
+  const [editGasSafeRegistered, setEditGasSafeRegistered] = useState(false);
   const [editSaving, setEditSaving] = useState(false);
 
   // Limit warnings state
@@ -274,6 +276,7 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
   });
 
   const { company } = useAuth();
+  const isUKCompany = company?.country === "GB";
 
   const openEditDialog = (staff: any) => {
     setEditingStaff(staff);
@@ -286,6 +289,7 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
     setEditHourlyRate(staff.hourly_rate ? String(staff.hourly_rate) : "");
     setEditRole(staff.global_role || "Field Crew");
     setEditCanManageRoles(staff.can_manage_roles || false);
+    setEditGasSafeRegistered(staff.gas_safe_registered || false);
     setEditDialogOpen(true);
   };
 
@@ -302,6 +306,7 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
         address: editAddress.trim() || null,
         job_title: editJobTitle.trim() || null,
         hourly_rate: editHourlyRate ? parseFloat(editHourlyRate) : null,
+        gas_safe_registered: editGasSafeRegistered,
       };
       if (canManageRoles) {
         updates.global_role = editRole;
@@ -491,6 +496,7 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
     setStaffAddress("");
     setJobTitle("");
     setPassword("");
+    setGasSafeRegistered(false);
     setNewStaffRole("Field Crew");
   };
 
@@ -534,6 +540,7 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
           job_title: jobTitle || undefined,
           company_id: companyId,
           global_role: newStaffRole,
+          gas_safe_registered: gasSafeRegistered,
         },
       });
       if (error) throw error;
@@ -1063,6 +1070,16 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
               </div>
             </div>
 
+            {isUKCompany && (
+              <div className="flex items-center justify-between p-3 border border-border/40 rounded-lg bg-slate-50/50 dark:bg-slate-900/50">
+                <div className="space-y-0.5">
+                  <label className="text-sm font-semibold">UK Gas Safe Registered</label>
+                  <p className="text-[10px] text-muted-foreground">Technician is legally certified to work on gas appliances in the UK.</p>
+                </div>
+                <Switch checked={gasSafeRegistered} onCheckedChange={setGasSafeRegistered} />
+              </div>
+            )}
+
             {/* Role description hint */}
             <p className="text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2 border border-border/40">
               <span className="font-semibold text-foreground">{newStaffRole}:</span>{" "}
@@ -1347,6 +1364,16 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
                   <p className="text-xs text-muted-foreground">Allow this staff member to assign roles to others</p>
                 </div>
                 <Switch checked={editCanManageRoles} onCheckedChange={setEditCanManageRoles} />
+              </div>
+            )}
+            
+            {isUKCompany && (
+              <div className="flex items-center justify-between p-3 rounded-lg border border-border/40 bg-muted/20">
+                <div>
+                  <p className="text-sm font-semibold">UK Gas Safe Registered</p>
+                  <p className="text-xs text-muted-foreground">Technician is legally certified to work on gas appliances in the UK.</p>
+                </div>
+                <Switch checked={editGasSafeRegistered} onCheckedChange={setEditGasSafeRegistered} />
               </div>
             )}
             {/* Read-only Payment Details (submitted by crew) */}

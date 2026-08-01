@@ -6,7 +6,9 @@ import FilterChipBar, { FilterChip } from "@/components/FilterChipBar";
 import SEO from "@/components/SEO";
 import ShiftScheduler from "@/components/ShiftScheduler";
 import DispatchBoard from "@/components/DispatchBoard";
+import MobileTechVoiceCopilot from "@/components/MobileTechVoiceCopilot";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAgenticDispatch } from "@/hooks/useAgenticDispatch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -54,6 +56,13 @@ import {
   Trash2,
   Edit2,
   ArrowRight,
+  MapPin,
+  FileText,
+  Paperclip,
+  ImageIcon,
+  MessageSquare,
+  Sparkles,
+  Bot,
 } from "lucide-react";
 import {
   format,
@@ -119,6 +128,7 @@ export default function WorkOrdersPage({ projectId }: { projectId?: string }) {
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const { isOptimizing, autoAssignJob } = useAgenticDispatch(company?.id || "");
 
   // Filters
   const [techFilter, setTechFilter] = useState("ALL");
@@ -138,6 +148,9 @@ export default function WorkOrdersPage({ projectId }: { projectId?: string }) {
   // Task dialog states
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  
+  const [showVoiceCopilot, setShowVoiceCopilot] = useState(false);
+
   const [taskName, setTaskName] = useState("");
   const [taskDesc, setTaskDesc] = useState("");
   const [taskPriority, setTaskPriority] = useState("Medium");
@@ -748,9 +761,29 @@ export default function WorkOrdersPage({ projectId }: { projectId?: string }) {
                             <Briefcase className="h-3.5 w-3.5" /> Project: {selectedJob?.project?.name}
                           </CardDescription>
                         </div>
-                        <Badge className={`${getJobStatusColor(selectedJob?.status || "")}`}>
-                          {selectedJob?.status}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-7 text-xs bg-indigo-500/10 text-indigo-500 border-indigo-500/20 hover:bg-indigo-500/20"
+                            disabled={isOptimizing || selectedJob?.status !== "Unassigned"}
+                            onClick={async () => {
+                              try {
+                                const tech = await autoAssignJob(selectedJob!.id, 0, 0, []);
+                                toast({ title: "AI Dispatch Success", description: `Assigned to ${tech.name} (Score: ${tech.score})` });
+                                queryClient.invalidateQueries({ queryKey: ["jobs"] });
+                              } catch(e: any) {
+                                toast({ title: "AI Dispatch Failed", description: e.message, variant: "destructive" });
+                              }
+                            }}
+                          >
+                            {isOptimizing ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Bot className="h-3 w-3 mr-1" />}
+                            AI Auto-Assign
+                          </Button>
+                          <Badge className={`${getJobStatusColor(selectedJob?.status || "")}`}>
+                            {selectedJob?.status}
+                          </Badge>
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-3 text-sm">
@@ -1140,6 +1173,26 @@ export default function WorkOrdersPage({ projectId }: { projectId?: string }) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Mobile Tech Copilot FAB & Widget */}
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4 pointer-events-none">
+          {showVoiceCopilot && (
+            <div className="pointer-events-auto">
+              <MobileTechVoiceCopilot 
+                onClose={() => setShowVoiceCopilot(false)} 
+                jobId={selectedJobId || undefined} 
+              />
+            </div>
+          )}
+          {!showVoiceCopilot && (
+            <Button 
+              className="pointer-events-auto h-14 w-14 rounded-full shadow-lg bg-indigo-600 hover:bg-indigo-700 p-0" 
+              onClick={() => setShowVoiceCopilot(true)}
+            >
+              <Bot className="h-6 w-6 text-white" />
+            </Button>
+          )}
+        </div>
     </>
   );
 

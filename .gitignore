@@ -24,3 +24,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Supabase temp & TS build info
+supabase/.temp
+*.tsbuildinfo

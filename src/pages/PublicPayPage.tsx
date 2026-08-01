@@ -1,13 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,13 +13,16 @@ import {
   Loader2,
   CheckCircle,
   AlertTriangle,
-  CreditCard,
   Lock,
-  Building,
-  DollarSign,
-  Briefcase,
 } from "lucide-react";
 import { format } from "date-fns";
+import { loadStripe, Stripe } from "@stripe/stripe-js";
+import {
+  Elements,
+  PaymentElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
 
 // ─── Interfaces ─────────────────────────────────────────────────────
 interface Customer {
@@ -37,20 +37,85 @@ interface Job {
 
 interface Invoice {
   id: string;
+  company_id: string;
   amount: number;
   status: string;
   payment_status: string;
   created_at: string;
   job: Job | null;
+  company: {
+    automation_settings: any;
+  } | null;
+}
+
+function CheckoutForm({ invoiceId, onSuccess }: { invoiceId: string; onSuccess: () => void }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+
+    setIsLoading(true);
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: window.location.href, // If redirect required (e.g. 3D secure)
+      },
+      redirect: 'if_required',
+    });
+
+    if (error) {
+      toast({
+        title: "Payment failed",
+        description: error.message || "An error occurred during payment.",
+        variant: "destructive",
+      });
+    } else if (paymentIntent && paymentIntent.status === "succeeded") {
+      // Mark as paid in DB
+      await supabase.from("payments").insert({
+        invoice_id: invoiceId,
+        amount: paymentIntent.amount / 100,
+        payment_method: "card",
+        stripe_payment_id: paymentIntent.id,
+        status: "completed",
+        notes: "Stripe Payment"
+      });
+      
+      toast({
+        title: "Payment Successful!",
+        description: "Your payment has been processed securely.",
+      });
+      onSuccess();
+    }
+    setIsLoading(false);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+      <PaymentElement />
+      <Button
+        type="submit"
+        disabled={isLoading || !stripe || !elements}
+        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-10 gap-2 shadow-lg shadow-emerald-500/20"
+      >
+        {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
+        Pay Now
+      </Button>
+    </form>
+  );
 }
 
 export default function PublicPayPage() {
   const { invoiceId } = useParams<{ invoiceId: string }>();
-  const { toast } = useToast();
-  const [payMethod, setPayMethod] = useState("card");
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
-  // 1. Fetch invoice details
-  const { data: invoice, isLoading, isError, refetch } = useQuery({
+  // 1. Fetch invoice details & company Stripe PK
+  const { data: invoice, isLoading: isInvoiceLoading, isError, refetch } = useQuery({
     queryKey: ["public_invoice", invoiceId],
     queryFn: async () => {
       if (!invoiceId) throw new Error("Missing invoice reference");
@@ -61,13 +126,16 @@ export default function PublicPayPage() {
           job:jobs(
             title,
             customer:customers(name, email)
+          ),
+          company:companies(
+            automation_settings
           )
         `)
         .eq("id", invoiceId)
         .single();
+      
       if (error) throw error;
       
-      // Typecast job associations
       const row = data as any;
       return {
         ...row,
@@ -83,39 +151,38 @@ export default function PublicPayPage() {
     enabled: !!invoiceId,
   });
 
-  // 2. Stripe checkout simulator mutation
-  const simulatePaymentMutation = useMutation({
-    mutationFn: async () => {
-      if (!invoice) throw new Error("Invoice details not loaded");
+  // 2. Initialize Stripe and fetch PaymentIntent
+  useEffect(() => {
+    async function initPayment() {
+      if (!invoice || invoice.payment_status === "Paid") return;
 
-      // Insert record into payments table
-      const { error: payError } = await supabase.from("payments").insert({
-        invoice_id: invoice.id,
-        amount: invoice.amount,
-        payment_method: payMethod,
-        stripe_payment_id: `ch_sim_${Math.random().toString(36).substring(2, 11)}`,
-        status: "completed",
-        notes: "Stripe Simulator payment"
-      });
-      if (payError) throw payError;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Payment Successful!",
-        description: "Your payment has been processed and logged successfully."
-      });
-      refetch();
-    },
-    onError: (err: any) => {
-      toast({
-        title: "Payment failed",
-        description: err.message,
-        variant: "destructive"
-      });
+      const pk = invoice.company?.automation_settings?.stripe?.publishable_key || invoice.company?.automation_settings?.stripe_publishable_key;
+      if (!pk) {
+        setPaymentError("This company has not configured payment processing yet.");
+        return;
+      }
+
+      setStripePromise(loadStripe(pk));
+
+      try {
+        const { data, error } = await supabase.functions.invoke("create-payment-intent", {
+          body: { invoiceId: invoice.id, companyId: invoice.company_id }
+        });
+
+        if (error || !data?.ok) {
+          throw new Error(data?.error || error?.message || "Failed to create payment intent");
+        }
+
+        setClientSecret(data.clientSecret);
+      } catch (err: any) {
+        setPaymentError(err.message);
+      }
     }
-  });
 
-  if (isLoading) {
+    initPayment();
+  }, [invoice]);
+
+  if (isInvoiceLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -197,40 +264,21 @@ export default function PublicPayPage() {
                   Thank you! A confirmation receipt has been sent to your email.
                 </p>
               </div>
+            ) : paymentError ? (
+              <div className="p-4 bg-red-50 text-red-700 rounded-lg text-sm border border-red-200">
+                <AlertTriangle className="h-4 w-4 inline mr-2" />
+                {paymentError}
+              </div>
+            ) : stripePromise && clientSecret ? (
+              <div className="space-y-4 pt-2">
+                <Elements stripe={stripePromise} options={{ clientSecret }}>
+                  <CheckoutForm invoiceId={invoice.id} onSuccess={refetch} />
+                </Elements>
+              </div>
             ) : (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block">Payment Method</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      variant={payMethod === "card" ? "default" : "outline"}
-                      onClick={() => setPayMethod("card")}
-                      className="text-xs h-9 gap-1.5"
-                    >
-                      <CreditCard className="h-4 w-4" /> Credit Card
-                    </Button>
-                    <Button
-                      variant={payMethod === "bank" ? "default" : "outline"}
-                      onClick={() => setPayMethod("bank")}
-                      className="text-xs h-9 gap-1.5"
-                    >
-                      <Building className="h-4 w-4" /> Bank ACH
-                    </Button>
-                  </div>
-                </div>
-
-                <Button
-                  onClick={() => simulatePaymentMutation.mutate()}
-                  disabled={simulatePaymentMutation.isPending}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-10 gap-2 mt-2 shadow-lg shadow-emerald-500/20"
-                >
-                  {simulatePaymentMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <CreditCard className="h-4 w-4" />
-                  )}
-                  Pay ${invoice.amount.toLocaleString()} Now
-                </Button>
+              <div className="flex items-center justify-center p-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <span className="ml-2 text-sm text-muted-foreground">Initializing secure checkout...</span>
               </div>
             )}
           </CardContent>

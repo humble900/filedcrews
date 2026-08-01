@@ -34,7 +34,9 @@ export type Feature =
   | 'timesheets'
   | 'compliance'
   | 'settings'
-  | 'inventory';
+  | 'inventory'
+  | 'marketplace'
+  | 'ai-agent';
 
 /**
  * Permission matrix: which roles can access which features.
@@ -60,6 +62,8 @@ const PERMISSION_MATRIX: Record<Feature, Record<GlobalRole, boolean | 'read'>> =
   'compliance':     { Owner: true,  Admin: true,  Finance: false,  Dispatcher: true,  'Field Crew': false },
   'settings':       { Owner: true,  Admin: true,  Finance: true,   Dispatcher: true,  'Field Crew': false },
   'inventory':      { Owner: true,  Admin: true,  Finance: true,   Dispatcher: false, 'Field Crew': false },
+  'marketplace':    { Owner: true,  Admin: true,  Finance: false,  Dispatcher: false, 'Field Crew': false },
+  'ai-agent':       { Owner: true,  Admin: true,  Finance: false,  Dispatcher: false, 'Field Crew': false },
 };
 
 /** Color map for role badges */

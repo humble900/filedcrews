@@ -68,6 +68,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import LeadsPipeline from "@/components/LeadsPipeline";
+import { UnifiedInbox } from "@/components/UnifiedInbox";
 
 interface Customer {
   id: string;
@@ -75,6 +76,7 @@ interface Customer {
   email: string | null;
   phone: string | null;
   billing_address: string | null;
+  preferred_contact_method?: string;
   created_at: string;
 }
 
@@ -113,6 +115,7 @@ export default function CRMPage({ projectId }: { projectId?: string }) {
   const [custEmail, setCustEmail] = useState("");
   const [custPhone, setCustPhone] = useState("");
   const [custAddress, setCustAddress] = useState("");
+  const [custContactMethod, setCustContactMethod] = useState("email");
 
   const [apiKey, setApiKey] = useState<string>("");
   const addressInputRef = useRef<HTMLInputElement>(null);
@@ -246,6 +249,7 @@ export default function CRMPage({ projectId }: { projectId?: string }) {
         email: custEmail.trim() || null,
         phone: custPhone.trim() || null,
         billing_address: custAddress.trim() || null,
+        preferred_contact_method: custContactMethod,
       };
 
       if (editingCustomer) {
@@ -455,12 +459,14 @@ export default function CRMPage({ projectId }: { projectId?: string }) {
       setCustEmail(customer.email || "");
       setCustPhone(customer.phone || "");
       setCustAddress(customer.billing_address || "");
+      setCustContactMethod(customer.preferred_contact_method || "email");
     } else {
       setEditingCustomer(null);
       setCustName("");
       setCustEmail("");
       setCustPhone("");
       setCustAddress("");
+      setCustContactMethod("email");
     }
     setCustomerDialogOpen(true);
   };
@@ -763,6 +769,10 @@ export default function CRMPage({ projectId }: { projectId?: string }) {
                 </Card>
               )}
 
+              {selectedCustomerId && (
+                <UnifiedInbox customerId={selectedCustomerId} />
+              )}
+
               {/* Grid wrapping Equipment Assets and Service Locations */}
               <div className="grid grid-cols-1 gap-4">
                 {/* Asset Management Panel */}
@@ -995,6 +1005,20 @@ export default function CRMPage({ projectId }: { projectId?: string }) {
                   />
                 )}
               </div>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-foreground">Preferred Contact Method</label>
+                <Select value={custContactMethod} onValueChange={setCustContactMethod}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="email">Email</SelectItem>
+                    <SelectItem value="sms">SMS</SelectItem>
+                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                    <SelectItem value="phone">Phone Call</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={closeCustomerDialog}>
@@ -1176,25 +1200,68 @@ export default function CRMPage({ projectId }: { projectId?: string }) {
               )}
             </DialogHeader>
 
-            {/* Service Log list */}
-            <div className="flex-1 overflow-y-auto my-4 pr-1 space-y-3 min-h-[150px]">
+            {/* Visual Asset Timeline */}
+            <div className="flex-1 overflow-y-auto my-4 pr-2 pl-2 space-y-0 min-h-[250px] relative">
               {selectedAsset?.service_history.length === 0 ? (
-                <p className="text-center text-muted-foreground text-sm py-8">
-                  No service event logged for this equipment.
-                </p>
+                <div className="flex flex-col items-center justify-center text-center h-full space-y-3 text-muted-foreground py-10 opacity-60">
+                  <Wrench className="h-10 w-10" />
+                  <p className="text-sm font-semibold">No service events logged for this equipment.</p>
+                </div>
               ) : (
-                selectedAsset?.service_history.map((log, idx) => (
-                  <div key={idx} className="p-3 rounded-lg border border-border/40 bg-muted/15 space-y-1">
-                    <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {log.date}
-                      </span>
-                      <span>Staff: {log.field_crew}</span>
+                <div className="relative border-l-2 border-border/60 ml-3 space-y-8 pb-4 pt-2">
+                  {/* Installation Node */}
+                  {selectedAsset?.install_date && (
+                    <div className="relative pl-6">
+                      <div className="absolute -left-[11px] top-1 h-5 w-5 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center">
+                        <CheckCircle className="h-3 w-3 text-emerald-600" />
+                      </div>
+                      <div className="space-y-1 bg-emerald-500/5 p-3 rounded-xl border border-emerald-500/20">
+                        <div className="flex items-center justify-between text-xs text-emerald-700/80 font-bold uppercase tracking-wider">
+                          <span>Installation Date</span>
+                          <span>{selectedAsset.install_date}</span>
+                        </div>
+                        <p className="text-sm text-foreground font-medium">Equipment originally installed and commissioned.</p>
+                      </div>
                     </div>
-                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{log.notes}</p>
-                  </div>
-                ))
+                  )}
+
+                  {/* Service History Nodes */}
+                  {selectedAsset?.service_history.map((log, idx) => (
+                    <div key={idx} className="relative pl-6 animate-in slide-in-from-left-2 fade-in" style={{ animationDelay: `${idx * 100}ms` }}>
+                      <div className="absolute -left-[11px] top-1 h-5 w-5 rounded-full bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center">
+                        <Wrench className="h-3 w-3 text-amber-600" />
+                      </div>
+                      <div className="space-y-1.5 p-3 rounded-xl border border-border/40 bg-card/80 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex items-center justify-between text-xs font-semibold">
+                          <span className="flex items-center gap-1.5 text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                            <Calendar className="h-3 w-3" />
+                            {log.date}
+                          </span>
+                          <span className="text-muted-foreground flex items-center gap-1">
+                            <UserCheck className="h-3 w-3" /> {log.field_crew}
+                          </span>
+                        </div>
+                        <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{log.notes}</p>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Warranty Expiration Node */}
+                  {selectedAsset?.warranty_expiry && (
+                    <div className="relative pl-6">
+                      <div className="absolute -left-[11px] top-1 h-5 w-5 rounded-full bg-rose-500/20 border-2 border-rose-500 flex items-center justify-center">
+                        <AlertTriangle className="h-3 w-3 text-rose-600" />
+                      </div>
+                      <div className="space-y-1 bg-rose-500/5 p-3 rounded-xl border border-rose-500/20">
+                        <div className="flex items-center justify-between text-xs text-rose-700/80 font-bold uppercase tracking-wider">
+                          <span>Warranty Expiration</span>
+                          <span>{selectedAsset.warranty_expiry}</span>
+                        </div>
+                        <p className="text-sm text-foreground font-medium">Manufacturer parts warranty expires.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 

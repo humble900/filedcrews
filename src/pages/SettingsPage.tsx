@@ -18,18 +18,25 @@ import {
 } from "@/components/ui/table";
 import {
   CreditCard, Crown, CheckCircle, AlertTriangle, Loader2, Users, Building,
-  MessageSquare, ShieldCheck, Zap, Download, Key, Trash2, User, Megaphone,
-  Lock, Puzzle, Code, Clock,
+  Lock, Puzzle, Code, Clock, Plug, BrainCircuit, User, Key, Zap, ShieldCheck, MessageSquare, Trash2, Megaphone, Download,
 } from "lucide-react";
 import { format } from "date-fns";
 
-type SettingsTab = "profile" | "company" | "billing" | "modules" | "developer";
+import {
+  saveCompanyIntegration,
+  disconnectCompanyIntegration,
+  testIntegrationConnection,
+  maskApiKey,
+} from "@/lib/integrations";
+
+type SettingsTab = "profile" | "company" | "billing" | "modules" | "integrations" | "developer";
 
 const TABS: { id: SettingsTab; label: string; icon: any; ownerOnly?: boolean }[] = [
   { id: "profile", label: "Profile", icon: User },
   { id: "company", label: "Company", icon: Building, ownerOnly: true },
   { id: "billing", label: "Billing & Plans", icon: CreditCard },
   { id: "modules", label: "Modules", icon: Puzzle, ownerOnly: true },
+  { id: "integrations", label: "Integrations & Sync", icon: Plug, ownerOnly: true },
   { id: "developer", label: "Developer", icon: Code, ownerOnly: true },
 ];
 
@@ -53,6 +60,104 @@ export default function SettingsPage() {
   const [exporting, setExporting] = useState(false);
   const [apiKeyName, setApiKeyName] = useState("");
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
+
+  // BYOK Credentials State
+  const autoSettings = (company as any)?.automation_settings || {};
+
+  const stripeIntegration = autoSettings.stripe || {};
+  const qbIntegration = autoSettings.quickbooks || {};
+
+  const [stripePubKey, setStripePubKey] = useState(
+    stripeIntegration.publishable_key || autoSettings.stripe_publishable_key || ""
+  );
+  const [stripeSecKey, setStripeSecKey] = useState(
+    stripeIntegration.secret_key_masked || (autoSettings.stripe_secret_key ? maskApiKey(autoSettings.stripe_secret_key) : "")
+  );
+
+  const [qbClientId, setQbClientId] = useState(
+    qbIntegration.client_id || autoSettings.quickbooks_client_id || ""
+  );
+  const [qbClientSecret, setQbClientSecret] = useState(
+    qbIntegration.client_secret_masked || (autoSettings.quickbooks_client_secret ? maskApiKey(autoSettings.quickbooks_client_secret) : "")
+  );
+
+  const [savingBYOK, setSavingBYOK] = useState(false);
+  const [testingStripe, setTestingStripe] = useState(false);
+  const [testingQB, setTestingQB] = useState(false);
+
+  const handleSaveBYOKKeys = async () => {
+    if (!company?.id) return;
+    setSavingBYOK(true);
+    try {
+      let currentSettings = { ...autoSettings };
+
+      if (stripePubKey.trim() || stripeSecKey.trim()) {
+        currentSettings = await saveCompanyIntegration(
+          company.id,
+          "stripe",
+          { publishable_key: stripePubKey.trim(), secret_key: stripeSecKey.trim() },
+          currentSettings
+        );
+      }
+
+      if (qbClientId.trim() || qbClientSecret.trim()) {
+        currentSettings = await saveCompanyIntegration(
+          company.id,
+          "quickbooks",
+          { client_id: qbClientId.trim(), client_secret: qbClientSecret.trim() },
+          currentSettings
+        );
+      }
+
+      toast({ title: "BYOK Credentials Saved", description: "Integration API credentials saved securely and masked." });
+      refetchCompany();
+    } catch (err: any) {
+      toast({ title: "Failed to save API keys", description: err.message, variant: "destructive" });
+    } finally {
+      setSavingBYOK(false);
+    }
+  };
+
+  const handleDisconnect = async (provider: "stripe" | "quickbooks") => {
+    if (!company?.id) return;
+    try {
+      await disconnectCompanyIntegration(company.id, provider, autoSettings);
+      if (provider === "stripe") {
+        setStripePubKey("");
+        setStripeSecKey("");
+      } else {
+        setQbClientId("");
+        setQbClientSecret("");
+      }
+      toast({ title: `${provider.toUpperCase()} Disconnected`, description: "Stored API keys purged successfully." });
+      refetchCompany();
+    } catch (err: any) {
+      toast({ title: "Disconnect Failed", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleTestConnection = async (provider: "stripe" | "quickbooks") => {
+    if (provider === "stripe") {
+      setTestingStripe(true);
+      const res = await testIntegrationConnection("stripe", { publishable_key: stripePubKey, secret_key: stripeSecKey });
+      setTestingStripe(false);
+      toast({
+        title: res.success ? "Stripe Connected & Verified" : "Stripe Connection Failed",
+        description: res.message,
+        variant: res.success ? "default" : "destructive",
+      });
+    } else {
+      setTestingQB(true);
+      const res = await testIntegrationConnection("quickbooks", { client_id: qbClientId, client_secret: qbClientSecret });
+      setTestingQB(false);
+      toast({
+        title: res.success ? "QuickBooks Connected & Verified" : "QuickBooks Connection Failed",
+        description: res.message,
+        variant: res.success ? "default" : "destructive",
+      });
+    }
+  };
+
 
   const visibleTabs = TABS.filter(t => !t.ownerOnly || isOwner || userRole === "Admin");
 
@@ -88,6 +193,18 @@ export default function SettingsPage() {
       return data || [];
     },
     enabled: !!company?.id,
+  });
+
+  const { data: migrationTasks = [], isLoading: loadingMigrations } = useQuery({
+    queryKey: ["migration_tasks", company?.id],
+    queryFn: async () => {
+      if (!company?.id) return [];
+      const { data, error } = await supabase.from("migration_tasks").select("*").eq("company_id", company.id).order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!company?.id,
+    refetchInterval: 3000, // Poll every 3 seconds for live updates
   });
 
   // ─── Mutations ───
@@ -188,7 +305,7 @@ export default function SettingsPage() {
     setExporting(true);
     try {
       for (const tbl of ["customers","projects","jobs","invoices","payments","estimates","timesheet_entries","form_responses","campaigns"]) {
-        const { data, error } = await supabase.from(tbl).select("*").eq("company_id", company.id);
+        const { data, error } = await (supabase as any).from(tbl).select("*").eq("company_id", company.id);
         if (error || !data || data.length === 0) continue;
         const headers = Object.keys(data[0]);
         const csvRows = [headers.join(","), ...data.map((row: any) => headers.map(f => `"${(row[f] == null ? "" : String(row[f]).replace(/"/g, '""'))}"`).join(","))];
@@ -294,6 +411,138 @@ export default function SettingsPage() {
           <Button onClick={handleSaveCompany} disabled={savingCompany} size="sm" className="font-semibold">
             {savingCompany ? <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> Saving...</> : "Save Company Details"}
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* BYOK Multi-Tenant Keys Card */}
+      <Card className="border-border/50">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base font-bold flex items-center gap-2">
+              <Key className="h-4 w-4 text-primary" /> Bring Your Own Key (BYOK) Live Credentials
+            </CardTitle>
+            <Badge variant="outline" className="bg-indigo-500/10 text-indigo-600 border-indigo-200">
+              Tenant Isolated
+            </Badge>
+          </div>
+          <CardDescription>
+            Configure your custom Stripe and QuickBooks API keys so payments & accounting sync directly into your own business accounts.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Stripe BYOK Section */}
+          <div className="space-y-4 pt-2">
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-indigo-600" /> Custom Stripe Account API Keys
+              </h4>
+              {stripePubKey && stripeSecKey ? (
+                <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/20 gap-1 text-[10px]">
+                  <ShieldCheck className="h-3 w-3" /> Connected
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-muted-foreground text-[10px]">
+                  Disconnected
+                </Badge>
+              )}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 max-w-xl">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground">Stripe Publishable Key</label>
+                <Input placeholder="pk_live_..." value={stripePubKey} onChange={(e) => setStripePubKey(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground">Stripe Secret Key</label>
+                <Input type="password" placeholder="sk_live_..." value={stripeSecKey} onChange={(e) => setStripeSecKey(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleTestConnection("stripe")}
+                disabled={testingStripe || !stripePubKey}
+                className="text-xs h-8"
+              >
+                {testingStripe ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Plug className="h-3 w-3 mr-1" />}
+                Test Stripe Connection
+              </Button>
+
+              {(stripePubKey || stripeSecKey) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDisconnect("stripe")}
+                  className="text-xs h-8 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
+                >
+                  <Trash2 className="h-3 w-3 mr-1" />
+                  Disconnect & Purge
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* QuickBooks BYOK Section */}
+          <div className="space-y-4 pt-4 border-t border-border/40">
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <Plug className="h-4 w-4 text-emerald-600" /> QuickBooks Online App Credentials
+              </h4>
+              {qbClientId && qbClientSecret ? (
+                <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/20 gap-1 text-[10px]">
+                  <ShieldCheck className="h-3 w-3" /> Connected
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-muted-foreground text-[10px]">
+                  Disconnected
+                </Badge>
+              )}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 max-w-xl">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground">QuickBooks Client ID</label>
+                <Input placeholder="AB1234567..." value={qbClientId} onChange={(e) => setQbClientId(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground">QuickBooks Client Secret</label>
+                <Input type="password" placeholder="••••••••••••" value={qbClientSecret} onChange={(e) => setQbClientSecret(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleTestConnection("quickbooks")}
+                disabled={testingQB || !qbClientId}
+                className="text-xs h-8"
+              >
+                {testingQB ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Plug className="h-3 w-3 mr-1" />}
+                Test QuickBooks Connection
+              </Button>
+
+              {(qbClientId || qbClientSecret) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDisconnect("quickbooks")}
+                  className="text-xs h-8 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
+                >
+                  <Trash2 className="h-3 w-3 mr-1" />
+                  Disconnect & Purge
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-border/40 flex justify-between items-center">
+            <Button onClick={handleSaveBYOKKeys} disabled={savingBYOK} size="sm" className="font-semibold shadow-sm">
+              {savingBYOK ? <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> Saving Credentials...</> : "Save Custom API Credentials"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -436,6 +685,34 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <Card className="border-border/50">
         <CardHeader>
+          <CardTitle className="text-base font-bold flex items-center gap-2"><Code className="h-4 w-4 text-primary" /> Embeddable Booking Widget</CardTitle>
+          <CardDescription>Integrate your lead capture form directly onto your external website.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-xs text-muted-foreground">
+            Copy the HTML snippet below and paste it into your website builder (e.g., WordPress, Squarespace, Wix) to embed a clean, unbranded version of your booking center.
+          </p>
+          <div className="relative">
+            <pre className="text-[11px] font-mono text-emerald-400 break-all whitespace-pre-wrap bg-slate-950 p-4 rounded-xl border border-border/40">
+              {`<iframe src="${window.location.origin}/book/${company?.prefix}?embed=true" width="100%" height="650" frameborder="0" style="border-radius: 8px; overflow: hidden; border: none; background: transparent;"></iframe>`}
+            </pre>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="absolute top-2 right-2 h-7 text-[10px] bg-slate-900 text-slate-300 hover:text-white border-slate-700 hover:bg-slate-800"
+              onClick={() => {
+                navigator.clipboard.writeText(`<iframe src="${window.location.origin}/book/${company?.prefix}?embed=true" width="100%" height="650" frameborder="0" style="border-radius: 8px; overflow: hidden; border: none; background: transparent;"></iframe>`);
+                toast({ title: "Copied to clipboard!" });
+              }}
+            >
+              Copy Code
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/50">
+        <CardHeader>
           <CardTitle className="text-base font-bold flex items-center gap-2"><Key className="h-4 w-4 text-primary" /> API Integrations</CardTitle>
           <CardDescription>Generate REST API tokens for external tools.</CardDescription>
         </CardHeader>
@@ -574,7 +851,55 @@ export default function SettingsPage() {
     </div>
   );
 
-  const tabContent: Record<SettingsTab, () => JSX.Element> = { profile: renderProfile, company: renderCompany, billing: renderBilling, modules: renderModules, developer: renderDeveloper };
+  const renderIntegrations = () => (
+    <div className="space-y-6">
+      <Card className="border-none shadow-xl bg-background/60 backdrop-blur-xl ring-1 ring-border/50">
+        <CardHeader className="bg-muted/30 border-b border-border/50">
+          <CardTitle className="text-xl flex items-center gap-2"><Plug className="h-5 w-5 text-primary" /> Connected Systems</CardTitle>
+          <CardDescription>Integrate with your legacy systems and sync data seamlessly.</CardDescription>
+        </CardHeader>
+        <CardContent className="p-6 space-y-6">
+          <div className="p-4 rounded-xl border border-border bg-card">
+            <h3 className="font-bold mb-1">ServiceTitan Migration</h3>
+            <p className="text-xs text-muted-foreground mb-4">You can sync your existing customers and jobs directly from ServiceTitan. Mila Virtual Coworker can handle this for you in chat!</p>
+            {loadingMigrations ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin"/> Loading sync history...</div>
+            ) : migrationTasks.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic">No past migrations found. Go chat with Mila to start one!</p>
+            ) : (
+              <div className="space-y-3">
+                {migrationTasks.map((task: any) => (
+                  <div key={task.id} className="p-3 bg-muted/30 rounded-lg border border-border flex justify-between items-center">
+                    <div>
+                      <p className="font-semibold text-sm capitalize">{task.provider_name} Sync</p>
+                      <p className="text-xs text-muted-foreground">Status: <Badge variant={task.status === "completed" ? "default" : task.status === "failed" ? "destructive" : "secondary"}>{task.status}</Badge></p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">{task.synced_records} / {task.total_records} Records</p>
+                      {task.status === 'in_progress' && (
+                        <div className="w-24 h-1.5 bg-muted mt-2 rounded-full overflow-hidden">
+                          <div className="h-full bg-primary" style={{ width: `${Math.min(100, Math.max(0, (task.synced_records / (task.total_records || 1)) * 100))}%` }} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const tabContent: Record<SettingsTab, () => JSX.Element> = { 
+    profile: renderProfile, 
+    company: renderCompany, 
+    billing: renderBilling, 
+    modules: renderModules, 
+    integrations: renderIntegrations,
+    developer: renderDeveloper 
+  };
 
   return (
     <>

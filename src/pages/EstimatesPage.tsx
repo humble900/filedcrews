@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import SEO from "@/components/SEO";
@@ -86,6 +86,7 @@ import {
   PenTool,
 } from "lucide-react";
 import { format, addDays, differenceInDays } from "date-fns";
+import SignatureCanvas from "react-signature-canvas";
 
 // ─── Types ──────────────────────────────────────────────────────────
 interface Customer {
@@ -647,7 +648,7 @@ export default function EstimatesPage() {
   const [previewActiveOptionIndex, setPreviewActiveOptionIndex] = useState(0);
   const [previewOptionStates, setPreviewOptionStates] = useState<Record<string, boolean>>({}); // tracking option checks for client side demo
   const [previewSigner, setPreviewSigner] = useState("");
-  const [previewSignatureDrawn, setPreviewSignatureDrawn] = useState(false);
+  const sigCanvasRef = useRef<SignatureCanvas | null>(null);
 
   // Active Option Tab in Builder Form
   const [activeBuilderOptionIndex, setActiveBuilderOptionIndex] = useState(0);
@@ -1760,16 +1761,15 @@ export default function EstimatesPage() {
                   </div>
                 )}
 
-                {/* Mock Sign-off Panel */}
-                <div className="border border-dashed border-slate-200 bg-slate-50/20 p-5 rounded-2xl space-y-4">
+                {/* Client Sign-off Panel */}
+                <div className="border border-slate-200 bg-white p-5 rounded-2xl shadow-sm space-y-4 mt-8">
                   <div className="flex justify-between items-center pb-2 border-b">
                     <h4 className="font-extrabold text-xs text-slate-800 flex items-center gap-1.5">
                       <PenTool className="h-4 w-4 text-primary" /> Sign & Accept Quote Proposal
                     </h4>
-                    <span className="text-[9px] font-mono text-muted-foreground uppercase">Demonstration flow</span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-1">
                       <label className="text-[10px] uppercase font-bold text-muted-foreground">Recipient Name</label>
                       <Input
@@ -1779,31 +1779,31 @@ export default function EstimatesPage() {
                       />
                     </div>
                     <div className="space-y-1 flex flex-col">
-                      <label className="text-[10px] uppercase font-bold text-muted-foreground">Client Signature Area</label>
-                      <div
-                        className="h-20 border-2 border-dashed bg-white hover:bg-slate-50 transition-colors rounded-xl flex items-center justify-center cursor-pointer"
-                        onClick={() => setPreviewSignatureDrawn(true)}
-                      >
-                        {previewSignatureDrawn ? (
-                          <span className="font-signature font-bold text-primary italic text-xl select-none">
-                            {previewSigner || activeCustomer?.name}
-                          </span>
-                        ) : (
-                          <span className="text-[10px] text-muted-foreground">Click here to insert mock signature</span>
-                        )}
+                      <label className="text-[10px] uppercase font-bold text-muted-foreground">Client Signature</label>
+                      <div className="border border-dashed border-slate-300 bg-slate-50 rounded-xl overflow-hidden touch-none h-32 relative group">
+                        <SignatureCanvas
+                          ref={sigCanvasRef}
+                          penColor="black"
+                          canvasProps={{ className: 'w-full h-full' }}
+                        />
                       </div>
                     </div>
                   </div>
 
                   <div className="flex justify-between items-center pt-2 gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => { setPreviewSignatureDrawn(false); setPreviewSigner(""); }} className="text-muted-foreground text-xs">
+                    <Button variant="ghost" size="sm" onClick={() => { sigCanvasRef.current?.clear(); setPreviewSigner(""); }} className="text-muted-foreground text-xs">
                       Reset Signature details
                     </Button>
                     <Button
-                      disabled={!previewSignatureDrawn || !previewSigner.trim()}
+                      disabled={!previewSigner.trim()}
                       className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
                       onClick={() => {
-                        toast({ title: "Proposal Approved", description: "Successfully accepted the proposal package." });
+                        if (sigCanvasRef.current?.isEmpty()) {
+                          toast({ title: "Signature Required", description: "Please draw your signature to accept.", variant: "destructive" });
+                          return;
+                        }
+                        const signatureDataUrl = sigCanvasRef.current?.toDataURL();
+                        toast({ title: "Proposal Approved", description: "Successfully signed and accepted the proposal package." });
                       }}
                     >
                       Accept Proposal Quote

@@ -42,6 +42,21 @@ const HomePage = () => {
     enabled: !!user?.id
   });
 
+  // Check if company has any projects (for post-activation onboarding)
+  const { data: projectCount = 0, isLoading: loadingProjects } = useQuery({
+    queryKey: ["has_projects", company?.id],
+    queryFn: async () => {
+      if (!company?.id) return 0;
+      const { count, error } = await supabase
+        .from("projects")
+        .select("*", { count: "exact", head: true })
+        .eq("company_id", company.id);
+      if (error) return 0;
+      return count || 0;
+    },
+    enabled: !!company?.id
+  });
+
   useEffect(() => {
     if (location.state?.tab) {
       setActiveTab(location.state.tab);
@@ -120,6 +135,11 @@ const HomePage = () => {
   }
 
   if (!company || company.subscription_status === 'pending_approval') {
+    return <Navigate to="/wizard" replace />;
+  }
+
+  // Force the account owner to complete the client & project setup if they haven't yet
+  if (projectCount === 0 && !loadingProjects && user?.id === company.auth_user_id) {
     return <Navigate to="/wizard" replace />;
   }
 

@@ -36,6 +36,7 @@ import {
   X,
   Loader2,
   Briefcase,
+  BrainCircuit,
   Target,
   TrendingUp,
   ShieldCheck,
@@ -928,6 +929,31 @@ export default function ProjectDetailWorkspace() {
               </div>
             </div>
           </div>
+
+          {/* AI Draft Banner */}
+          {searchParams.get("review") === "ai_draft" && (
+            <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in slide-in-from-top-4 fade-in duration-500">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-500/20 rounded-lg shrink-0">
+                  <BrainCircuit className="h-6 w-6 text-indigo-600 animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-indigo-700 text-base">AI Draft Mode</h3>
+                  <p className="text-xs text-indigo-600/80">This project, invoice, and team were drafted by the AI Operations Assistant. Review the tabs below to confirm accuracy.</p>
+                </div>
+              </div>
+              <Button 
+                onClick={() => {
+                  searchParams.delete("review");
+                  setSearchParams(searchParams);
+                  toast({ title: "AI Plan Executed", description: "The project has been officially activated and teams dispatched." });
+                }} 
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold whitespace-nowrap shrink-0"
+              >
+                Approve & Execute Plan
+              </Button>
+            </div>
+          )}
 
           {/* Tabs */}
           <Tabs

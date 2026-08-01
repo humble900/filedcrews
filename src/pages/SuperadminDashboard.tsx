@@ -318,7 +318,7 @@ export default function SuperadminDashboard() {
   const { data: signupMode = "founders_partner" } = useQuery({
     queryKey: ["platform_signup_mode"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("platform_settings")
         .select("value")
         .eq("key", "signup_mode")
@@ -331,7 +331,7 @@ export default function SuperadminDashboard() {
 
   const toggleSignupModeMutation = useMutation({
     mutationFn: async (newMode: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("platform_settings")
         .upsert({ key: "signup_mode", value: newMode, updated_at: new Date().toISOString() });
       if (error) throw error;

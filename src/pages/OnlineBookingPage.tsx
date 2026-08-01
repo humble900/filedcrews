@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import SEO from "@/components/SEO";
@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2,
@@ -30,9 +31,12 @@ import { format } from "date-fns";
 
 export default function OnlineBookingPage() {
   const { prefix } = useParams<{ prefix: string }>();
+  const [searchParams] = useSearchParams();
+  const isEmbed = searchParams.get("embed") === "true";
   const { toast } = useToast();
 
   const [step, setStep] = useState(1);
+  const [leadId, setLeadId] = useState<string | null>(null);
 
   // Form inputs
   const [custName, setCustName] = useState("");
@@ -43,6 +47,40 @@ export default function OnlineBookingPage() {
   const [bookingDate, setBookingDate] = useState("");
   const [bookingWindow, setBookingWindow] = useState("morning"); // morning, afternoon
   const [bookingNotes, setBookingNotes] = useState("");
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(`ob_draft_${prefix}`);
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        if (data.leadId) setLeadId(data.leadId);
+        if (data.custName) setCustName(data.custName);
+        if (data.custEmail) setCustEmail(data.custEmail);
+        if (data.custPhone) setCustPhone(data.custPhone);
+        if (data.custAddress) setCustAddress(data.custAddress);
+        if (data.selectedJobTypeId) setSelectedJobTypeId(data.selectedJobTypeId);
+        if (data.bookingDate) setBookingDate(data.bookingDate);
+        if (data.bookingWindow) setBookingWindow(data.bookingWindow);
+        if (data.bookingNotes) setBookingNotes(data.bookingNotes);
+        if (data.step && data.step < 4) setStep(data.step);
+      } catch (e) {
+        console.warn("Failed to parse booking draft from localStorage", e);
+      }
+    }
+  }, [prefix]);
+
+  // Save to localStorage when state changes
+  useEffect(() => {
+    if (step === 4) {
+      // Clear draft upon successful submission
+      localStorage.removeItem(`ob_draft_${prefix}`);
+    } else {
+      localStorage.setItem(`ob_draft_${prefix}`, JSON.stringify({
+        leadId, step, custName, custEmail, custPhone, custAddress, selectedJobTypeId, bookingDate, bookingWindow, bookingNotes
+      }));
+    }
+  }, [prefix, leadId, step, custName, custEmail, custPhone, custAddress, selectedJobTypeId, bookingDate, bookingWindow, bookingNotes]);
 
   // 1. Fetch Company by Prefix
   const { data: company, isLoading: loadingCompany } = useQuery({
@@ -78,6 +116,33 @@ export default function OnlineBookingPage() {
     enabled: !!company?.id,
   });
 
+  const savePartial = async (nextStep: number) => {
+    setStep(nextStep);
+    if (!company) return;
+    try {
+      const payload = {
+        company_id: company.id,
+        customer_name: custName.trim(),
+        email: custEmail.trim(),
+        phone: custPhone.trim(),
+        address: custAddress.trim() || null,
+        source: "Website - Partial",
+        status: "New",
+        job_type_id: selectedJobTypeId === "NONE" ? null : selectedJobTypeId,
+        notes: bookingNotes.trim() || null
+      };
+
+      if (leadId) {
+        await supabase.from("leads").update(payload).eq("id", leadId);
+      } else {
+        const { data, error } = await supabase.from("leads").insert(payload).select("id").maybeSingle();
+        if (data?.id && !error) setLeadId(data.id);
+      }
+    } catch (e) {
+      console.warn("Partial save failed", e);
+    }
+  };
+
   // 3. Mutation to Submit Lead
   const createBookingMutation = useMutation({
     mutationFn: async () => {
@@ -91,7 +156,7 @@ Requested Date: ${bookingDate} (${bookingWindow})
 Problem Details: ${bookingNotes.trim()}
       `.trim();
 
-      const { error } = await supabase.from("leads").insert({
+      const payload = {
         company_id: company.id,
         customer_name: custName.trim(),
         email: custEmail.trim(),
@@ -101,12 +166,19 @@ Problem Details: ${bookingNotes.trim()}
         source: "Website",
         status: "New",
         job_type_id: selectedJobTypeId === "NONE" ? null : selectedJobTypeId,
-      });
+      };
 
-      if (error) throw error;
+      if (leadId) {
+        const { error } = await supabase.from("leads").update(payload).eq("id", leadId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("leads").insert(payload);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       setStep(4);
+      setLeadId(null);
       toast({ title: "Booking Received", description: "Your service appointment request is queued." });
     },
     onError: (err: any) => {
@@ -147,22 +219,24 @@ Problem Details: ${bookingNotes.trim()}
         noIndex
       />
 
-      <div className="min-h-screen bg-slate-900 text-white flex flex-col font-sans">
-        <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-40">
-          <div className="max-w-[800px] mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                <Building className="h-6 w-6" />
-              </div>
-              <div>
-                <h1 className="text-lg font-black tracking-tight leading-none">{company.name}</h1>
-                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Online Booking Center</span>
+      <div className={`min-h-screen text-white flex flex-col font-sans ${isEmbed ? 'bg-transparent' : 'bg-slate-900'}`}>
+        {!isEmbed && (
+          <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-40">
+            <div className="max-w-[800px] mx-auto px-4 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                  <Building className="h-6 w-6" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-black tracking-tight leading-none">{company.name}</h1>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Online Booking Center</span>
+                </div>
               </div>
             </div>
-          </div>
-        </header>
+          </header>
+        )}
 
-        <main className="flex-1 max-w-[500px] w-full mx-auto px-4 py-8 flex flex-col justify-center">
+        <main className={`flex-1 max-w-[500px] w-full mx-auto px-4 flex flex-col justify-center ${isEmbed ? 'py-2' : 'py-8'}`}>
           <Card className="bg-slate-950 border-slate-800/80 card-shadow-md text-white">
             <CardHeader className="border-b border-slate-800/60 pb-4">
               <CardTitle className="text-base font-bold flex items-center gap-2">
@@ -221,7 +295,7 @@ Problem Details: ${bookingNotes.trim()}
                       toast({ title: "Error", description: "Name, email, and phone are required.", variant: "destructive" });
                       return;
                     }
-                    setStep(2);
+                    savePartial(2);
                   }}
                   className="w-full h-11 bg-primary hover:bg-primary/95 text-white font-bold gap-2 mt-2"
                 >
@@ -267,7 +341,7 @@ Problem Details: ${bookingNotes.trim()}
                     Back
                   </Button>
                   <Button
-                    onClick={() => setStep(3)}
+                    onClick={() => savePartial(3)}
                     className="flex-1 bg-primary hover:bg-primary/95 text-white font-bold gap-2"
                   >
                     Next: Choose Date <ArrowRight className="h-4 w-4" />
@@ -342,6 +416,7 @@ Problem Details: ${bookingNotes.trim()}
                       setCustAddress("");
                       setBookingDate("");
                       setBookingNotes("");
+                      setLeadId(null);
                     }}
                     className="w-full bg-slate-850 hover:bg-slate-800 text-white border border-slate-800"
                   >

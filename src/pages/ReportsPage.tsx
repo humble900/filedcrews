@@ -1271,7 +1271,7 @@ export default function ReportsPage({ projectId }: { projectId?: string }) {
                     <div className="space-y-0.5">
                       <div className="text-xs text-muted-foreground font-semibold">Shift Realized Labor Cost</div>
                       <div className="text-2xl font-black text-foreground">
-                        ${totalLaborCost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ${Number(totalLaborCost).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                     </div>
                   </CardContent>

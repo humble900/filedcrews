@@ -39,6 +39,16 @@ import {
   EyeOff,
   X,
   TrendingUp,
+  ThermometerSnowflake,
+  Wrench,
+  Trees,
+  Zap,
+  Sparkles,
+  ShieldAlert,
+  Sun,
+  Home,
+  CheckCircle2,
+  Hammer,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -201,16 +211,16 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
   const navigate = useNavigate();
 
   // Fetch signup_mode platform setting
-  const { data: signupMode = "founders_partner" } = useQuery({
+  const { data: signupMode = "lite" } = useQuery({
     queryKey: ["platform_signup_mode_wizard"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: settingData, error: settingError } = await (supabase as any)
         .from("platform_settings")
         .select("value")
         .eq("key", "signup_mode")
         .maybeSingle();
-      if (error) throw error;
-      return data?.value || "founders_partner";
+      if (settingError) throw settingError;
+      return settingData?.value || "lite";
     }
   });
 
@@ -242,7 +252,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
     setSubmittingApp(true);
     try {
       const generatedPrefix = computePrefix(companyName);
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("companies")
         .insert({
           name: companyName.trim(),
@@ -250,11 +260,13 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
           auth_user_id: user?.id,
           currency: "USD",
           industry: companyVertical,
+          country: companyCountry,
           address: companyAddress.trim() || null,
           website: companyWebsite.trim() || null,
           staff_count: companyStaffCount.trim() || null,
           annual_revenue: companyAnnualRevenue.trim() || null,
-          subscription_status: 'pending_approval'
+          subscription_status: 'pending_approval',
+          referred_by: localStorage.getItem("filedcrews_affiliate_code") || null
         });
       
       if (error) throw error;
@@ -357,6 +369,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
   // Step 6: Deploy Setup (Signup Form in Mode 1, Confirm action in Mode 2 & 3)
   // Step 7: Handover Details & QR Code
   const [step, setStep] = useState(1);
+  const [subStep, setSubStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCreds, setCopiedCreds] = useState(false);
@@ -371,6 +384,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
   const [companyName, setCompanyName] = useState("");
   const [companyPrefix, setCompanyPrefix] = useState("");
   const [companyVertical, setCompanyVertical] = useState<string>("General");
+  const [companyCountry, setCompanyCountry] = useState<string>("US");
 
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
@@ -418,9 +432,11 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
   const [crewEmail, setCrewEmail] = useState("");
   const [crewPhone, setCrewPhone] = useState("");
   const [crewPhoneDialCode, setCrewPhoneDialCode] = useState("+1");
-  const [introStep, setIntroStep] = useState(1); // 1 to 5 for clay-style card introduction
+  const [introStep, setIntroStep] = useState(1); // 1 to 6 for clay-style card introduction
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [showCrewPassword, setShowCrewPassword] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<'free_trial' | 'growth' | 'enterprise'>('free_trial');
+  const [includeSampleData, setIncludeSampleData] = useState<boolean>(true);
 
   // Signup fields (for Mode 1 Step 6)
   const [signupEmail, setSignupEmail] = useState("");
@@ -598,6 +614,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
           setCurrencyCode(parsed.currencyCode || "USD");
           setPhoneDialCode(parsed.phoneDialCode || "+1");
           setCompanyVertical(parsed.companyVertical || "General");
+          setCompanyCountry(parsed.companyCountry || "US");
         }
       } catch (e) {
         console.error("Error parsing sandbox state", e);
@@ -664,7 +681,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
             setCoords(userCoords);
             saveSandboxProgress({ coords: userCoords });
           },
-          () => console.log("Geolocation permission denied. Using default coords.")
+          () => {}
         );
       }
     }
@@ -776,7 +793,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
           throw new Error(`The prefix "${prefixToUse}" is already in use by another company. Please change your company prefix.`);
         }
 
-        const { data: comp, error: compErr } = await supabase
+        const { data: comp, error: compErr } = await (supabase as any)
           .from("companies")
           .insert({
             name: companyName.trim(),
@@ -784,11 +801,11 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
             auth_user_id: userId,
             currency: currencyCode,
             industry: companyVertical,
+            country: companyCountry,
             address: companyAddress.trim() || null,
             website: companyWebsite.trim() || null,
             staff_count: companyStaffCount.trim() || null,
             annual_revenue: companyAnnualRevenue.trim() || null,
-            affiliate_promo_code: localStorage.getItem("filedcrews_affiliate_code") || null,
           })
           .select()
           .single();
@@ -1142,7 +1159,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
   if (loading || !apiKey || (user && loadingAdmin)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0c121f]">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -1152,23 +1169,23 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
     return (
       <div className="min-h-screen bg-[#0a0f1d] flex flex-col items-center justify-center p-4 font-sans select-none relative overflow-hidden">
         {/* Glow Spheres */}
-        <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[400px] h-[400px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
 
         <div className="w-full max-w-lg bg-slate-900/60 border border-slate-800 backdrop-blur-xl p-8 rounded-2xl shadow-2xl z-10 text-center space-y-6">
-          <div className="mx-auto w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 animate-pulse border border-amber-500/20">
+          <div className="mx-auto w-16 h-16 rounded-full bg-indigo-500/10 flex items-center justify-center text-amber-500 animate-pulse border border-amber-500/20">
             <Lock className="h-8 w-8" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-white tracking-tight">Application Under Review</h2>
+            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Application Under Review</h2>
             <p className="text-amber-500 text-xs font-semibold tracking-wider uppercase">Founders Partner Charter Program</p>
           </div>
-          <p className="text-slate-400 text-sm leading-relaxed">
-            Thank you for applying to the Founders Partner Charter! Our product team is currently verifying your business profile (<span className="text-white font-semibold">{company.name}</span>) to configure your dedicated dashboard and SMS routing channels.
+          <p className="text-slate-500 text-sm leading-relaxed">
+            Thank you for applying to the Founders Partner Charter! Our product team is currently verifying your business profile (<span className="text-slate-900 font-semibold">{company.name}</span>) to configure your dedicated dashboard and SMS routing channels.
           </p>
           <div className="p-4 bg-slate-950/50 border border-slate-850 rounded-xl space-y-1 text-left">
             <p className="text-[11px] text-slate-500 uppercase font-bold tracking-wider">Submitted Profile Details</p>
-            <div className="text-xs text-slate-300 space-y-2 mt-2">
+            <div className="text-xs text-slate-700 space-y-2 mt-2">
               <p><strong className="text-slate-500">Industry:</strong> {company.industry}</p>
               <p><strong className="text-slate-500">Business Address:</strong> {company.address || "—"}</p>
               <p><strong className="text-slate-500">Estimated Crew Size:</strong> {company.staff_count || "—"}</p>
@@ -1178,7 +1195,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
           <p className="text-xs text-slate-500">
             We review and approve profiles within 2 hours. A confirmation email will be sent once your workspace is live.
           </p>
-          <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate("/"); }} className="text-xs text-slate-400 hover:text-white hover:bg-slate-800/50 w-full">
+          <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate("/"); }} className="text-xs text-slate-500 hover:text-slate-900 hover:bg-slate-800/50 w-full">
             Log Out or Switch Account
           </Button>
         </div>
@@ -1195,49 +1212,67 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
         <div className="w-full max-w-xl bg-slate-900/60 border border-slate-800 backdrop-blur-xl p-8 rounded-2xl shadow-2xl z-10 space-y-6">
           <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold text-white tracking-tight">Founders Partner Application</h2>
-            <p className="text-slate-400 text-sm">
+            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Founders Partner Application</h2>
+            <p className="text-slate-500 text-sm">
               Apply to join our exclusive Charter Program. Please provide your business profile details below to initiate manual vetting.
             </p>
           </div>
 
           <form onSubmit={handleApply} className="space-y-4">
             <div className="space-y-1">
-              <Label className="text-slate-300 text-xs font-semibold">Business Name</Label>
+              <Label className="text-slate-700 text-xs font-semibold">Business Name</Label>
               <Input
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
                 placeholder="e.g. Acme Plumbing Services"
                 required
-                className="bg-slate-950/80 border-slate-800 text-white placeholder-slate-600 focus:border-blue-500 focus:ring-blue-500"
+                className="bg-slate-950/80 border-slate-800 text-slate-900 placeholder-slate-600 focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Label className="text-slate-300 text-xs font-semibold">Industry Vertical</Label>
+                <Label className="text-slate-700 text-xs font-semibold">Industry Vertical</Label>
                 <Select value={companyVertical} onValueChange={setCompanyVertical}>
-                  <SelectTrigger className="bg-slate-950/80 border-slate-800 text-white">
+                  <SelectTrigger className="bg-slate-950/80 border-slate-800 text-slate-900">
                     <SelectValue placeholder="Select vertical" />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-800 text-white">
+                  <SelectContent className="bg-slate-900 border-slate-800 text-slate-900">
                     <SelectItem value="HVAC">HVAC</SelectItem>
                     <SelectItem value="Electrical">Electrical</SelectItem>
                     <SelectItem value="Plumbing">Plumbing</SelectItem>
                     <SelectItem value="Landscaping">Landscaping</SelectItem>
                     <SelectItem value="Cleaning">Cleaning</SelectItem>
+                    <SelectItem value="Pest Control">Pest Control</SelectItem>
+                    <SelectItem value="General Construction">General Construction</SelectItem>
                     <SelectItem value="General">General Trade / Other</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-1">
-                <Label className="text-slate-300 text-xs font-semibold">Estimated Crew Size</Label>
+                <Label className="text-slate-700 text-xs font-semibold">Country</Label>
+                <Select value={companyCountry} onValueChange={(val) => { setCompanyCountry(val); saveSandboxProgress({ companyCountry: val }); }}>
+                  <SelectTrigger className="bg-slate-950/80 border-slate-800 text-slate-900">
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-slate-800 text-slate-900">
+                    {countriesList.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.flag} {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-slate-700 text-xs font-semibold">Estimated Crew Size</Label>
                 <Select value={companyStaffCount} onValueChange={setCompanyStaffCount}>
-                  <SelectTrigger className="bg-slate-950/80 border-slate-800 text-white">
+                  <SelectTrigger className="bg-slate-950/80 border-slate-800 text-slate-900">
                     <SelectValue placeholder="Select size" />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-800 text-white">
+                  <SelectContent className="bg-slate-900 border-slate-800 text-slate-900">
                     <SelectItem value="1-5">1 to 5 technicians</SelectItem>
                     <SelectItem value="6-20">6 to 20 technicians</SelectItem>
                     <SelectItem value="21-50">21 to 50 technicians</SelectItem>
@@ -1248,33 +1283,33 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
             </div>
 
             <div className="space-y-1">
-              <Label className="text-slate-300 text-xs font-semibold">Business Address</Label>
+              <Label className="text-slate-700 text-xs font-semibold">Business Address</Label>
               <Input
                 value={companyAddress}
                 onChange={(e) => setCompanyAddress(e.target.value)}
                 placeholder="e.g. 100 Main St, Suite A, Austin, TX"
-                className="bg-slate-950/80 border-slate-800 text-white placeholder-slate-600 focus:border-blue-500 focus:ring-blue-500"
+                className="bg-slate-950/80 border-slate-800 text-slate-900 placeholder-slate-600 focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Label className="text-slate-300 text-xs font-semibold">Company Website</Label>
+                <Label className="text-slate-700 text-xs font-semibold">Company Website</Label>
                 <Input
                   value={companyWebsite}
                   onChange={(e) => setCompanyWebsite(e.target.value)}
                   placeholder="e.g. www.acme.com"
-                  className="bg-slate-950/80 border-slate-800 text-white placeholder-slate-600 focus:border-blue-500 focus:ring-blue-500"
+                  className="bg-slate-950/80 border-slate-800 text-slate-900 placeholder-slate-600 focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
 
               <div className="space-y-1">
-                <Label className="text-slate-300 text-xs font-semibold">Annual Revenue Scope</Label>
+                <Label className="text-slate-700 text-xs font-semibold">Annual Revenue Scope</Label>
                 <Select value={companyAnnualRevenue} onValueChange={setCompanyAnnualRevenue}>
-                  <SelectTrigger className="bg-slate-950/80 border-slate-800 text-white">
+                  <SelectTrigger className="bg-slate-950/80 border-slate-800 text-slate-900">
                     <SelectValue placeholder="Select revenue range" />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-800 text-white">
+                  <SelectContent className="bg-slate-900 border-slate-800 text-slate-900">
                     <SelectItem value="Under $250k">Under $250k</SelectItem>
                     <SelectItem value="$250k-$1M">$250k to $1M</SelectItem>
                     <SelectItem value="$1M-$5M">$1M to $5M</SelectItem>
@@ -1287,14 +1322,14 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
             <Button
               type="submit"
               disabled={submittingApp}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 mt-4 rounded-xl shadow-lg gap-2"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 mt-4 rounded-xl shadow-lg gap-2"
             >
               {submittingApp ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Submit Charter Application
             </Button>
           </form>
 
-          <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate("/"); }} className="text-xs text-slate-500 hover:text-white hover:bg-slate-800/50 w-full mt-2">
+          <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate("/"); }} className="text-xs text-slate-500 hover:text-slate-900 hover:bg-slate-800/50 w-full mt-2">
             Log Out or Switch Account
           </Button>
         </div>
@@ -1302,7 +1337,236 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
     );
   }
 
-  if (wizardMode === "public-sandbox" && introStep <= 5 && !user) {
+  if (wizardMode === "public-sandbox" && introStep === 6) {
+    return (
+      <>
+        <SEO
+          title="Select Your Plan — FiledCrew"
+          description="Choose a subscription plan to activate your FiledCrew workspace."
+          path="/wizard"
+          noIndex
+        />
+        <div className="min-h-screen bg-slate-50 flex flex-col font-sans select-none relative overflow-x-hidden">
+          {/* Full Width Top Header Bar */}
+          <header className="bg-white border-b border-slate-200 py-4 px-6 sm:px-12 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+            <div className="flex items-center gap-3">
+              <img src="/favicon.png" alt="FiledCrew Logo" className="h-8 w-8 rounded-lg shadow-sm" />
+              <span className="text-xl font-black text-slate-900 tracking-tight">FiledCrew</span>
+            </div>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setIntroStep(5);
+                saveSandboxProgress({ introStep: 5 });
+              }}
+              className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1.5"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back to Account Details
+            </Button>
+          </header>
+
+          {/* Main Full-Width Content Container */}
+          <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-8 py-10 flex flex-col items-center justify-center">
+            {/* Header Hero Section */}
+            <div className="text-center max-w-2xl mx-auto space-y-3 mb-10">
+              <div className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-primary bg-primary/10 px-3 py-1 rounded-full uppercase tracking-wider">
+                <Sparkles className="h-3.5 w-3.5" /> Workspace Registration Complete
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
+                Select Your Subscription Plan
+              </h1>
+              <p className="text-slate-500 text-sm leading-relaxed">
+                Your company profile <span className="font-bold text-slate-800">{companyName || "Organization"}</span> and administrator account are registered. Choose a plan to activate your workspace.
+              </p>
+            </div>
+
+            {/* 3 Neutral Equal Plan Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl w-full">
+              
+              {/* Plan 1: 14-Day Free Trial */}
+              <div className="bg-white rounded-2xl border-2 border-slate-200 hover:border-primary/60 p-6 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                      Self-Serve Trial
+                    </span>
+                    <h2 className="text-xl font-extrabold text-slate-900 mt-3">14-Day Free Trial</h2>
+                    <div className="text-3xl font-black text-slate-900 mt-2">
+                      $0 <span className="text-xs font-normal text-slate-500">/ 14 days</span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                      Start exploring immediately with 5 field crew seats & full platform access. No credit card required.
+                    </p>
+                  </div>
+
+                  <ul className="text-xs text-slate-600 space-y-2.5 pt-4 border-t border-slate-100">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                      <span><strong>5 Field Crew Seats</strong></span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                      <span>Live GPS Map & Worksite Geofences</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                      <span>Digital Timesheets & Job Checklists</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                      <span>Guided Initial Setup Wizard</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <Button
+                  onClick={async () => {
+                    const activeUserRes = await supabase.auth.getUser();
+                    const activeUserId = activeUserRes.data.user?.id || user?.id;
+                    if (activeUserId) {
+                      const { data: comp } = await supabase.from("companies").select("id").eq("auth_user_id", activeUserId).maybeSingle();
+                      if (comp) {
+                        await (supabase as any).from("companies").update({
+                          subscription_tier: "free_trial",
+                          subscription_status: "trialing"
+                        }).eq("id", comp.id);
+                      }
+                    }
+                    // Launch 2nd flow of onboarding (Add Client, Project, Geofence, Crew, Job)
+                    setStep(2);
+                    setIntroStep(7);
+                    saveSandboxProgress({ step: 2, introStep: 7, selectedPlan: "free_trial" });
+                  }}
+                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs h-11 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                >
+                  Start Free Trial (5 Seats) <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Plan 2: Growth Plan (Per Seat) */}
+              <div className="bg-white rounded-2xl border-2 border-slate-200 hover:border-amber-500/60 p-6 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-[10px] font-extrabold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                      Scalable Per-Seat
+                    </span>
+                    <h2 className="text-xl font-extrabold text-slate-900 mt-3">Growth Plan</h2>
+                    <div className="text-3xl font-black text-slate-900 mt-2">
+                      $29 <span className="text-xs font-normal text-slate-500">/ seat / mo</span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                      Pay as your crew expands. Direct WhatsApp activation with your dedicated admin support.
+                    </p>
+                  </div>
+
+                  <ul className="text-xs text-slate-600 space-y-2.5 pt-4 border-t border-slate-100">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                      <span><strong>Unlimited Crew Seats</strong></span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                      <span>Dispatch Cost & Quote Engine</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                      <span>Client Portal Access & Instant Payments</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                      <span>Priority Admin Account Activation</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <Button
+                  onClick={async () => {
+                    const activeUserRes = await supabase.auth.getUser();
+                    const activeUserId = activeUserRes.data.user?.id || user?.id;
+                    if (activeUserId) {
+                      const { data: comp } = await supabase.from("companies").select("id").eq("auth_user_id", activeUserId).maybeSingle();
+                      if (comp) {
+                        await (supabase as any).from("companies").update({
+                          subscription_tier: "growth",
+                          subscription_status: "pending_activation"
+                        }).eq("id", comp.id);
+                      }
+                    }
+                    const text = encodeURIComponent(`Hi there! I just registered ${companyName || 'our company'} on FiledCrew and would like to activate our Growth Plan ($29/seat/mo). Please assist with account activation.`);
+                    window.open(`https://wa.me/14094229714?text=${text}`, "_blank");
+                  }}
+                  className="w-full bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs h-11 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                >
+                  Activate via WhatsApp ➔
+                </Button>
+              </div>
+
+              {/* Plan 3: Founding Partner Program */}
+              <div className="bg-white rounded-2xl border-2 border-slate-200 hover:border-purple-500/60 p-6 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-[10px] font-extrabold text-purple-700 bg-purple-100 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                      Yearly Charter Access
+                    </span>
+                    <h2 className="text-xl font-extrabold text-slate-900 mt-3">Founding Partner</h2>
+                    <div className="text-3xl font-black text-slate-900 mt-2">
+                      Yearly Charter <span className="text-xs font-normal text-slate-500">/ annual</span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                      Exclusive annual charter for field operators. Includes white-glove migration & direct co-design access.
+                    </p>
+                  </div>
+
+                  <ul className="text-xs text-slate-600 space-y-2.5 pt-4 border-t border-slate-100">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                      <span><strong>Yearly VIP Charter License</strong></span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                      <span>White-Glove Database & Crew Migration</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                      <span>Direct Product Co-Design Access</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                      <span>Dedicated Engineering WhatsApp Hotline</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <Button
+                  onClick={async () => {
+                    const activeUserRes = await supabase.auth.getUser();
+                    const activeUserId = activeUserRes.data.user?.id || user?.id;
+                    if (activeUserId) {
+                      const { data: comp } = await supabase.from("companies").select("id").eq("auth_user_id", activeUserId).maybeSingle();
+                      if (comp) {
+                        await (supabase as any).from("companies").update({
+                          subscription_tier: "founding_partner",
+                          subscription_status: "pending_charter"
+                        }).eq("id", comp.id);
+                      }
+                    }
+                    const text = encodeURIComponent(`Hi there! We are interested in enrolling ${companyName || 'our company'} in the Yearly Founding Partner Charter for FiledCrew. Please send us details on how we can get started.`);
+                    window.open(`https://wa.me/14094229714?text=${text}`, "_blank");
+                  }}
+                  className="w-full bg-purple-700 hover:bg-purple-800 text-white font-extrabold text-xs h-11 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                >
+                  Join Yearly Charter ➔
+                </Button>
+              </div>
+
+            </div>
+          </main>
+        </div>
+      </>
+    );
+  }
+
+  if (wizardMode === "public-sandbox" && introStep <= 5) {
     return (
       <>
         <SEO
@@ -1311,44 +1575,311 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
           path="/wizard"
           noIndex
         />
-        <div className="min-h-screen bg-[#0a0f1d] flex flex-col items-center justify-center p-4 sm:p-6 md:p-12 relative overflow-hidden font-sans select-none">
-          {/* Subtle decorative glow blur spheres */}
-          <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-blue-600/10 rounded-full blur-[100px] pointer-events-none" />
-          <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[400px] h-[400px] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none" />
-
-          {/* Clean minimal top logo/nav */}
-          <div className="w-full max-w-xl flex items-center justify-between mb-8 z-10">
-            <div className="flex items-center gap-3">
-              <img src="/favicon.png" alt="Ocrem Logo" className="h-8 w-8 rounded-lg" />
-              <span className="text-base font-extrabold text-white tracking-tight">OnSite Crew Manager</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-1.5 w-24 bg-[#14223c] rounded-full border border-[#233558]/30 overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-300 shadow-[0_0_8px_rgba(59,130,246,0.6)]"
-                  style={{ width: `${(introStep / 5) * 100}%` }}
-                />
+        <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row font-sans select-none relative overflow-hidden">
+          {/* Left Pane (Desktop only - Remote 3 Replica) */}
+          <div className="hidden lg:flex lg:w-[400px] xl:w-[460px] flex-col justify-between p-10 bg-sidebar text-sidebar-foreground border-r border-sidebar-border relative overflow-hidden shrink-0 select-none">
+            
+            <div className="relative z-10 w-full mx-auto flex flex-col h-full justify-between">
+              {/* Header Section */}
+              <div>
+                {/* Top Logo */}
+              <div className="flex items-center gap-3 mb-8">
+                <img src="/favicon.png" alt="FiledCrew Logo" className="h-8 w-8 rounded-lg shadow-sm" />
+                <span className="text-xl font-black text-white tracking-tight">FiledCrew</span>
               </div>
-              <span className="text-[10px] font-mono font-bold text-slate-400">{introStep} of 5</span>
-            </div>
-          </div>
 
-          {/* Main Card Container */}
-          <Card className="w-full max-w-xl bg-[#14223c]/40 border-[#233558]/60 shadow-2xl relative overflow-hidden backdrop-blur-md text-slate-100 z-10 p-6 md:p-8 rounded-2xl">
+              {/* Hero Copy */}
+              <div className="space-y-2 mb-10">
+                <h1 className="text-3xl xl:text-4xl font-extrabold tracking-tight text-white leading-tight">
+                  Setup your workspace.
+                </h1>
+                <p className="text-xs text-sidebar-foreground/75 font-medium leading-relaxed max-w-[300px]">
+                  Configure your company details, location, and team structure for field dispatch.
+                </p>
+              </div>
+            </div>
+
+            {/* Overlapping Floating UI Cards & Feature Callouts matching Remote 3 (Dynamic Per Step) */}
+            <div className="relative w-full h-[400px] pointer-events-none my-auto">
+              
+              {/* STEP 1: COMPANY PROFILE */}
+              {introStep <= 1 && (
+                <>
+                  <div className="absolute right-0 top-0 text-left z-0 translate-x-1 -translate-y-6">
+                    <p className="font-bold text-[11px] text-white">Manage field crews</p>
+                    <p className="text-[9.5px] text-slate-400 font-medium">Technicians to contractors</p>
+                  </div>
+
+                  <div className="absolute right-0 top-6 w-[250px] bg-white text-slate-900 rounded-2xl shadow-2xl p-4 z-20 border border-slate-100">
+                    <div className="grid grid-cols-[1fr_auto_auto] gap-2 text-[8px] font-extrabold text-slate-400 border-b border-slate-100 pb-2 uppercase tracking-wider mb-2.5">
+                      <span>NAME</span>
+                      <span>ROLE</span>
+                      <span>REGION</span>
+                    </div>
+                    <div className="space-y-2.5">
+                      {[
+                        { name: "Jacob", role: "HVAC Lead", region: "US", avatar: "bg-blue-50 text-blue-700" },
+                        { name: "Olivia", role: "Electrician", region: "CA", avatar: "bg-amber-50 text-amber-700" },
+                        { name: "Patrícia", role: "Plumber", region: "MX", avatar: "bg-emerald-50 text-emerald-700" },
+                        { name: "Martha", role: "Inspector", region: "UK", avatar: "bg-purple-50 text-purple-700" }
+                      ].map((p, i) => (
+                        <div key={i} className="grid grid-cols-[1fr_auto_auto] gap-2 items-center text-[10px]">
+                          <div className="flex items-center gap-2">
+                            <div className={`h-6 w-6 rounded-full ${p.avatar} flex items-center justify-center text-[10px] font-black border border-slate-200/60`}>
+                              {p.name.charAt(0)}
+                            </div>
+                            <span className="font-bold text-slate-800">{p.name}</span>
+                          </div>
+                          <span className="text-slate-500 font-medium text-[9px]">{p.role}</span>
+                          <span className="text-[9px] font-bold text-slate-400">{p.region}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="absolute left-0 bottom-12 w-[230px] bg-white text-slate-900 rounded-2xl shadow-2xl p-4 z-30 -translate-x-3 border border-slate-100">
+                    <div className="inline-block border border-slate-200 text-[8px] font-bold text-slate-400 px-2 py-0.5 rounded-full mb-3 uppercase tracking-wider">
+                      PER DISPATCH
+                    </div>
+                    <div className="space-y-1.5 text-[10px]">
+                      <div className="flex justify-between items-center pb-1.5 border-b border-slate-100">
+                        <span className="text-slate-500">Tech labor rate</span>
+                        <span className="font-bold text-slate-900">$1,250.00</span>
+                      </div>
+                      <div className="flex justify-between items-center pb-1.5 border-b border-slate-100">
+                        <span className="text-slate-500">Parts & materials</span>
+                        <span className="font-bold text-slate-900">$850.00</span>
+                      </div>
+                      <div className="flex justify-between items-center pt-1 text-xs">
+                        <span className="font-black text-slate-900">Total Estimate</span>
+                        <span className="font-black text-slate-900">$2,100.00</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="absolute left-0 bottom-0 text-left z-10 translate-y-2">
+                    <p className="font-bold text-[11px] text-white">Calculate dispatch cost</p>
+                    <p className="text-[9.5px] text-slate-400 font-medium">Total cost of job & materials</p>
+                  </div>
+                </>
+              )}
+
+              {/* STEP 2: LOCATION & GEOFENCING */}
+              {introStep === 2 && (
+                <>
+                  <div className="absolute right-0 top-0 text-left z-0 translate-x-1 -translate-y-6">
+                    <p className="font-bold text-[11px] text-white">Smart Geofence Auto-Clock</p>
+                    <p className="text-[9.5px] text-slate-400 font-medium">Automatic shift tracking on site arrival</p>
+                  </div>
+
+                  <div className="absolute right-0 top-6 w-[250px] bg-white text-slate-900 rounded-2xl shadow-2xl p-4 z-20 border border-slate-100">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-2">
+                      <span className="text-[10px] font-extrabold text-slate-900">Active Geofences</span>
+                      <span className="text-[8px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold">LIVE</span>
+                    </div>
+                    <div className="space-y-2 text-[10px]">
+                      <div className="flex items-center justify-between p-1.5 bg-slate-50 rounded-lg">
+                        <div>
+                          <p className="font-bold text-slate-800">Austin Tech Hub</p>
+                          <p className="text-[8px] text-slate-500">150m Radius • 4 Techs</p>
+                        </div>
+                        <span className="text-[8px] font-bold text-emerald-600">Auto Verified</span>
+                      </div>
+                      <div className="flex items-center justify-between p-1.5 bg-slate-50 rounded-lg">
+                        <div>
+                          <p className="font-bold text-slate-800">Dallas Field Station</p>
+                          <p className="text-[8px] text-slate-500">200m Radius • 2 Techs</p>
+                        </div>
+                        <span className="text-[8px] font-bold text-blue-600">En Route</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="absolute left-0 bottom-12 w-[230px] bg-white text-slate-900 rounded-2xl shadow-2xl p-4 z-30 -translate-x-3 border border-slate-100">
+                    <p className="text-xs font-black text-slate-900">GPS Fleet Telemetry</p>
+                    <p className="text-[8px] text-slate-500 font-semibold mb-2">14 Active Vehicles</p>
+                    <div className="space-y-1 text-[10px] border-t border-slate-100 pt-2">
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Avg Response Time</span>
+                        <span className="font-bold text-slate-900">14 mins</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Signal Accuracy</span>
+                        <span className="font-bold text-emerald-600">99.8%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="absolute left-0 bottom-0 text-left z-10 translate-y-2">
+                    <p className="font-bold text-[11px] text-white">Live fleet tracking</p>
+                    <p className="text-[9.5px] text-slate-400 font-medium">Real-time GPS coordinates & status</p>
+                  </div>
+                </>
+              )}
+
+              {/* STEP 3: BRANDING & INVOICING */}
+              {introStep === 3 && (
+                <>
+                  <div className="absolute right-0 top-0 text-left z-0 translate-x-1 -translate-y-6">
+                    <p className="font-bold text-[11px] text-white">Branded Client Invoices</p>
+                    <p className="text-[9.5px] text-slate-400 font-medium">Custom logo, colors & terms</p>
+                  </div>
+
+                  <div className="absolute right-0 top-6 w-[250px] bg-white text-slate-900 rounded-2xl shadow-2xl p-4 z-20 border border-slate-100">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-2">
+                      <div className="flex items-center gap-1.5">
+                        <div className="h-4 w-4 bg-indigo-600 rounded" />
+                        <span className="text-[10px] font-black text-slate-900">INV #9402</span>
+                      </div>
+                      <span className="text-[8px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold">PAID</span>
+                    </div>
+                    <div className="space-y-1 text-[10px]">
+                      <p className="text-slate-500 text-[8px]">Client: <span className="font-bold text-slate-800">Apex Realty Corp</span></p>
+                      <div className="flex justify-between border-t border-slate-100 pt-1 mt-1">
+                        <span className="text-slate-500">Commercial HVAC</span>
+                        <span className="font-black text-slate-900">$3,450.00</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="absolute left-0 bottom-12 w-[230px] bg-white text-slate-900 rounded-2xl shadow-2xl p-4 z-30 -translate-x-3 border border-slate-100">
+                    <p className="text-xs font-black text-slate-900">Stripe Direct Payouts</p>
+                    <p className="text-[8px] text-slate-500 font-semibold mb-2">Next-Day Bank Transfer</p>
+                    <p className="text-lg font-black text-slate-900 mb-1">$14,850.00</p>
+                    <p className="text-[8px] text-emerald-600 font-bold">100% Auto-Synced Invoices</p>
+                  </div>
+
+                  <div className="absolute left-0 bottom-0 text-left z-10 translate-y-2">
+                    <p className="font-bold text-[11px] text-white">Instant payment payouts</p>
+                    <p className="text-[9.5px] text-slate-400 font-medium">Accept credit cards & bank transfers</p>
+                  </div>
+                </>
+              )}
+
+              {/* STEP 4: TEAM SIZE & DISPATCH */}
+              {introStep === 4 && (
+                <>
+                  <div className="absolute right-0 top-0 text-left z-0 translate-x-1 -translate-y-6">
+                    <p className="font-bold text-[11px] text-white">AI Route Optimization</p>
+                    <p className="text-[9.5px] text-slate-400 font-medium">Save up to 30% fuel on dispatch</p>
+                  </div>
+
+                  <div className="absolute right-0 top-6 w-[250px] bg-white text-slate-900 rounded-2xl shadow-2xl p-4 z-20 border border-slate-100">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-2">
+                      <span className="text-[10px] font-extrabold text-slate-900">Dispatch Efficiency</span>
+                      <span className="text-[8px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-bold">OPTIMIZED</span>
+                    </div>
+                    <div className="space-y-1 text-[10px]">
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Fuel Saved Today</span>
+                        <span className="font-black text-emerald-600">38 Gallons</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Travel Time Reduced</span>
+                        <span className="font-black text-blue-600">42 mins / tech</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="absolute left-0 bottom-12 w-[230px] bg-white text-slate-900 rounded-2xl shadow-2xl p-4 z-30 -translate-x-3 border border-slate-100">
+                    <p className="text-xs font-black text-slate-900 mb-1">Technician Capacity</p>
+                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden mb-2">
+                      <div className="h-full bg-indigo-600 w-[88%]" />
+                    </div>
+                    <div className="flex justify-between text-[9px] font-bold text-slate-500">
+                      <span>14 / 16 Shifts Filled</span>
+                      <span className="text-indigo-600">88% Load</span>
+                    </div>
+                  </div>
+
+                  <div className="absolute left-0 bottom-0 text-left z-10 translate-y-2">
+                    <p className="font-bold text-[11px] text-white">Capacity management</p>
+                    <p className="text-[9.5px] text-slate-400 font-medium">Prevent crew burnout & double-booking</p>
+                  </div>
+                </>
+              )}
+
+              {/* STEP 5: FINAL SIGN UP / COMPLETE */}
+              {introStep >= 5 && (
+                <>
+                  <div className="absolute right-0 top-0 text-left z-0 translate-x-1 -translate-y-6">
+                    <p className="font-bold text-[11px] text-white">Command Center Ready</p>
+                    <p className="text-[9.5px] text-slate-400 font-medium">Everything provisioned for dispatch</p>
+                  </div>
+
+                  <div className="absolute right-0 top-6 w-[250px] bg-white text-slate-900 rounded-2xl shadow-2xl p-4 z-20 border border-slate-100">
+                    <div className="mb-2 pb-2 border-b border-slate-100">
+                      <p className="text-xs font-black text-slate-900">Workspace Provisioned</p>
+                      <p className="text-[8px] text-slate-500 font-semibold">Ready for immediate crew onboarding</p>
+                    </div>
+                    <div className="space-y-1 text-[9px] text-slate-600 font-medium">
+                      <p className="flex items-center gap-1"><span className="text-emerald-500 font-bold">✓</span> CRM & Job Dispatch Active</p>
+                      <p className="flex items-center gap-1"><span className="text-emerald-500 font-bold">✓</span> Invoicing & Payments Live</p>
+                      <p className="flex items-center gap-1"><span className="text-emerald-500 font-bold">✓</span> GPS Geofences Configured</p>
+                    </div>
+                  </div>
+
+                  <div className="absolute left-0 bottom-12 w-[230px] bg-white text-slate-900 rounded-2xl shadow-2xl p-4 z-30 -translate-x-3 border border-slate-100">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-black text-slate-900">Enterprise SLA</span>
+                      <span className="text-[8px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold">99.9%</span>
+                    </div>
+                    <p className="text-[9px] text-slate-500 leading-tight">SOC2 Compliant • Encrypted Backups • 24/7 Priority Support</p>
+                  </div>
+
+                  <div className="absolute left-0 bottom-0 text-left z-10 translate-y-2">
+                    <p className="font-bold text-[11px] text-white">Enterprise security</p>
+                    <p className="text-[9.5px] text-slate-400 font-medium">Bank-grade encryption & compliance</p>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Subtle background ambient gradient glow */}
+            <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-blue-600/10 rounded-full blur-[80px] pointer-events-none" />
+          </div>
+        </div>
+
+          {/* Right Pane (Forms) */}
+          <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-8 lg:p-16 relative">
+            <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-blue-600/5 rounded-full blur-[100px] pointer-events-none" />
+            <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[400px] h-[400px] bg-indigo-600/5 rounded-full blur-[120px] pointer-events-none" />
+
+            {/* Mobile Nav */}
+            <div className="w-full max-w-xl flex items-center justify-between mb-8 lg:hidden z-10">
+              <div className="flex items-center gap-3">
+                <img src="/favicon.png" alt="FiledCrew Logo" className="h-7 w-7 rounded-lg" />
+                <span className="text-sm font-extrabold text-slate-900 tracking-tight">FiledCrew</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-1.5 w-20 bg-white rounded-full border border-slate-300/30 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-300"
+                    style={{ width: `${(introStep / 6) * 100}%` }}
+                  />
+                </div>
+                <span className="text-[10px] font-mono font-bold text-slate-500">{introStep}/6</span>
+              </div>
+            </div>
+
+            {/* Main Card Container */}
+            <div className={cn(
+              "w-full bg-transparent lg:bg-white shadow-xl lg:border lg:border-slate-200 lg:shadow-2xl relative overflow-hidden backdrop-blur-md text-slate-900 z-10 lg:p-8 rounded-2xl transition-all duration-300",
+              introStep === 4 || introStep === 6 ? "max-w-[680px]" : "max-w-[480px]"
+            )}>
             <div className="space-y-6">
               
               {/* Card 1: Company Name */}
               {introStep === 1 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Get Started</span>
-                    <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight">What is your company's name?</h2>
-                    <p className="text-slate-400 text-xs leading-relaxed">
+                    <h2 className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">What is your company's name?</h2>
+                    <p className="text-slate-500 text-xs leading-relaxed">
                       We'll set up your personalized enterprise workspace under this name.
                     </p>
                   </div>
                   <div className="space-y-2.5">
-                    <Label htmlFor="intro-company-name" className="text-xs font-semibold text-slate-300 uppercase">Company Name</Label>
+                    <Label htmlFor="intro-company-name" className="text-xs font-semibold text-slate-700 uppercase">Company Name</Label>
                     <Input
                       id="intro-company-name"
                       placeholder="e.g. Paramount Constructors"
@@ -1361,13 +1892,13 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                         setCompanyPrefix(prefix);
                         saveSandboxProgress({ companyPrefix: prefix });
                       }}
-                      className="bg-[#0c121f] border-[#233558] text-slate-100 text-base h-12 focus:ring-blue-500 focus:border-blue-500 px-4 rounded-lg"
+                      className="bg-slate-50 border-slate-300 text-slate-900 text-base h-12 focus:ring-sidebar focus:border-sidebar px-4 rounded-lg"
                     />
                   </div>
                   {companyName && (
-                    <div className="p-3 bg-blue-500/5 border border-blue-500/10 rounded-lg flex items-center justify-between text-xs">
-                      <span className="text-slate-400">Generated crew prefix code:</span>
-                      <span className="font-mono text-blue-400 font-bold bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">@{companyPrefix}</span>
+                    <div className="p-3 bg-slate-100 border border-slate-200 rounded-lg flex items-center justify-between text-xs">
+                      <span className="text-slate-600 font-medium">Generated crew prefix code:</span>
+                      <span className="font-mono text-white font-bold bg-sidebar px-2 py-0.5 rounded border border-sidebar-border">@{companyPrefix}</span>
                     </div>
                   )}
                 </div>
@@ -1377,14 +1908,13 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
               {introStep === 2 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">HQ Location</span>
-                    <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight">Where is your company located?</h2>
-                    <p className="text-slate-400 text-xs leading-relaxed">
+                    <h2 className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">Where is your company located?</h2>
+                    <p className="text-slate-500 text-xs leading-relaxed">
                       This establishes your region for local mapping and geofence tracking.
                     </p>
                   </div>
                   <div className="space-y-2.5">
-                    <Label htmlFor="intro-company-address" className="text-xs font-semibold text-slate-300 uppercase">Headquarters Address</Label>
+                    <Label htmlFor="intro-company-address" className="text-xs font-semibold text-slate-700 uppercase">Headquarters Address</Label>
                     <Input
                       id="intro-company-address"
                       ref={companyAddressInputRef}
@@ -1394,7 +1924,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                         setCompanyAddress(e.target.value);
                         saveSandboxProgress({ companyAddress: e.target.value });
                       }}
-                      className="bg-[#0c121f] border-[#233558] text-slate-100 text-base h-12 focus:ring-blue-500 focus:border-blue-500 px-4 rounded-lg"
+                      className="bg-slate-50 border-slate-300 text-slate-900 text-base h-12 focus:ring-emerald-600 focus:border-emerald-600 px-4 rounded-lg"
                     />
                   </div>
                 </div>
@@ -1404,15 +1934,14 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
               {introStep === 3 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Metadata</span>
-                    <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight">Tell us about your operations</h2>
-                    <p className="text-slate-400 text-xs leading-relaxed">
+                    <h2 className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">Tell us about your operations</h2>
+                    <p className="text-slate-500 text-xs leading-relaxed">
                       We'll configure your dashboard parameters based on your team structure.
                     </p>
                   </div>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="intro-company-website" className="text-xs font-semibold text-slate-300 uppercase">Company Website</Label>
+                      <Label htmlFor="intro-company-website" className="text-xs font-semibold text-slate-700 uppercase">Company Website</Label>
                       <Input
                         id="intro-company-website"
                         placeholder="www.company.com"
@@ -1421,12 +1950,12 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                           setCompanyWebsite(e.target.value);
                           saveSandboxProgress({ companyWebsite: e.target.value });
                         }}
-                        className="bg-[#0c121f] border-[#233558] text-slate-100 h-11 px-3 rounded-lg"
+                        className="bg-slate-50 border-slate-300 text-slate-900 h-11 px-3 rounded-lg"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="intro-staff-count" className="text-xs font-semibold text-slate-300 uppercase">Team Size</Label>
+                        <Label htmlFor="intro-staff-count" className="text-xs font-semibold text-slate-700 uppercase">Team Size</Label>
                         <select
                           id="intro-staff-count"
                           value={companyStaffCount}
@@ -1434,7 +1963,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                             setCompanyStaffCount(e.target.value);
                             saveSandboxProgress({ companyStaffCount: e.target.value });
                           }}
-                          className="w-full bg-[#0c121f] border border-[#233558] text-slate-100 h-11 rounded-lg px-2 text-xs focus:ring-blue-500 outline-none"
+                          className="w-full bg-slate-50 border border-slate-300 text-slate-900 h-11 rounded-lg px-2 text-xs focus:ring-blue-500 outline-none"
                         >
                           <option value="">Select size</option>
                           <option value="1-5">1-5 members</option>
@@ -1444,7 +1973,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                         </select>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="intro-annual-revenue" className="text-xs font-semibold text-slate-300 uppercase font-mono">Annual Revenue</Label>
+                        <Label htmlFor="intro-annual-revenue" className="text-xs font-semibold text-slate-700 uppercase font-mono">Annual Revenue</Label>
                         <select
                           id="intro-annual-revenue"
                           value={companyAnnualRevenue}
@@ -1452,7 +1981,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                             setCompanyAnnualRevenue(e.target.value);
                             saveSandboxProgress({ companyAnnualRevenue: e.target.value });
                           }}
-                          className="w-full bg-[#0c121f] border border-[#233558] text-slate-100 h-11 rounded-lg px-2 text-xs focus:ring-blue-500 outline-none"
+                          className="w-full bg-slate-50 border border-slate-300 text-slate-900 h-11 rounded-lg px-2 text-xs focus:ring-blue-500 outline-none"
                         >
                           <option value="">Select range</option>
                           <option value="Under $100K">Under $100K</option>
@@ -1463,20 +1992,20 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                       </div>
                     </div>
                     <div className="space-y-2 relative">
-                      <Label className="text-xs font-semibold text-slate-300 uppercase">Default Currency</Label>
+                      <Label className="text-xs font-semibold text-slate-700 uppercase">Default Currency</Label>
                       <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             role="combobox"
                             aria-expanded={currencyOpen}
-                            className="w-full justify-between bg-[#0c121f] border-[#233558] text-slate-100 hover:bg-slate-900 hover:text-white h-11 px-3 py-2 text-xs rounded-lg"
+                            className="w-full justify-between bg-slate-50 border-slate-300 text-slate-900 hover:bg-slate-900 hover:text-slate-900 h-11 px-3 py-2 text-xs rounded-lg"
                           >
                             {currencyCode ? (
                               <span className="flex items-center gap-2">
                                 <span>{currenciesList.find(c => c.code === currencyCode)?.flag || "🌐"}</span>
                                 <span className="font-mono font-semibold">{currencyCode}</span>
-                                <span className="text-slate-400">({getCurrencySymbol(currencyCode)})</span>
+                                <span className="text-slate-500">({getCurrencySymbol(currencyCode)})</span>
                                 <span className="text-slate-500 text-xs truncate max-w-[200px] hidden sm:inline">
                                   - {currenciesList.find(c => c.code === currencyCode)?.name}
                                 </span>
@@ -1487,10 +2016,10 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                             <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 bg-[#14223c] border-[#233558] text-slate-100">
-                          <Command className="bg-transparent text-slate-100">
-                            <CommandInput placeholder="Search currency..." className="border-0 focus:ring-0 text-slate-100 bg-[#0c121f]" />
-                            <CommandEmpty className="py-2 text-center text-xs text-slate-400">No currency found.</CommandEmpty>
+                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 bg-white border-slate-300 text-slate-900">
+                          <Command className="bg-transparent text-slate-900">
+                            <CommandInput placeholder="Search currency..." className="border-0 focus:ring-0 text-slate-900 bg-slate-50" />
+                            <CommandEmpty className="py-2 text-center text-xs text-slate-500">No currency found.</CommandEmpty>
                             <CommandGroup>
                               <CommandList className="max-h-[220px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                                 {currenciesList.map((c) => (
@@ -1507,7 +2036,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                     <span className="flex items-center gap-2">
                                       <span>{c.flag}</span>
                                       <span className="font-mono font-bold">{c.code}</span>
-                                      <span className="text-slate-400">({c.symbol})</span>
+                                      <span className="text-slate-500">({c.symbol})</span>
                                       <span className="text-slate-500 font-sans truncate max-w-[150px]">- {c.name}</span>
                                     </span>
                                     {currencyCode === c.code && (
@@ -1525,114 +2054,173 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                 </div>
               )}
 
-              {/* Card 4: Niche Industry Vertical */}
+              {/* Card 4: Niche Industry Vertical & Country */}
               {introStep === 4 && (
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Industry Vertical</span>
-                    <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight">Select your operational niche</h2>
-                    <p className="text-slate-400 text-xs leading-relaxed">
-                      We calibrate vertical presets and workflows matching your business field.
+                <div className="space-y-5">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">Select your industry vertical</h2>
+                      <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full uppercase tracking-wider">Clay-Style Presets</span>
+                    </div>
+                    <p className="text-slate-500 text-xs leading-relaxed">
+                      We'll tailor your dispatch workflows, cost models, and crew tags to your exact trade.
                     </p>
                   </div>
-                  <div className="grid grid-cols-2 gap-2.5 max-h-[220px] overflow-y-auto pr-1">
-                    {[
-                      { val: "HVAC", label: "HVAC Services" },
-                      { val: "Plumbing", label: "Plumbing & Piping" },
-                      { val: "Landscaping", label: "Landscaping & Lawn" },
-                      { val: "Electrical", label: "Electrical Systems" },
-                      { val: "Cleaning", label: "Commercial Cleaning" },
-                      { val: "General Construction", label: "General Contractor" },
-                      { val: "Pest Control", label: "Pest Extermination" },
-                    ].map((v) => {
-                      const isSelected = companyVertical === v.val;
-                      return (
-                        <button
-                          key={v.val}
-                          type="button"
-                          onClick={() => {
-                            applyVerticalPresets(v.val);
-                          }}
-                          className={cn(
-                            "p-3 rounded-lg border text-left text-xs font-semibold transition-all flex items-center justify-between",
-                            isSelected
-                              ? "bg-blue-600/10 border-blue-500 text-white shadow-md shadow-blue-500/15"
-                              : "bg-[#0c121f] border-[#233558]/60 text-slate-300 hover:border-slate-500"
-                          )}
-                        >
-                          <span>{v.label}</span>
-                          {isSelected && <CheckCircle className="h-4 w-4 text-blue-400" />}
-                        </button>
-                      );
-                    })}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        applyVerticalPresets("Other");
-                      }}
-                      className={cn(
-                        "p-3 rounded-lg border text-left text-xs font-semibold transition-all flex items-center justify-between col-span-2",
-                        companyVertical !== "HVAC" &&
-                          companyVertical !== "Plumbing" &&
-                          companyVertical !== "Landscaping" &&
-                          companyVertical !== "Electrical" &&
-                          companyVertical !== "Cleaning" &&
-                          companyVertical !== "General Construction" &&
-                          companyVertical !== "Pest Control"
-                          ? "bg-blue-600/10 border-blue-500 text-white shadow-md shadow-blue-500/15"
-                          : "bg-[#0c121f] border-[#233558]/60 text-slate-300 hover:border-slate-500"
-                      )}
-                    >
-                      <span>Custom / Other Vertical</span>
-                      {companyVertical !== "HVAC" &&
-                        companyVertical !== "Plumbing" &&
-                        companyVertical !== "Landscaping" &&
-                        companyVertical !== "Electrical" &&
-                        companyVertical !== "Cleaning" &&
-                        companyVertical !== "General Construction" &&
-                        companyVertical !== "Pest Control" && (
-                          <CheckCircle className="h-4 w-4 text-blue-400" />
+                  
+                  <div className="space-y-4">
+                    {/* Country Selector */}
+                    <div className="flex items-center gap-3 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                      <Label className="text-slate-700 text-xs font-bold shrink-0">Operating Country:</Label>
+                      <Select value={companyCountry} onValueChange={(val) => { setCompanyCountry(val); saveSandboxProgress({ companyCountry: val }); }}>
+                        <SelectTrigger className="bg-white border-slate-200 text-slate-900 h-8 text-xs font-semibold focus:ring-primary flex-1">
+                          <SelectValue placeholder="Select country" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border-slate-200 text-slate-900">
+                          {countriesList.map((c) => (
+                            <SelectItem key={c.code} value={c.code} className="text-xs">
+                              {c.flag} {c.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Clay-Style Vertical Cards Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[340px] overflow-y-auto pr-1">
+                      {[
+                        { val: "HVAC", label: "HVAC & Climate", desc: "Heating, AC, dispatch & equipment tracking", icon: ThermometerSnowflake, iconBg: "bg-blue-500/10 text-blue-600" },
+                        { val: "Plumbing", label: "Plumbing & Piping", desc: "Drains, leaks, emergency callouts & piping", icon: Wrench, iconBg: "bg-cyan-500/10 text-cyan-600" },
+                        { val: "Landscaping", label: "Landscaping & Grounds", desc: "Groundskeeping, lawn care & seasonal jobs", icon: Trees, iconBg: "bg-emerald-500/10 text-emerald-600" },
+                        { val: "Electrical", label: "Electrical Systems", desc: "Wiring, panel upgrades & high-voltage jobs", icon: Zap, iconBg: "bg-amber-500/10 text-amber-600" },
+                        { val: "Cleaning", label: "Commercial Cleaning", desc: "Sanitation, janitorial & facility contracts", icon: Sparkles, iconBg: "bg-indigo-500/10 text-indigo-600" },
+                        { val: "General Construction", label: "General Contractor", desc: "Remodeling, job sites & sub-contractors", icon: Hammer, iconBg: "bg-orange-500/10 text-orange-600" },
+                        { val: "Pest Control", label: "Pest Management", desc: "Extermination routes & periodic spray schedules", icon: ShieldAlert, iconBg: "bg-rose-500/10 text-rose-600" },
+                        { val: "Solar & Renewables", label: "Solar & Renewables", desc: "PV installs, battery storage & grid maintenance", icon: Sun, iconBg: "bg-yellow-500/10 text-yellow-600" },
+                        { val: "Roofing & Siding", label: "Roofing & Exterior", desc: "Roof repair, siding & storm restoration", icon: Home, iconBg: "bg-purple-500/10 text-purple-600" },
+                      ].map((v) => {
+                        const IconComponent = v.icon;
+                        const isSelected = companyVertical === v.val;
+                        return (
+                          <button
+                            key={v.val}
+                            type="button"
+                            onClick={() => {
+                              applyVerticalPresets(v.val);
+                            }}
+                            className={cn(
+                              "p-3.5 rounded-xl border text-left transition-all duration-200 relative flex flex-col justify-between group cursor-pointer",
+                              isSelected
+                                ? "bg-primary/5 border-primary ring-2 ring-primary/20 shadow-md scale-[1.01]"
+                                : "bg-white border-slate-200/90 hover:border-slate-300 hover:bg-slate-50/80 shadow-xs hover:shadow-sm"
+                            )}
+                          >
+                            <div className="flex items-start justify-between w-full mb-2">
+                              <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110", v.iconBg)}>
+                                <IconComponent className="h-4 w-4" />
+                              </div>
+                              {isSelected ? (
+                                <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                              ) : (
+                                <div className="h-4 w-4 rounded-full border border-slate-300 group-hover:border-slate-400" />
+                              )}
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-xs text-slate-900 group-hover:text-primary transition-colors">{v.label}</h4>
+                              <p className="text-[11px] text-slate-500 mt-0.5 leading-snug line-clamp-2">{v.desc}</p>
+                            </div>
+                          </button>
+                        );
+                      })}
+
+                      {/* Custom / Other Trade Card */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          applyVerticalPresets("Other");
+                        }}
+                        className={cn(
+                          "p-3.5 rounded-xl border text-left transition-all duration-200 relative flex flex-col justify-between group cursor-pointer sm:col-span-2",
+                          companyVertical !== "HVAC" &&
+                            companyVertical !== "Plumbing" &&
+                            companyVertical !== "Landscaping" &&
+                            companyVertical !== "Electrical" &&
+                            companyVertical !== "Cleaning" &&
+                            companyVertical !== "General Construction" &&
+                            companyVertical !== "Pest Control" &&
+                            companyVertical !== "Solar & Renewables" &&
+                            companyVertical !== "Roofing & Siding"
+                            ? "bg-primary/5 border-primary ring-2 ring-primary/20 shadow-md"
+                            : "bg-white border-slate-200/90 hover:border-slate-300 hover:bg-slate-50/80 shadow-xs hover:shadow-sm"
                         )}
-                    </button>
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
+                              <Briefcase className="h-4 w-4" />
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-xs text-slate-900">Other Custom Trade</h4>
+                              <p className="text-[11px] text-slate-500">Appliance repair, pool maintenance, elevators, or specialized service</p>
+                            </div>
+                          </div>
+                          {companyVertical !== "HVAC" &&
+                            companyVertical !== "Plumbing" &&
+                            companyVertical !== "Landscaping" &&
+                            companyVertical !== "Electrical" &&
+                            companyVertical !== "Cleaning" &&
+                            companyVertical !== "General Construction" &&
+                            companyVertical !== "Pest Control" &&
+                            companyVertical !== "Solar & Renewables" &&
+                            companyVertical !== "Roofing & Siding" ? (
+                              <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                            ) : (
+                              <div className="h-4 w-4 rounded-full border border-slate-300 group-hover:border-slate-400 shrink-0" />
+                            )}
+                        </div>
+                      </button>
+                    </div>
+
+                    {/* Custom Trade Input (if Other selected) */}
+                    {companyVertical !== "HVAC" &&
+                      companyVertical !== "Plumbing" &&
+                      companyVertical !== "Landscaping" &&
+                      companyVertical !== "Electrical" &&
+                      companyVertical !== "Cleaning" &&
+                      companyVertical !== "General Construction" &&
+                      companyVertical !== "Pest Control" &&
+                      companyVertical !== "Solar & Renewables" &&
+                      companyVertical !== "Roofing & Siding" && (
+                        <div className="space-y-1.5 pt-1 animate-in fade-in-50 duration-200">
+                          <Label htmlFor="custom-vertical-name" className="text-xs font-bold text-slate-700">Specify Custom Industry</Label>
+                          <Input
+                            id="custom-vertical-name"
+                            placeholder="e.g. Pool & Spa Care, Elevator Service, Security Systems"
+                            value={companyVertical === "Other" ? "" : companyVertical}
+                            onChange={(e) => {
+                              setCompanyVertical(e.target.value || "Other");
+                              saveSandboxProgress({ companyVertical: e.target.value || "Other" });
+                            }}
+                            className="bg-slate-50 border-slate-300 text-slate-900 h-9 px-3 text-xs rounded-lg focus:ring-primary"
+                          />
+                        </div>
+                      )}
                   </div>
-                  {companyVertical !== "HVAC" &&
-                    companyVertical !== "Plumbing" &&
-                    companyVertical !== "Landscaping" &&
-                    companyVertical !== "Electrical" &&
-                    companyVertical !== "Cleaning" &&
-                    companyVertical !== "General Construction" &&
-                    companyVertical !== "Pest Control" && (
-                      <div className="space-y-2">
-                        <Label htmlFor="custom-vertical-name" className="text-xs font-semibold text-slate-300 uppercase">Specify Industry</Label>
-                        <Input
-                          id="custom-vertical-name"
-                          placeholder="e.g. Roof Repair, Solar Install"
-                          value={companyVertical === "Other" ? "" : companyVertical}
-                          onChange={(e) => {
-                            setCompanyVertical(e.target.value || "Other");
-                            saveSandboxProgress({ companyVertical: e.target.value || "Other" });
-                          }}
-                          className="bg-[#0c121f] border-[#233558] text-slate-100 h-10 px-3 rounded-lg"
-                        />
-                      </div>
-                    )}
                 </div>
               )}
 
-              {/* Card 5: Admin Credentials Signup */}
+            {/* Card 5: Admin Credentials Signup */}
               {introStep === 5 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Final Step</span>
-                    <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight">Create your administrator account</h2>
-                    <p className="text-slate-400 text-xs leading-relaxed">
+                    <h2 className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">Create your administrator account</h2>
+                    <p className="text-slate-500 text-xs leading-relaxed">
                       You will use these credentials to log in to your desktop control board.
                     </p>
                   </div>
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
-                        <Label htmlFor="admin-first-name" className="text-[10px] font-semibold text-slate-400 uppercase">First Name</Label>
+                        <Label htmlFor="admin-first-name" className="text-[10px] font-semibold text-slate-500 uppercase">First Name</Label>
                         <Input
                           id="admin-first-name"
                           placeholder="John"
@@ -1641,11 +2229,11 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                             setAdminFirstName(e.target.value);
                             saveSandboxProgress({ adminFirstName: e.target.value });
                           }}
-                          className="bg-[#0c121f] border-[#233558] text-slate-100 h-10"
+                          className="bg-slate-50 border-slate-300 text-slate-900 h-10"
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="admin-last-name" className="text-[10px] font-semibold text-slate-400 uppercase">Last Name</Label>
+                        <Label htmlFor="admin-last-name" className="text-[10px] font-semibold text-slate-500 uppercase">Last Name</Label>
                         <Input
                           id="admin-last-name"
                           placeholder="Doe"
@@ -1654,12 +2242,12 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                             setAdminLastName(e.target.value);
                             saveSandboxProgress({ adminLastName: e.target.value });
                           }}
-                          className="bg-[#0c121f] border-[#233558] text-slate-100 h-10"
+                          className="bg-slate-50 border-slate-300 text-slate-900 h-10"
                         />
                       </div>
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor="admin-email" className="text-[10px] font-semibold text-slate-400 uppercase">Email Address</Label>
+                      <Label htmlFor="admin-email" className="text-[10px] font-semibold text-slate-500 uppercase">Email Address</Label>
                       <Input
                         id="admin-email"
                         type="email"
@@ -1670,14 +2258,14 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                           saveSandboxProgress({ adminEmail: e.target.value });
                           setSignupEmail(e.target.value);
                         }}
-                        className="bg-[#0c121f] border-[#233558] text-slate-100 h-10"
+                        className="bg-slate-50 border-slate-300 text-slate-900 h-10"
                       />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1.5">
-                        <Label htmlFor="admin-phone" className="text-[10px] font-semibold text-slate-400 uppercase">Phone Number</Label>
+                        <Label htmlFor="admin-phone" className="text-[10px] font-semibold text-slate-500 uppercase">Phone Number</Label>
                         <div className="flex gap-2">
-                          <div className="flex items-center bg-[#0c121f] border border-[#233558] rounded-md pl-1.5 pr-0.5 w-[82px] shrink-0 focus-within:ring-2 focus-within:ring-blue-500 h-10">
+                          <div className="flex items-center bg-slate-50 border border-slate-300 rounded-md pl-1.5 pr-0.5 w-[82px] shrink-0 focus-within:ring-2 focus-within:ring-blue-500 h-10">
                             <span className="mr-0.5 select-none text-base">{getFlagFromDialCode(adminPhoneDialCode)}</span>
                             <Input
                               type="text"
@@ -1693,18 +2281,18 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                 setAdminPhoneDialCode(val);
                                 saveSandboxProgress({ adminPhoneDialCode: val });
                               }}
-                              className="border-0 bg-transparent p-0 text-slate-100 placeholder-slate-500 focus-visible:ring-0 focus-visible:ring-offset-0 w-[30px] text-xs h-7"
+                              className="border-0 bg-transparent p-0 text-slate-900 placeholder-slate-500 focus-visible:ring-0 focus-visible:ring-offset-0 w-[30px] text-xs h-7"
                             />
                             <Popover open={adminPhoneOpen} onOpenChange={setAdminPhoneOpen}>
                               <PopoverTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-5 w-5 text-slate-400 hover:text-white p-0 shrink-0">
+                                <Button variant="ghost" size="icon" className="h-5 w-5 text-slate-500 hover:text-slate-900 p-0 shrink-0">
                                   <ChevronDown className="h-3 w-3" />
                                 </Button>
                               </PopoverTrigger>
-                              <PopoverContent className="w-[280px] p-0 bg-[#14223c] border-[#233558] text-slate-100">
-                                <Command className="bg-transparent text-slate-100">
-                                  <CommandInput placeholder="Search country or code..." className="border-0 focus:ring-0 text-slate-100 bg-[#0c121f]" />
-                                  <CommandEmpty className="py-2 text-center text-xs text-slate-400">No country found.</CommandEmpty>
+                              <PopoverContent className="w-[280px] p-0 bg-white border-slate-300 text-slate-900">
+                                <Command className="bg-transparent text-slate-900">
+                                  <CommandInput placeholder="Search country or code..." className="border-0 focus:ring-0 text-slate-900 bg-slate-50" />
+                                  <CommandEmpty className="py-2 text-center text-xs text-slate-500">No country found.</CommandEmpty>
                                   <CommandGroup>
                                     <CommandList className="max-h-[220px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                                       {countriesList.map((c) => (
@@ -1720,9 +2308,9 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                         >
                                           <span className="flex items-center gap-2">
                                             <span>{c.flag}</span>
-                                            <span className="text-slate-300 font-sans truncate max-w-[120px]">{c.name}</span>
+                                            <span className="text-slate-700 font-sans truncate max-w-[120px]">{c.name}</span>
                                           </span>
-                                          <span className="font-mono text-slate-400 font-semibold">{c.dial_code}</span>
+                                          <span className="font-mono text-slate-500 font-semibold">{c.dial_code}</span>
                                         </CommandItem>
                                       ))}
                                     </CommandList>
@@ -1739,12 +2327,12 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                               setAdminPhone(e.target.value);
                               saveSandboxProgress({ adminPhone: e.target.value });
                             }}
-                            className="bg-[#0c121f] border-[#233558] text-slate-100 h-10 flex-1"
+                            className="bg-slate-50 border-slate-300 text-slate-900 h-10 flex-1"
                           />
                         </div>
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="admin-pass" className="text-[10px] font-semibold text-slate-400 uppercase font-mono">Password</Label>
+                        <Label htmlFor="admin-pass" className="text-[10px] font-semibold text-slate-500 uppercase font-mono">Password</Label>
                         <div className="relative">
                           <Input
                             id="admin-pass"
@@ -1756,12 +2344,12 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                               saveSandboxProgress({ adminPassword: e.target.value });
                               setSignupPassword(e.target.value);
                             }}
-                            className="bg-[#0c121f] border-[#233558] text-slate-100 h-10 pr-10"
+                            className="bg-slate-50 border-slate-300 text-slate-900 h-10 pr-10"
                           />
                           <button
                             type="button"
                             onClick={() => setShowAdminPassword(!showAdminPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800 transition-colors focus:outline-none"
                             tabIndex={-1}
                           >
                             {showAdminPassword ? (
@@ -1777,8 +2365,10 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                 </div>
               )}
 
+
+
               {/* Card Footer Controls */}
-              <div className="border-t border-[#233558]/40 pt-5 mt-4 flex items-center justify-between">
+              <div className="border-t border-slate-300/40 pt-4 mt-4 flex items-center justify-between">
                 <Button
                   variant="ghost"
                   onClick={() => {
@@ -1788,8 +2378,8 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                       saveSandboxProgress({ introStep: nextStep });
                     }
                   }}
-                  disabled={introStep === 1}
-                  className="text-xs font-bold text-slate-400 hover:text-white"
+                  disabled={introStep === 1 || saving}
+                  className="text-xs font-bold text-slate-500 hover:text-slate-900"
                 >
                   <ArrowLeft className="h-3.5 w-3.5 mr-1.5" /> Back
                 </Button>
@@ -1828,11 +2418,11 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                       setIntroStep(nextStep);
                       saveSandboxProgress({ introStep: nextStep });
                     }}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold px-5 h-10 rounded-lg shadow-lg flex items-center gap-1"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold px-6 h-10 rounded-lg shadow-md flex items-center gap-1 transition-all"
                   >
                     Continue <ArrowRight className="h-3.5 w-3.5 ml-1" />
                   </Button>
-                ) : (
+                ) : introStep === 5 ? (
                   <Button
                     onClick={async (e) => {
                       if (!adminFirstName.trim() || !adminLastName.trim()) {
@@ -1901,20 +2491,35 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                             website: companyWebsite.trim() || null,
                             staff_count: companyStaffCount.trim() || null,
                             annual_revenue: companyAnnualRevenue.trim() || null,
-                            affiliate_promo_code: localStorage.getItem("filedcrews_affiliate_code") || null,
                           })
                           .select()
                           .single();
 
                         if (compErr) throw compErr;
 
-                        toast.success("Account created and company profile registered!");
+                        // 3. Create staff profile for the admin automatically
+                        const { error: staffErr } = await supabase
+                          .from("staff_profiles")
+                          .insert({
+                            company_id: comp.id,
+                            auth_user_id: createdUser.id,
+                            full_name: `${adminFirstName.trim()} ${adminLastName.trim()}`,
+                            first_name: adminFirstName.trim(),
+                            last_name: adminLastName.trim(),
+                            email: adminEmail.trim(),
+                            phone: adminPhone.trim() ? adminPhoneDialCode + adminPhone.trim() : null,
+                            username: adminEmail.trim(),
+                            global_role: "Admin"
+                          });
+
+                        if (staffErr) throw staffErr;
+
+                        toast.success("Account created! Select your plan to complete setup.");
                         
-                        // Transition to the second wizard: Customer & Project (Step 2)
-                        setStep(2);
+                        // Move to Card 6: Subscription Plan Selection & Free Trial
                         const nextStep = 6;
                         setIntroStep(nextStep);
-                        saveSandboxProgress({ introStep: nextStep, step: 2 });
+                        saveSandboxProgress({ introStep: nextStep });
                       } catch (err: any) {
                         toast.error(err.message || "Sign up failed. Please check inputs and retry.");
                       } finally {
@@ -1922,15 +2527,79 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                       }
                     }}
                     disabled={saving}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-extrabold px-6 h-10 rounded-lg shadow-lg"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-extrabold px-6 h-10 rounded-lg shadow-md transition-all"
                   >
-                    {saving ? "Registering..." : "Create Account & Start Setup"}
+                    {saving ? "Registering..." : "Create Account & Choose Plan"}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={async () => {
+                      setSaving(true);
+                      try {
+                        const activeUserRes = await supabase.auth.getUser();
+                        const activeUserId = activeUserRes.data.user?.id || user?.id;
+                        if (!activeUserId) throw new Error("Session lost. Please log in.");
+
+                        const { data: comp } = await supabase
+                          .from("companies")
+                          .select("id")
+                          .eq("auth_user_id", activeUserId)
+                          .maybeSingle();
+
+                        if (comp) {
+                          await (supabase as any)
+                            .from("companies")
+                            .update({
+                              subscription_tier: selectedPlan,
+                              subscription_status: selectedPlan === 'free_trial' ? 'trialing' : 'active'
+                            })
+                            .eq("id", comp.id);
+
+                          if (includeSampleData) {
+                            if (!customerName) setCustomerName("Apex Commercial Assets");
+                            if (!projectName) setProjectName("HQ HVAC & Maintenance Upgrade");
+                            if (!staffFirstName) setStaffFirstName("Alex");
+                            if (!staffLastName) setStaffLastName("Miller");
+                            if (!staffRole) setStaffRole("Lead Field Technician");
+                            await executeBulkInsert(activeUserId, comp.id);
+                          }
+                        }
+
+                        localStorage.removeItem(SANDBOX_STORAGE_KEY);
+                        toast.success("Workspace activated! Welcome to FiledCrew.");
+                        navigate("/");
+                        window.location.reload();
+                      } catch (err: any) {
+                        toast.error(err.message || "Failed to activate workspace.");
+                      } finally {
+                        setSaving(false);
+                      }
+                    }}
+                    disabled={saving}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold px-6 h-10 rounded-lg shadow-md transition-all flex items-center gap-1.5"
+                  >
+                    {saving ? "Launching Workspace..." : "Confirm Plan & Enter Dashboard ➔"}
                   </Button>
                 )}
               </div>
-
+              
+              {introStep === 6 && (
+                <div className="text-center pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep(2);
+                      saveSandboxProgress({ step: 2 });
+                    }}
+                    className="text-[11px] font-semibold text-slate-500 hover:text-primary transition-colors"
+                  >
+                    Or click here if you'd like to manually setup your first client & project step-by-step ➔
+                  </button>
+                </div>
+              )}
             </div>
-          </Card>
+            </div>
+          </div>
         </div>
       </>
     );
@@ -1945,80 +2614,38 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
         noIndex
       />
 
-      <div className="min-h-screen flex flex-col md:flex-row bg-[#0c121f] text-slate-100 font-sans antialiased">
-        {/* Left Side: Progress tracker (Blue Background) */}
-        <div className="hidden md:flex md:w-96 bg-[#14274e] border-r border-[#233558] p-8 flex-col justify-between shrink-0 sticky top-0 h-screen">
-          <div>
-            <div className="flex items-center gap-3 mb-8">
-              <img src="/favicon.png" alt="Ocrem Logo" className="h-9 w-9 rounded-lg" />
-              <span className="text-xl font-bold tracking-tight text-white">OnSite Crew Manager</span>
+      <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans antialiased">
+        {/* Centered Minimalist Flow */}
+        <div className="flex-1 flex flex-col items-center pt-8 md:pt-16 p-4 overflow-y-auto">
+          {/* Progress Bar Header */}
+          <div className="w-full max-w-2xl mb-12 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img src="/favicon.png" alt="Ocrem Logo" className="h-8 w-8 rounded-lg shadow-sm" />
+              <span className="text-xl font-bold tracking-tight text-slate-900">OnSite</span>
             </div>
-
-            <div className="space-y-1 mb-8">
-              <h2 className="text-lg font-bold text-white">
-                {wizardMode === "new-project" ? "Project Builder" : "Guided Setup Wizard"}
-              </h2>
-              <p className="text-xs text-slate-300">
-                {wizardMode === "new-project"
-                  ? "Launch a complete project stack in one unified sequence."
-                  : "Experience the platform's core tracking capabilities first."}
-              </p>
-            </div>
-
-            {/* Stepper Index Indicators */}
-            {step <= 6 && (
-              <div className="space-y-6 relative">
-                {/* Vertical timeline connector */}
-                <div className="absolute left-4 top-3 bottom-3 w-0.5 bg-white/10 hidden md:block" />
-
-                {activeStepsList.map((s, index) => {
-                  const isActive = step === s.num;
-                  const isCompleted = step > s.num;
-
-                  return (
-                    <div key={s.num} className="flex gap-4 items-start relative z-10">
-                      <div
-                        className={`h-9 w-9 rounded-lg border flex items-center justify-center text-xs font-bold font-mono transition-all shrink-0 ${
-                          isActive
-                            ? "bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-500/20 scale-105"
-                            : isCompleted
-                            ? "bg-emerald-600/20 border-emerald-500/40 text-emerald-400"
-                            : "bg-[#14223c]/40 border-[#233558]/80 text-slate-400"
-                        }`}
-                      >
-                        {isCompleted ? <CheckCircle className="h-4 w-4" /> : `0${index + 1}`}
-                      </div>
-                      <div className="hidden md:block">
-                        <p className={`text-sm font-semibold transition-colors ${isActive ? "text-white" : "text-slate-300"}`}>
-                          {s.label}
-                        </p>
-                        <p className="text-[10px] text-slate-400 leading-tight mt-0.5">{s.desc}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+            {step > 1 && (
+              <Button variant="ghost" size="sm" onClick={() => {
+                if (step === 2 && subStep > 1) {
+                   setSubStep(subStep - 1);
+                } else {
+                   setStep(step - 1);
+                }
+              }} className="text-slate-500 hover:text-slate-900">
+                <ArrowLeft className="w-4 h-4 mr-2" /> Back
+              </Button>
             )}
           </div>
-
-          <div className="hidden md:block text-[11px] text-slate-400">
-            &copy; {new Date().getFullYear()} OnSite Crew Manager &middot; Enterprise Field Operations
-          </div>
-        </div>
-
-        {/* Right Side: Step Card Forms */}
-        <div className="flex-1 flex items-center justify-center p-4 md:p-12 overflow-y-auto">
           <div className="w-full max-w-2xl">
             {step <= 6 && (
-              <Card className="bg-[#14223c]/60 border-[#233558]/80 shadow-2xl relative overflow-hidden backdrop-blur-sm text-slate-100">
-                <CardHeader className="border-b border-[#233558]/40 pb-5">
+              <Card className="border-0 shadow-none bg-transparent text-slate-900">
+                <CardHeader className="pb-8">
                   <div className="space-y-2">
                     <div className="flex justify-end items-center text-xs font-bold font-mono text-blue-400">
                       <span>
                         {Math.round(((step - (wizardMode === "new-project" ? 1 : 0)) / (wizardMode === "new-project" ? 5 : 6)) * 100)}% COMPLETE
                       </span>
                     </div>
-                    <div className="h-1.5 w-full bg-slate-950/60 rounded-full border border-[#233558]/30">
+                    <div className="h-1.5 w-full bg-slate-950/60 rounded-full border border-slate-300/30">
                       <div
                         className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-500 ease-out shadow-[0_0_10px_rgba(59,130,246,0.85)]"
                         style={{
@@ -2029,48 +2656,61 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                   </div>
                   {step === 1 && (
                     <>
-                      <CardTitle className="text-2xl font-bold mt-2 text-white">Let's set up your company profile!</CardTitle>
-                      <CardDescription className="text-slate-400 mt-1 text-sm leading-relaxed">
+                      <CardTitle className="text-2xl font-bold mt-2 text-slate-900">Let's set up your company profile!</CardTitle>
+                      <CardDescription className="text-slate-500 mt-1 text-sm leading-relaxed">
                         Welcome to OnSite Crew Manager! Let's start by naming your company and choosing a short 5-letter prefix. This prefix helps your crew members log in easily from the mobile app (for example: @YOURCOMPANY_JOHN).
                       </CardDescription>
                     </>
                   )}
+
                   {step === 2 && (
                     <>
-                      <CardTitle className="text-2xl font-bold mt-2 text-white">Let's add your very first client!</CardTitle>
-                      <CardDescription className="text-slate-400 mt-1 text-sm leading-relaxed">
-                        Every great project starts with a client. Tell us who you're doing work for, and name the specific project. This organizes your workspace, geofence logs, and timesheet reports perfectly from day one.
+                      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-4 flex items-start gap-3">
+                        <div className="bg-blue-500 text-white p-2 rounded-lg shrink-0">
+                          <Briefcase className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-blue-900 text-sm">Phase 2: Client & Project Setup</h3>
+                          <p className="text-blue-700 text-xs mt-1">
+                            Your company profile is set! Now, let's configure your very first client and project. This will set up the workspace for your field crew to log time, parts, and job updates.
+                          </p>
+                        </div>
+                      </div>
+                      <CardTitle className="text-2xl font-bold mt-2 text-slate-900">Who is your first client?</CardTitle>
+                      <CardDescription className="text-slate-500 mt-1 text-sm leading-relaxed">
+                        Enter the details of the customer or project you are managing. You'll be able to attach multiple projects, invoices, and geofences to this client later.
                       </CardDescription>
                     </>
                   )}
+
                   {step === 3 && (
                     <>
-                      <CardTitle className="text-2xl font-bold mt-2 text-white">Where is the worksite located?</CardTitle>
-                      <CardDescription className="text-slate-400 mt-1 text-sm leading-relaxed">
+                      <CardTitle className="text-2xl font-bold mt-2 text-slate-900">Where is the worksite located?</CardTitle>
+                      <CardDescription className="text-slate-500 mt-1 text-sm leading-relaxed">
                         Let's mark the physical location on the map. Find your worksite, drop a pin, and adjust the radius. When your crew arrives or leaves, they can check in, and we'll automatically notify you.
                       </CardDescription>
                     </>
                   )}
                   {step === 4 && (
                     <>
-                      <CardTitle className="text-2xl font-bold mt-2 text-white">Add your first crew member!</CardTitle>
-                      <CardDescription className="text-slate-400 mt-1 text-sm leading-relaxed">
+                      <CardTitle className="text-2xl font-bold mt-2 text-slate-900">Add your first crew member!</CardTitle>
+                      <CardDescription className="text-slate-500 mt-1 text-sm leading-relaxed">
                         Let's create the username and passcode for your first crew member so they can access the mobile app. They'll use this account to check in, update job details, and upload site photos.
                       </CardDescription>
                     </>
                   )}
                   {step === 5 && (
                     <>
-                      <CardTitle className="text-2xl font-bold mt-2 text-white">Let's dispatch their first job checklist</CardTitle>
-                      <CardDescription className="text-slate-400 mt-1 text-sm leading-relaxed">
+                      <CardTitle className="text-2xl font-bold mt-2 text-slate-900">Let's dispatch their first job checklist</CardTitle>
+                      <CardDescription className="text-slate-500 mt-1 text-sm leading-relaxed">
                         What tasks need to be completed at this worksite? Let's write down a checklist and schedule a date. Your assigned crew member will see it on their mobile app immediately, ready to update in real time.
                       </CardDescription>
                     </>
                   )}
                   {step === 6 && (
                     <>
-                      <CardTitle className="text-2xl font-bold mt-2 text-white">Everything looks great! Let's deploy your setup</CardTitle>
-                      <CardDescription className="text-slate-400 mt-1 text-sm leading-relaxed">
+                      <CardTitle className="text-2xl font-bold mt-2 text-slate-900">Everything looks great! Let's deploy your setup</CardTitle>
+                      <CardDescription className="text-slate-500 mt-1 text-sm leading-relaxed">
                         {wizardMode === "public-sandbox"
                           ? "Let's review everything you've configured. Fill in your administrator details below, and we'll compile your company profile, project, geofence, and crew credentials instantly so you can launch your dashboard!"
                           : "Take a quick moment to verify your setup details below. Once you click 'Publish', we'll write this new project, geofence, and crew member to your active workspace database immediately!"}
@@ -2084,10 +2724,10 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                   {step === 2 && (
                     <div className="space-y-6">
                       {/* Section A: Customer Details */}
-                      <div className="space-y-4 border-b border-[#233558]/40 pb-4">
+                      <div className="space-y-4 border-b border-slate-300/40 pb-4">
                         <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider">Client Information</h4>
                         <div className="space-y-2">
-                          <Label htmlFor="customer-name" className="text-sm font-semibold text-slate-300">Client / Customer Name</Label>
+                          <Label htmlFor="customer-name" className="text-sm font-semibold text-slate-700">Client / Customer Name</Label>
                           <Input
                             id="customer-name"
                             placeholder="e.g. Chevron Nigeria Limited"
@@ -2096,12 +2736,12 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                               setCustomerName(e.target.value);
                               saveSandboxProgress({ customerName: e.target.value });
                             }}
-                            className="bg-[#0c121f] border-[#233558] text-slate-100"
+                            className="bg-slate-50 border-slate-300 text-slate-900"
                           />
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="customer-email" className="text-sm font-semibold text-slate-300">Client Email (Optional)</Label>
+                            <Label htmlFor="customer-email" className="text-sm font-semibold text-slate-700">Client Email (Optional)</Label>
                             <Input
                               id="customer-email"
                               type="email"
@@ -2111,13 +2751,13 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                 setCustomerEmail(e.target.value);
                                 saveSandboxProgress({ customerEmail: e.target.value });
                               }}
-                              className="bg-[#0c121f] border-[#233558] text-slate-100"
+                              className="bg-slate-50 border-slate-300 text-slate-900"
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="customer-phone" className="text-sm font-semibold text-slate-300">Client Phone (Optional)</Label>
+                            <Label htmlFor="customer-phone" className="text-sm font-semibold text-slate-700">Client Phone (Optional)</Label>
                             <div className="flex gap-2">
-                              <div className="flex items-center bg-[#0c121f] border border-[#233558] rounded-md pl-1.5 pr-0.5 w-[82px] shrink-0 focus-within:ring-2 focus-within:ring-blue-500">
+                              <div className="flex items-center bg-slate-50 border border-slate-300 rounded-md pl-1.5 pr-0.5 w-[82px] shrink-0 focus-within:ring-2 focus-within:ring-blue-500">
                                 <span className="mr-0.5 select-none text-base">{getFlagFromDialCode(phoneDialCode)}</span>
                                 <Input
                                   type="text"
@@ -2133,18 +2773,18 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                     setPhoneDialCode(val);
                                     saveSandboxProgress({ phoneDialCode: val });
                                   }}
-                                  className="bg-transparent border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-slate-100 font-mono text-xs w-full"
+                                  className="bg-transparent border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-slate-900 font-mono text-xs w-full"
                                 />
                                 <Popover open={phoneOpen} onOpenChange={setPhoneOpen}>
                                   <PopoverTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-5 w-5 text-slate-400 hover:text-white p-0 shrink-0">
+                                    <Button variant="ghost" size="icon" className="h-5 w-5 text-slate-500 hover:text-slate-900 p-0 shrink-0">
                                       <ChevronDown className="h-3 w-3" />
                                     </Button>
                                   </PopoverTrigger>
-                                  <PopoverContent className="w-[280px] p-0 bg-[#14223c] border-[#233558] text-slate-100">
-                                    <Command className="bg-transparent text-slate-100">
-                                      <CommandInput placeholder="Search country or code..." className="border-0 focus:ring-0 text-slate-100 bg-[#0c121f]" />
-                                      <CommandEmpty className="py-2 text-center text-xs text-slate-400">No country found.</CommandEmpty>
+                                  <PopoverContent className="w-[280px] p-0 bg-white border-slate-300 text-slate-900">
+                                    <Command className="bg-transparent text-slate-900">
+                                      <CommandInput placeholder="Search country or code..." className="border-0 focus:ring-0 text-slate-900 bg-slate-50" />
+                                      <CommandEmpty className="py-2 text-center text-xs text-slate-500">No country found.</CommandEmpty>
                                       <CommandGroup>
                                         <CommandList className="max-h-[220px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                                           {countriesList.map((c) => (
@@ -2160,9 +2800,9 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                             >
                                               <span className="flex items-center gap-2">
                                                 <span>{c.flag}</span>
-                                                <span className="text-slate-300 font-sans truncate max-w-[120px]">{c.name}</span>
+                                                <span className="text-slate-700 font-sans truncate max-w-[120px]">{c.name}</span>
                                               </span>
-                                              <span className="font-mono text-slate-400 font-semibold">{c.dial_code}</span>
+                                              <span className="font-mono text-slate-500 font-semibold">{c.dial_code}</span>
                                             </CommandItem>
                                           ))}
                                         </CommandList>
@@ -2180,13 +2820,13 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                   setCustomerPhone(e.target.value);
                                   saveSandboxProgress({ customerPhone: e.target.value });
                                 }}
-                                className="bg-[#0c121f] border-[#233558] text-slate-100 flex-1"
+                                className="bg-slate-50 border-slate-300 text-slate-900 flex-1"
                               />
                             </div>
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="customer-address" className="text-sm font-semibold text-slate-300">Billing Address (Optional)</Label>
+                          <Label htmlFor="customer-address" className="text-sm font-semibold text-slate-700">Billing Address (Optional)</Label>
                           <Input
                             id="customer-address"
                             ref={addressInputRef}
@@ -2196,7 +2836,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                               setCustomerBillingAddress(e.target.value);
                               saveSandboxProgress({ customerBillingAddress: e.target.value });
                             }}
-                            className="bg-[#0c121f] border-[#233558] text-slate-100"
+                            className="bg-slate-50 border-slate-300 text-slate-900"
                           />
                         </div>
                       </div>
@@ -2206,7 +2846,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                         <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider">Project Specifications</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                           <div className="sm:col-span-2 space-y-2">
-                            <Label htmlFor="project-name" className="text-sm font-semibold text-slate-300">Project / Site Name</Label>
+                            <Label htmlFor="project-name" className="text-sm font-semibold text-slate-700">Project / Site Name</Label>
                             <Input
                               id="project-name"
                               placeholder="e.g. Escravos Refinery Expansion"
@@ -2215,11 +2855,11 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                 setProjectName(e.target.value);
                                 saveSandboxProgress({ projectName: e.target.value });
                               }}
-                              className="bg-[#0c121f] border-[#233558] text-slate-100"
+                              className="bg-slate-50 border-slate-300 text-slate-900"
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="project-status" className="text-sm font-semibold text-slate-300">Project Status</Label>
+                            <Label htmlFor="project-status" className="text-sm font-semibold text-slate-700">Project Status</Label>
                             <Select
                               value={projectStatus}
                               onValueChange={(val) => {
@@ -2227,13 +2867,13 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                 saveSandboxProgress({ projectStatus: val });
                               }}
                             >
-                              <SelectTrigger className="bg-[#0c121f] border-[#233558] text-slate-100">
+                              <SelectTrigger className="bg-slate-50 border-slate-300 text-slate-900">
                                 <SelectValue placeholder="Planning" />
                               </SelectTrigger>
-                              <SelectContent className="bg-[#0c121f] border-[#233558] text-slate-100">
-                                <SelectItem value="Planning" className="focus:bg-[#14223c] focus:text-white">Planning</SelectItem>
-                                <SelectItem value="Active" className="focus:bg-[#14223c] focus:text-white">Active</SelectItem>
-                                <SelectItem value="Completed" className="focus:bg-[#14223c] focus:text-white">Completed</SelectItem>
+                              <SelectContent className="bg-slate-50 border-slate-300 text-slate-900">
+                                <SelectItem value="Planning" className="focus:bg-white focus:text-slate-900">Planning</SelectItem>
+                                <SelectItem value="Active" className="focus:bg-white focus:text-slate-900">Active</SelectItem>
+                                <SelectItem value="Completed" className="focus:bg-white focus:text-slate-900">Completed</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -2241,7 +2881,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="contract-value" className="text-sm font-semibold text-slate-300">Contract Value ({getCurrencySymbol(currencyCode)})</Label>
+                            <Label htmlFor="contract-value" className="text-sm font-semibold text-slate-700">Contract Value ({getCurrencySymbol(currencyCode)})</Label>
                             <Input
                               id="contract-value"
                               type="number"
@@ -2252,11 +2892,11 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                 setContractValue(e.target.value);
                                 saveSandboxProgress({ contractValue: e.target.value });
                               }}
-                              className="bg-[#0c121f] border-[#233558] text-slate-100"
+                              className="bg-slate-50 border-slate-300 text-slate-900"
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="labour-budget" className="text-sm font-semibold text-slate-300">Labor Budget Cost ({getCurrencySymbol(currencyCode)})</Label>
+                            <Label htmlFor="labour-budget" className="text-sm font-semibold text-slate-700">Labor Budget Cost ({getCurrencySymbol(currencyCode)})</Label>
                             <Input
                               id="labour-budget"
                               type="number"
@@ -2267,16 +2907,16 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                 setBudgetLabourCost(e.target.value);
                                 saveSandboxProgress({ budgetLabourCost: e.target.value });
                               }}
-                              className="bg-[#0c121f] border-[#233558] text-slate-100"
+                              className="bg-slate-50 border-slate-300 text-slate-900"
                             />
                           </div>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="project-start-date" className="text-sm font-semibold text-slate-300">Project Start Date</Label>
+                            <Label htmlFor="project-start-date" className="text-sm font-semibold text-slate-700">Project Start Date</Label>
                             <div className="relative">
-                              <Calendar className="absolute left-3 top-3 h-4 w-4 text-slate-400 pointer-events-none" />
+                              <Calendar className="absolute left-3 top-3 h-4 w-4 text-slate-500 pointer-events-none" />
                               <Input
                                 id="project-start-date"
                                 type="date"
@@ -2292,14 +2932,14 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                   setProjectStartDate(e.target.value);
                                   saveSandboxProgress({ projectStartDate: e.target.value });
                                 }}
-                                className="bg-[#0c121f] border-[#233558] text-slate-100 pl-10 cursor-pointer w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                                className="bg-slate-50 border-slate-300 text-slate-900 pl-10 cursor-pointer w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                               />
                             </div>
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="project-end-date" className="text-sm font-semibold text-slate-300">Project End Date</Label>
+                            <Label htmlFor="project-end-date" className="text-sm font-semibold text-slate-700">Project End Date</Label>
                             <div className="relative">
-                              <Calendar className="absolute left-3 top-3 h-4 w-4 text-slate-400 pointer-events-none" />
+                              <Calendar className="absolute left-3 top-3 h-4 w-4 text-slate-500 pointer-events-none" />
                               <Input
                                 id="project-end-date"
                                 type="date"
@@ -2315,14 +2955,14 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                   setProjectEndDate(e.target.value);
                                   saveSandboxProgress({ projectEndDate: e.target.value });
                                 }}
-                                className="bg-[#0c121f] border-[#233558] text-slate-100 pl-10 cursor-pointer w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                                className="bg-slate-50 border-slate-300 text-slate-900 pl-10 cursor-pointer w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                               />
                             </div>
                           </div>
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="project-desc" className="text-sm font-semibold text-slate-300">Project Description (Optional)</Label>
+                          <Label htmlFor="project-desc" className="text-sm font-semibold text-slate-700">Project Description (Optional)</Label>
                           <Textarea
                             id="project-desc"
                             placeholder="Provide details about the work scope, safety compliance notes, etc."
@@ -2332,31 +2972,31 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                               saveSandboxProgress({ projectDescription: e.target.value });
                             }}
                             rows={2}
-                            className="bg-[#0c121f] border-[#233558] text-slate-100 focus:ring-blue-500 focus:border-blue-500"
+                            className="bg-slate-50 border-slate-300 text-slate-900 focus:ring-indigo-600 focus:border-indigo-600"
                           />
                         </div>
 
                         {/* Custom Cost Categories & Budgets */}
-                        <div className="space-y-4 pt-4 border-t border-[#233558]/40">
+                        <div className="space-y-4 pt-4 border-t border-slate-300/40">
                           <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
                             <TrendingUp className="h-4 w-4 text-blue-400" /> Planned Budgets & Cost Categories
                           </h4>
-                          <p className="text-[11px] text-slate-400 leading-relaxed">
+                          <p className="text-[11px] text-slate-500 leading-relaxed">
                             Configure planned budgets for specific cost categories (e.g. Marketing, Foundation, Materials, Transportation) during this project setup.
                           </p>
 
                           {wizardPlannedCosts.length > 0 && (
                             <div className="space-y-2 max-h-48 overflow-y-auto">
                               {wizardPlannedCosts.map((item, idx) => (
-                                <div key={idx} className="flex items-center justify-between text-xs p-2.5 rounded bg-[#070b13] border border-[#233558]/60">
+                                <div key={idx} className="flex items-center justify-between text-xs p-2.5 rounded bg-[#070b13] border border-slate-200">
                                   <div className="flex items-center gap-2">
-                                    <Badge className="bg-[#14223c] text-blue-300 border-none text-[9px] font-mono uppercase">
+                                    <Badge className="bg-white text-blue-300 border-none text-[9px] font-mono uppercase">
                                       {item.category}
                                     </Badge>
-                                    <span className="font-semibold text-slate-200">{item.title}</span>
+                                    <span className="font-semibold text-slate-800">{item.title}</span>
                                   </div>
                                   <div className="flex items-center gap-3">
-                                    <span className="font-mono font-bold text-slate-300">
+                                    <span className="font-mono font-bold text-slate-700">
                                       ${item.budget_amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                                     </span>
                                     <Button
@@ -2381,13 +3021,13 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                               placeholder="Category (e.g. Marketing)"
                               value={newWizardCostCategory}
                               onChange={(e) => setNewWizardCostCategory(e.target.value)}
-                              className="h-9 text-xs bg-[#0c121f] border-[#233558] text-slate-100 placeholder:text-slate-500 focus-visible:ring-blue-500"
+                              className="h-9 text-xs bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-500 focus-visible:ring-blue-500"
                             />
                             <Input
                               placeholder="Description (e.g. Ad Campaign)"
                               value={newWizardCostTitle}
                               onChange={(e) => setNewWizardCostTitle(e.target.value)}
-                              className="h-9 text-xs bg-[#0c121f] border-[#233558] text-slate-100 placeholder:text-slate-500 focus-visible:ring-blue-500"
+                              className="h-9 text-xs bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-500 focus-visible:ring-blue-500"
                             />
                             <div className="flex gap-2">
                               <Input
@@ -2395,7 +3035,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                 placeholder="Budget ($)"
                                 value={newWizardCostBudget}
                                 onChange={(e) => setNewWizardCostBudget(e.target.value)}
-                                className="h-9 text-xs bg-[#0c121f] border-[#233558] text-slate-100 placeholder:text-slate-500 focus-visible:ring-blue-500 flex-1"
+                                className="h-9 text-xs bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-500 focus-visible:ring-blue-500 flex-1"
                               />
                               <Button
                                 type="button"
@@ -2416,7 +3056,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                   setNewWizardCostTitle("");
                                   setNewWizardCostBudget("");
                                 }}
-                                className="h-9 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 shrink-0"
+                                className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 shrink-0 rounded-md"
                               >
                                 Add
                               </Button>
@@ -2431,7 +3071,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                   {step === 3 && (
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="geofence-name" className="text-sm font-semibold text-slate-300">Worksite Zone Name</Label>
+                        <Label htmlFor="geofence-name" className="text-sm font-semibold text-slate-700">Worksite Zone Name</Label>
                         <Input
                           id="geofence-name"
                           placeholder="e.g. Main Site Gate A, HQ Building, North Warehouse"
@@ -2440,13 +3080,13 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                             setGeofenceName(e.target.value);
                             saveSandboxProgress({ geofenceName: e.target.value });
                           }}
-                          className="bg-[#0c121f] border-[#233558] text-slate-100"
+                          className="bg-slate-50 border-slate-300 text-slate-900"
                         />
                         <p className="text-xs text-slate-500">A descriptive label for this worksite zone.</p>
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="geofence-address" className="text-sm font-semibold text-slate-300">Worksite Physical Address</Label>
+                        <Label htmlFor="geofence-address" className="text-sm font-semibold text-slate-700">Worksite Physical Address</Label>
                         <Input
                           id="geofence-address"
                           ref={mapSearchInputRef}
@@ -2456,7 +3096,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                             setGeofenceAddress(e.target.value);
                             saveSandboxProgress({ geofenceAddress: e.target.value });
                           }}
-                          className="bg-[#0c121f] border-[#233558] text-slate-100"
+                          className="bg-slate-50 border-slate-300 text-slate-900"
                         />
                         <p className="text-xs text-slate-500">Search for the physical address — selecting it pins the location on the map below.</p>
                       </div>
@@ -2464,7 +3104,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                       {/* Circular Radius Slider */}
                       <div className="space-y-2">
                         <div className="flex justify-between items-center text-sm">
-                          <Label className="text-slate-300">Tracking Geofence Radius</Label>
+                          <Label className="text-slate-700">Tracking Geofence Radius</Label>
                           <span className="font-mono text-blue-400 font-bold">{radius} meters</span>
                         </div>
                         <Slider
@@ -2482,8 +3122,8 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
                       {/* Google Map Selector Container */}
                       <div className="space-y-2">
-                        <Label className="text-sm font-semibold text-slate-300">Coordinates Map (Click Map to Select Worksite Center)</Label>
-                        <div className="h-64 w-full rounded-xl overflow-hidden border border-[#233558] bg-slate-950 relative">
+                        <Label className="text-sm font-semibold text-slate-700">Coordinates Map (Click Map to Select Worksite Center)</Label>
+                        <div className="h-64 w-full rounded-xl overflow-hidden border border-slate-300 bg-slate-950 relative">
                           <Map
                             defaultCenter={coords}
                             defaultZoom={14}
@@ -2503,7 +3143,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                             <MapHandler center={coords} />
                           </Map>
                         </div>
-                        <p className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <p className="text-[10px] text-slate-500 flex items-center gap-1">
                           <MapPin className="h-3 w-3 text-red-500" /> Currently Selected: {coords.lat.toFixed(6)}, {coords.lng.toFixed(6)}
                         </p>
                       </div>
@@ -2514,14 +3154,14 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                   {step === 4 && (
                     <div className="space-y-4">
                       {wizardMode !== "public-sandbox" && existingStaff.length > 0 && (
-                        <div className="flex border border-[#233558] rounded-lg overflow-hidden p-0.5 bg-[#0c121f]">
+                        <div className="flex border border-slate-300 rounded-lg overflow-hidden p-0.5 bg-slate-50">
                           <button
                             type="button"
                             onClick={() => setCrewMode("create")}
                             className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
                               crewMode === "create"
-                                ? "bg-blue-600 text-white shadow-sm"
-                                : "text-slate-400 hover:text-slate-200"
+                                ? "bg-blue-600 text-slate-900 shadow-sm"
+                                : "text-slate-500 hover:text-slate-800"
                             }`}
                           >
                             Create New Crew Member
@@ -2531,8 +3171,8 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                             onClick={() => setCrewMode("select")}
                             className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
                               crewMode === "select"
-                                ? "bg-blue-600 text-white shadow-sm"
-                                : "text-slate-400 hover:text-slate-200"
+                                ? "bg-blue-600 text-slate-900 shadow-sm"
+                                : "text-slate-500 hover:text-slate-800"
                             }`}
                           >
                             Select Existing Crew Member
@@ -2543,7 +3183,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                       {crewMode === "create" ? (
                         <>
                           <div className="space-y-2">
-                            <Label htmlFor="staff-name" className="text-sm font-semibold text-slate-300">Crew Member Full Name</Label>
+                            <Label htmlFor="staff-name" className="text-sm font-semibold text-slate-700">Crew Member Full Name</Label>
                             <Input
                               id="staff-name"
                               placeholder="e.g. John Doe"
@@ -2552,13 +3192,13 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                 setStaffName(e.target.value);
                                 saveSandboxProgress({ staffName: e.target.value });
                               }}
-                              className="bg-[#0c121f] border-[#233558] text-slate-100"
+                              className="bg-slate-50 border-slate-300 text-slate-900"
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="staff-username" className="text-sm font-semibold text-slate-300">Username Suffix</Label>
-                            <div className="flex items-center bg-[#0c121f] border border-[#233558] rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-blue-500">
-                              <span className="bg-slate-900 border-r border-[#233558] text-blue-400 font-mono text-sm px-3 py-2 select-none">
+                            <Label htmlFor="staff-username" className="text-sm font-semibold text-slate-700">Username Suffix</Label>
+                            <div className="flex items-center bg-slate-50 border border-slate-300 rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-blue-500">
+                              <span className="bg-slate-900 border-r border-slate-300 text-blue-400 font-mono text-sm px-3 py-2 select-none">
                                 @{(companyPrefix || "PREFIX").toLowerCase()}_
                               </span>
                               <Input
@@ -2570,16 +3210,16 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                   setStaffUsernameSuffix(val);
                                   saveSandboxProgress({ staffUsernameSuffix: val });
                                 }}
-                                className="bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-slate-100 flex-1"
+                                className="bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-slate-900 flex-1"
                               />
                             </div>
-                            <p className="text-xs text-slate-400">
-                              Field crew member will log in with username: <span className="font-mono text-white font-medium">{formattedStaffUsername}</span>
+                            <p className="text-xs text-slate-500">
+                              Field crew member will log in with username: <span className="font-mono text-slate-900 font-medium">{formattedStaffUsername}</span>
                             </p>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label htmlFor="crew-email" className="text-sm font-semibold text-slate-300">Email Address</Label>
+                              <Label htmlFor="crew-email" className="text-sm font-semibold text-slate-700">Email Address</Label>
                               <Input
                                 id="crew-email"
                                 type="email"
@@ -2589,13 +3229,13 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                   setCrewEmail(e.target.value);
                                   saveSandboxProgress({ crewEmail: e.target.value });
                                 }}
-                                className="bg-[#0c121f] border-[#233558] text-slate-100"
+                                className="bg-slate-50 border-slate-300 text-slate-900"
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="crew-phone" className="text-sm font-semibold text-slate-300">Phone Number</Label>
+                              <Label htmlFor="crew-phone" className="text-sm font-semibold text-slate-700">Phone Number</Label>
                               <div className="flex gap-2">
-                                <div className="flex items-center bg-[#0c121f] border border-[#233558] rounded-md pl-1.5 pr-0.5 w-[82px] shrink-0 focus-within:ring-2 focus-within:ring-blue-500">
+                                <div className="flex items-center bg-slate-50 border border-slate-300 rounded-md pl-1.5 pr-0.5 w-[82px] shrink-0 focus-within:ring-2 focus-within:ring-blue-500">
                                   <span className="mr-0.5 select-none text-base">{getFlagFromDialCode(crewPhoneDialCode)}</span>
                                   <Input
                                     type="text"
@@ -2611,18 +3251,18 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                       setCrewPhoneDialCode(val);
                                       saveSandboxProgress({ crewPhoneDialCode: val });
                                     }}
-                                    className="border-0 bg-transparent p-0 text-slate-100 placeholder-slate-500 focus-visible:ring-0 focus-visible:ring-offset-0 w-[30px] text-xs h-8"
+                                    className="border-0 bg-transparent p-0 text-slate-900 placeholder-slate-500 focus-visible:ring-0 focus-visible:ring-offset-0 w-[30px] text-xs h-8"
                                   />
                                   <Popover open={crewPhoneOpen} onOpenChange={setCrewPhoneOpen}>
                                     <PopoverTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-5 w-5 text-slate-400 hover:text-white p-0 shrink-0">
+                                      <Button variant="ghost" size="icon" className="h-5 w-5 text-slate-500 hover:text-slate-900 p-0 shrink-0">
                                         <ChevronDown className="h-3 w-3" />
                                       </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-[280px] p-0 bg-[#14223c] border-[#233558] text-slate-100">
-                                      <Command className="bg-transparent text-slate-100">
-                                        <CommandInput placeholder="Search country or code..." className="border-0 focus:ring-0 text-slate-100 bg-[#0c121f]" />
-                                        <CommandEmpty className="py-2 text-center text-xs text-slate-400">No country found.</CommandEmpty>
+                                    <PopoverContent className="w-[280px] p-0 bg-white border-slate-300 text-slate-900">
+                                      <Command className="bg-transparent text-slate-900">
+                                        <CommandInput placeholder="Search country or code..." className="border-0 focus:ring-0 text-slate-900 bg-slate-50" />
+                                        <CommandEmpty className="py-2 text-center text-xs text-slate-500">No country found.</CommandEmpty>
                                         <CommandGroup>
                                           <CommandList className="max-h-[220px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                                             {countriesList.map((c) => (
@@ -2638,9 +3278,9 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                               >
                                                 <span className="flex items-center gap-2">
                                                   <span>{c.flag}</span>
-                                                  <span className="text-slate-300 font-sans truncate max-w-[120px]">{c.name}</span>
+                                                  <span className="text-slate-700 font-sans truncate max-w-[120px]">{c.name}</span>
                                                 </span>
-                                                <span className="font-mono text-slate-400 font-semibold">{c.dial_code}</span>
+                                                <span className="font-mono text-slate-500 font-semibold">{c.dial_code}</span>
                                               </CommandItem>
                                             ))}
                                           </CommandList>
@@ -2657,13 +3297,13 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                     setCrewPhone(e.target.value);
                                     saveSandboxProgress({ crewPhone: e.target.value });
                                   }}
-                                  className="bg-[#0c121f] border-[#233558] text-slate-100 flex-1"
+                                  className="bg-slate-50 border-slate-300 text-slate-900 flex-1"
                                 />
                               </div>
                             </div>
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="staff-pass" className="text-sm font-semibold text-slate-300">Password</Label>
+                            <Label htmlFor="staff-pass" className="text-sm font-semibold text-slate-700">Password</Label>
                             <div className="relative">
                               <Input
                                 id="staff-pass"
@@ -2674,12 +3314,12 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                   setStaffPassword(e.target.value);
                                   saveSandboxProgress({ staffPassword: e.target.value });
                                 }}
-                                className="bg-[#0c121f] border-[#233558] text-slate-100 font-mono pr-10"
+                                className="bg-slate-50 border-slate-300 text-slate-900 font-mono pr-10"
                               />
                               <button
                                 type="button"
                                 onClick={() => setShowCrewPassword(!showCrewPassword)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800 transition-colors focus:outline-none"
                                 tabIndex={-1}
                               >
                                 {showCrewPassword ? (
@@ -2693,7 +3333,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                         </>
                       ) : (
                         <div className="space-y-2">
-                          <Label htmlFor="select-existing-staff" className="text-sm font-semibold text-slate-300">Select Existing Crew Member</Label>
+                          <Label htmlFor="select-existing-staff" className="text-sm font-semibold text-slate-700">Select Existing Crew Member</Label>
                           <Select
                             value={selectedStaffId}
                             onValueChange={(val) => {
@@ -2711,18 +3351,18 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                               }
                             }}
                           >
-                            <SelectTrigger className="bg-[#0c121f] border-[#233558] text-slate-100">
+                            <SelectTrigger className="bg-slate-50 border-slate-300 text-slate-900">
                               <SelectValue placeholder="Choose a crew member" />
                             </SelectTrigger>
-                            <SelectContent className="bg-[#0c121f] border-[#233558] text-slate-100">
+                            <SelectContent className="bg-slate-50 border-slate-300 text-slate-900">
                               {existingStaff.map((s) => (
-                                <SelectItem key={s.id} value={s.id} className="focus:bg-[#14223c] focus:text-white">
+                                <SelectItem key={s.id} value={s.id} className="focus:bg-white focus:text-slate-900">
                                   {s.full_name} ({s.username})
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
-                          <p className="text-xs text-slate-400">
+                          <p className="text-xs text-slate-500">
                             The scheduled tasks and work orders will be assigned to this existing crew profile.
                           </p>
                         </div>
@@ -2734,7 +3374,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                   {step === 5 && (
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="job-title" className="text-sm font-semibold text-slate-300">Job Scope Title</Label>
+                        <Label htmlFor="job-title" className="text-sm font-semibold text-slate-700">Job Scope Title</Label>
                         <Input
                           id="job-title"
                           placeholder="e.g. Electrical Installation & Verification"
@@ -2743,14 +3383,14 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                             setJobTitle(e.target.value);
                             saveSandboxProgress({ jobTitle: e.target.value });
                           }}
-                          className="bg-[#0c121f] border-[#233558] text-slate-100"
+                          className="bg-slate-50 border-slate-300 text-slate-900"
                         />
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="job-start" className="text-sm font-semibold text-slate-300">Scheduled Start</Label>
+                          <Label htmlFor="job-start" className="text-sm font-semibold text-slate-700">Scheduled Start</Label>
                           <div className="relative">
-                            <Calendar className="absolute left-3 top-3 h-4 w-4 text-slate-400 pointer-events-none" />
+                            <Calendar className="absolute left-3 top-3 h-4 w-4 text-slate-500 pointer-events-none" />
                             <Input
                               id="job-start"
                               type="datetime-local"
@@ -2766,14 +3406,14 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                 setJobStart(e.target.value);
                                 saveSandboxProgress({ jobStart: e.target.value });
                               }}
-                              className="bg-[#0c121f] border-[#233558] text-slate-100 pl-10 text-xs sm:text-sm cursor-pointer w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                              className="bg-slate-50 border-slate-300 text-slate-900 pl-10 text-xs sm:text-sm cursor-pointer w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                             />
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="job-end" className="text-sm font-semibold text-slate-300">Scheduled End</Label>
+                          <Label htmlFor="job-end" className="text-sm font-semibold text-slate-700">Scheduled End</Label>
                           <div className="relative">
-                            <Calendar className="absolute left-3 top-3 h-4 w-4 text-slate-400 pointer-events-none" />
+                            <Calendar className="absolute left-3 top-3 h-4 w-4 text-slate-500 pointer-events-none" />
                             <Input
                               id="job-end"
                               type="datetime-local"
@@ -2789,13 +3429,13 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                 setJobEnd(e.target.value);
                                 saveSandboxProgress({ jobEnd: e.target.value });
                               }}
-                              className="bg-[#0c121f] border-[#233558] text-slate-100 pl-10 text-xs sm:text-sm cursor-pointer w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                              className="bg-slate-50 border-slate-300 text-slate-900 pl-10 text-xs sm:text-sm cursor-pointer w-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                             />
                           </div>
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="job-desc" className="text-sm font-semibold text-slate-300">Task Checklist / Work Scope Description (Optional)</Label>
+                        <Label htmlFor="job-desc" className="text-sm font-semibold text-slate-700">Task Checklist / Work Scope Description (Optional)</Label>
                         <Textarea
                           id="job-desc"
                           placeholder="Add details, materials checklist, safety codes, or client-specific orders."
@@ -2805,7 +3445,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                             saveSandboxProgress({ jobDescription: e.target.value });
                           }}
                           rows={3}
-                          className="bg-[#0c121f] border-[#233558] text-slate-100 focus:ring-blue-500"
+                          className="bg-slate-50 border-slate-300 text-slate-900 focus:ring-blue-500"
                         />
                       </div>
                     </div>
@@ -2815,30 +3455,30 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                   {step === 6 && (
                     <div className="space-y-6">
                       {/* Interactive preview panel summarizing data in standard card */}
-                      <div className="bg-[#0c121f] border border-[#233558] rounded-xl p-4 sm:p-5 space-y-4">
-                        <h3 className="text-sm font-bold text-slate-200 border-b border-[#233558]/60 pb-2">Configuration Preview</h3>
+                      <div className="bg-slate-50 border border-slate-300 rounded-xl p-4 sm:p-5 space-y-4">
+                        <h3 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-2">Configuration Preview</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                           {wizardMode !== "new-project" && (
                             <div>
-                              <span className="text-slate-400 block font-medium">Company Profile</span>
-                              <span className="text-slate-200 font-semibold">{companyName} (Prefix: {companyPrefix}, Currency: {currencyCode})</span>
+                              <span className="text-slate-500 block font-medium">Company Profile</span>
+                              <span className="text-slate-800 font-semibold">{companyName} (Prefix: {companyPrefix}, Currency: {currencyCode})</span>
                             </div>
                           )}
                           <div>
-                            <span className="text-slate-400 block font-medium">Project Scope</span>
-                            <span className="text-slate-200 font-semibold">{projectName} for {customerName} ({getCurrencySymbol(currencyCode)}{parseFloat(contractValue).toLocaleString("en-US", { minimumFractionDigits: 2 })})</span>
+                            <span className="text-slate-500 block font-medium">Project Scope</span>
+                            <span className="text-slate-800 font-semibold">{projectName} for {customerName} ({getCurrencySymbol(currencyCode)}{parseFloat(contractValue).toLocaleString("en-US", { minimumFractionDigits: 2 })})</span>
                           </div>
                           <div>
-                            <span className="text-slate-400 block font-medium">Geofence Coordinate Zone</span>
-                            <span className="text-slate-200 font-semibold">{geofenceName}{geofenceAddress ? ` — ${geofenceAddress}` : ''} ({radius}m radius)</span>
+                            <span className="text-slate-500 block font-medium">Geofence Coordinate Zone</span>
+                            <span className="text-slate-800 font-semibold">{geofenceName}{geofenceAddress ? ` — ${geofenceAddress}` : ''} ({radius}m radius)</span>
                           </div>
                           <div>
-                            <span className="text-slate-400 block font-medium">Provisioned Crew Member</span>
-                            <span className="text-slate-200 font-semibold">{staffName} ({formattedStaffUsername})</span>
+                            <span className="text-slate-500 block font-medium">Provisioned Crew Member</span>
+                            <span className="text-slate-800 font-semibold">{staffName} ({formattedStaffUsername})</span>
                           </div>
                           <div className="sm:col-span-2">
-                            <span className="text-slate-400 block font-medium">Scheduled Work Order</span>
-                            <span className="text-slate-200 font-semibold">{jobTitle}</span>
+                            <span className="text-slate-500 block font-medium">Scheduled Work Order</span>
+                            <span className="text-slate-800 font-semibold">{jobTitle}</span>
                           </div>
                         </div>
                       </div>
@@ -2846,42 +3486,42 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                       {/* Display registration form in Sandbox mode */}
                       {wizardMode === "public-sandbox" ? (
                         <form onSubmit={handleDeployPublic} className="space-y-4 pt-2">
-                          <div className="text-sm font-semibold text-blue-400 flex items-center gap-1.5 border-b border-[#233558]/40 pb-2 mb-3">
+                          <div className="text-sm font-semibold text-blue-400 flex items-center gap-1.5 border-b border-slate-300/40 pb-2 mb-3">
                             <Lock className="h-4 w-4" /> Create Administrator Account
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="signup-email" className="text-sm font-semibold text-slate-300">Admin Email Address</Label>
+                            <Label htmlFor="signup-email" className="text-sm font-semibold text-slate-700">Admin Email Address</Label>
                             <div className="relative">
-                              <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                              <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
                               <Input
                                 id="signup-email"
                                 type="email"
                                 placeholder="you@company.com"
                                 value={signupEmail}
                                 onChange={(e) => setSignupEmail(e.target.value)}
-                                className="bg-[#0c121f] border-[#233558] text-slate-100 pl-10"
+                                className="bg-slate-50 border-slate-300 text-slate-900 pl-10"
                                 required
                               />
                             </div>
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="signup-pass" className="text-sm font-semibold text-slate-300">Dashboard Password</Label>
+                            <Label htmlFor="signup-pass" className="text-sm font-semibold text-slate-700">Dashboard Password</Label>
                             <div className="relative">
-                              <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                              <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
                               <Input
                                 id="signup-pass"
                                 type="password"
                                 placeholder="•••••••• (Min 6 characters)"
                                 value={signupPassword}
                                 onChange={(e) => setSignupPassword(e.target.value)}
-                                className="bg-[#0c121f] border-[#233558] text-slate-100 pl-10 font-mono"
+                                className="bg-slate-50 border-slate-300 text-slate-900 pl-10 font-mono"
                                 required
                               />
                             </div>
                           </div>
                           <Button
                             type="submit"
-                            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold h-11 text-base shadow-lg shadow-blue-600/20"
+                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-11 text-base shadow-md transition-all"
                             disabled={saving}
                           >
                             {saving ? (
@@ -2900,7 +3540,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                         <div className="pt-4">
                           <Button
                             onClick={handleDeployAuth}
-                            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold h-11 text-base shadow-lg"
+                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-11 text-base shadow-md transition-all"
                             disabled={saving}
                           >
                             {saving ? (
@@ -2922,29 +3562,29 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
                 {/* Back and Next navigation links */}
                 {step <= 5 && (
-                  <div className="border-t border-[#233558]/40 p-4 sm:p-6 bg-slate-900/20 flex justify-between items-center gap-4">
+                  <div className="border-t border-slate-300/40 p-4 sm:p-6 bg-slate-900/20 flex justify-between items-center gap-4">
                     <Button
                       variant="ghost"
                       onClick={handleBack}
                       disabled={step === 2}
-                      className="gap-1.5 text-slate-400 hover:text-white"
+                      className="gap-1.5 text-slate-500 hover:text-slate-900"
                     >
                       <ArrowLeft className="h-4 w-4" /> Back
                     </Button>
                     <Button
                       onClick={handleNext}
-                      className="gap-1.5 bg-blue-600 hover:bg-blue-500 text-white px-5 sm:px-6 shadow-md"
+                      className="gap-1.5 bg-blue-600 hover:bg-blue-500 text-slate-900 px-5 sm:px-6 shadow-md"
                     >
                       Next <ArrowRight className="h-4 w-4" />
                     </Button>
                   </div>
                 )}
                 {step === 6 && (
-                  <div className="border-t border-[#233558]/40 p-4 bg-slate-900/20 flex justify-start items-center">
+                  <div className="border-t border-slate-300/40 p-4 bg-slate-900/20 flex justify-start items-center">
                     <Button
                       variant="ghost"
                       onClick={handleBack}
-                      className="gap-1.5 text-slate-400 hover:text-white"
+                      className="gap-1.5 text-slate-500 hover:text-slate-900"
                     >
                       <ArrowLeft className="h-4 w-4" /> Back
                     </Button>
@@ -2955,26 +3595,26 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
             {/* STEP 7: Crew Handover & QR Success View */}
             {step === 7 && (
-              <Card className="bg-[#14223c]/60 border-[#233558]/80 shadow-2xl relative overflow-hidden backdrop-blur-sm text-slate-100 text-center py-6">
+              <Card className="bg-white/60 border-slate-300/80 shadow-2xl relative overflow-hidden backdrop-blur-sm text-slate-900 text-center py-6">
                 <CardHeader>
                   <div className="mx-auto h-12 w-12 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/30 mb-2">
                     <CheckCircle className="h-6 w-6 text-emerald-500" />
                   </div>
-                  <CardTitle className="text-2xl font-bold text-white">You are all set! Your setup has been deployed</CardTitle>
-                  <CardDescription className="text-slate-400 text-sm leading-relaxed">
+                  <CardTitle className="text-2xl font-bold text-slate-900">You are all set! Your setup has been deployed</CardTitle>
+                  <CardDescription className="text-slate-500 text-sm leading-relaxed">
                     Fantastic job! We have created your company, client, geofence, crew profile, and job. Now, simply share these mobile login credentials with your crew member so they can download the app and connect their device.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="px-6 space-y-6">
                   {/* Share credential card details */}
-                  <div className="bg-[#0c121f] border border-[#233558] rounded-xl p-5 text-left space-y-4">
-                    <div className="flex justify-between items-center border-b border-[#233558]/60 pb-2">
-                      <span className="text-sm font-bold text-slate-200">Field Crew Login Details</span>
+                  <div className="bg-slate-50 border border-slate-300 rounded-xl p-5 text-left space-y-4">
+                    <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                      <span className="text-sm font-bold text-slate-800">Field Crew Login Details</span>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={handleCopyCredentials}
-                        className="h-8 text-xs text-blue-400 hover:text-white hover:bg-slate-800"
+                        className="h-8 text-xs text-blue-400 hover:text-slate-900 hover:bg-slate-800"
                       >
                         {copiedCreds ? (
                           <>
@@ -2990,11 +3630,11 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
                     <div className="space-y-2 font-mono text-sm">
                       <div className="flex justify-between items-center h-8">
-                        <span className="text-slate-400 text-xs">Crew Member Name:</span>
-                        <span className="text-white font-semibold">{staffName}</span>
+                        <span className="text-slate-500 text-xs">Crew Member Name:</span>
+                        <span className="text-slate-900 font-semibold">{staffName}</span>
                       </div>
                       <div className="flex justify-between items-center h-8">
-                        <span className="text-slate-400 text-xs">Login Username:</span>
+                        <span className="text-slate-500 text-xs">Login Username:</span>
                         <div className="flex items-center gap-1.5">
                           <span className="text-blue-400 font-bold">{formattedStaffUsername}</span>
                           <button
@@ -3002,7 +3642,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                               navigator.clipboard.writeText(formattedStaffUsername);
                               toast.success("Username copied!");
                             }}
-                            className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition-colors"
+                            className="text-slate-500 hover:text-slate-900 p-1 rounded hover:bg-slate-800 transition-colors"
                             title="Copy Username"
                           >
                             <Copy className="h-3.5 w-3.5" />
@@ -3010,15 +3650,15 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                         </div>
                       </div>
                       <div className="flex justify-between items-center h-8">
-                        <span className="text-slate-400 text-xs">Login Password:</span>
+                        <span className="text-slate-500 text-xs">Login Password:</span>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-white font-bold">{staffPassword}</span>
+                          <span className="text-slate-900 font-bold">{staffPassword}</span>
                           <button
                             onClick={() => {
                               navigator.clipboard.writeText(staffPassword);
                               toast.success("Password copied!");
                             }}
-                            className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition-colors"
+                            className="text-slate-500 hover:text-slate-900 p-1 rounded hover:bg-slate-800 transition-colors"
                             title="Copy Password"
                           >
                             <Copy className="h-3.5 w-3.5" />
@@ -3029,11 +3669,11 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                   </div>
 
                   {/* Modern social sharing toolbar */}
-                  <div className="bg-[#0c121f] border border-[#233558] rounded-xl p-5 text-left space-y-3">
-                    <span className="text-sm font-bold text-slate-200 block border-b border-[#233558]/60 pb-2">
+                  <div className="bg-slate-50 border border-slate-300 rounded-xl p-5 text-left space-y-3">
+                    <span className="text-sm font-bold text-slate-800 block border-b border-slate-200 pb-2">
                       Quick Share with Crew Member
                     </span>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-500">
                       Instantly share the setup credentials and download link through standard communication channels:
                     </p>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
@@ -3123,17 +3763,17 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                   </div>
 
                   {/* Share QR download apk */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center border border-[#233558] rounded-xl p-5 bg-[#0c121f]">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center border border-slate-300 rounded-xl p-5 bg-slate-50">
                     <div className="text-left space-y-2">
-                      <h4 className="text-sm font-bold text-slate-200">Download Mobile APK</h4>
-                      <p className="text-xs text-slate-400 leading-relaxed">
+                      <h4 className="text-sm font-bold text-slate-800">Download Mobile APK</h4>
+                      <p className="text-xs text-slate-500 leading-relaxed">
                         Field crew members must install the Android APK package directly to start location and face tracking.
                       </p>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={handleCopyApkLink}
-                        className="gap-1.5 mt-2 h-9 text-xs border-[#233558] text-blue-400 hover:text-white"
+                        className="gap-1.5 mt-2 h-9 text-xs border-slate-300 text-blue-400 hover:text-slate-900"
                       >
                         {copiedLink ? (
                           <>
@@ -3158,7 +3798,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
                   <Button
                     onClick={handleFinish}
-                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold h-11 text-base shadow-lg"
+                    className="w-full bg-blue-600 hover:bg-blue-500 text-slate-900 font-bold h-11 text-base shadow-lg"
                   >
                     Go to Dashboard
                   </Button>
@@ -3193,7 +3833,7 @@ export default function ProjectSetupWizard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0c121f]">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );

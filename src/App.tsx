@@ -8,6 +8,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { Skeleton } from "@/components/ui/skeleton";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./hooks/useAuth";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 // ─── Eagerly loaded (small, always-needed) ─────────────────────────
 import Index from "./pages/Index";
@@ -41,10 +42,17 @@ const PublicPayPage = lazy(() => import("./pages/PublicPayPage"));
 const TimesheetsPage = lazy(() => import("./pages/TimesheetsPage"));
 const MembershipsPage = lazy(() => import("./pages/MembershipsPage"));
 const CompliancePage = lazy(() => import("./pages/CompliancePage"));
-const PortalPage = lazy(() => import("./pages/PortalPage"));
 const OnlineBookingPage = lazy(() => import("./pages/OnlineBookingPage"));
 const InventoryPage = lazy(() => import("./pages/InventoryPage"));
 const AffiliatePortal = lazy(() => import("./pages/AffiliatePortal"));
+const UseCasePage = lazy(() => import("./pages/UseCasePage"));
+const MarketplacePage = lazy(() => import("./pages/MarketplacePage"));
+const AIAgentProductPage = lazy(() => import("./pages/AIAgentProductPage"));
+const AIAgentPricingPage = lazy(() => import("./pages/AIAgentPricingPage"));
+const AITermsPage = lazy(() => import("./pages/AITermsPage"));
+const AIAgentPage = lazy(() => import("./pages/AIAgentPage"));
+const ActionInboxPage = lazy(() => import("./pages/ActionInboxPage"));
+const KnowledgeBasePage = lazy(() => import("./pages/KnowledgeBasePage"));
 
 // ─── Page loading skeleton ─────────────────────────────────────────
 function PageSkeleton() {
@@ -110,8 +118,9 @@ function ReferralTracker() {
 }
 
 const App = () => (
-  <HelmetProvider>
-    <QueryClientProvider client={queryClient}>
+  <ErrorBoundary>
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -123,6 +132,11 @@ const App = () => (
               <Route path="/" element={<HomePage />} />
               <Route path="/auth" element={<Index />} />
               <Route path="/wizard" element={<ProjectSetupWizard />} />
+              <Route path="/inbox" element={
+                <ProtectedRoute>
+                  <ActionInboxPage />
+                </ProtectedRoute>
+              } />
               <Route path="/dashboard/wizard" element={<ProjectSetupWizard />} />
               <Route path="/face-verify" element={<FaceVerification />} />
               <Route path="/reset-password" element={<ResetPassword />} />
@@ -209,9 +223,33 @@ const App = () => (
                 </ProtectedRoute>
               } />
               
-              <Route path="/approve/:token" element={<PublicApprovalPage />} />
-              <Route path="/pay/:invoiceId" element={<PublicPayPage />} />
-              <Route path="/portal" element={<PortalPage />} />
+              <Route path="/marketplace" element={
+                <ProtectedRoute feature="marketplace">
+                  <MarketplacePage />
+                </ProtectedRoute>
+              } />
+              <Route path="/marketplace/ai-agent" element={
+                <ProtectedRoute feature="marketplace">
+                  <AIAgentProductPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/marketplace/ai-agent/pricing" element={
+                <ProtectedRoute feature="marketplace">
+                  <AIAgentPricingPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/marketplace/ai-agent/terms" element={
+                <ProtectedRoute feature="marketplace">
+                  <AITermsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/marketplace" element={<ProtectedRoute><MarketplacePage /></ProtectedRoute>} />
+              <Route path="/ai-agents" element={<ProtectedRoute><AIAgentPage /></ProtectedRoute>} />
+              <Route path="/knowledge-base" element={<ProtectedRoute><KnowledgeBasePage /></ProtectedRoute>} />
+              
+              {/* Product/Marketing Pages */}
+              <Route path="/use-cases/:industry" element={<UseCasePage />} />
+
               <Route path="/book/:prefix" element={<OnlineBookingPage />} />
               <Route path="/affiliates" element={<AffiliatePortal />} />
               
@@ -223,6 +261,7 @@ const App = () => (
       </TooltipProvider>
     </QueryClientProvider>
   </HelmetProvider>
+  </ErrorBoundary>
 );
 
 export default App;

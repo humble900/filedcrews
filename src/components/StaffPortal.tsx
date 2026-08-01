@@ -1,5 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { enqueueOfflineAction, flushOfflineQueue, getPendingOfflineActions } from "@/lib/offlineQueue";
+import { usePermissions } from "@/hooks/usePermissions";
+import { useTerminology } from "@/hooks/useTerminology";
+import { useReputationEngine } from "@/hooks/useReputationEngine";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,6 +48,8 @@ import TaskPhotoUpload from "./TaskPhotoUpload";
 import TaskMultiplePhotoUpload from "./TaskMultiplePhotoUpload";
 import DocumentScanner from "./DocumentScanner";
 import InteractiveSpreadsheet from "./InteractiveSpreadsheet";
+import { AICopilotButton } from "./AICopilotButton";
+import { EquipmentScanner } from "./EquipmentScanner";
 import { ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 interface StaffProfile {
@@ -90,6 +96,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
   const { isTrialExpired } = useAuth();
   const queryClient = useQueryClient();
   const apkDownloadUrl = "/downloads/Ocrem.apk";
+  const { processJobCompletion } = useReputationEngine(staffProfile.company_id);
 
   const [activeTab, setActiveTab] = useState<MobileTab>("tasks");
   const [docSubTab, setDocSubTab] = useState<"files" | "reports">("files");
@@ -153,7 +160,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   // Offline states
-  const [isOfflineMode, setIsOfflineMode] = useState(false);
+  const [isOfflineMode, setIsOfflineMode] = useState(!navigator.onLine);
   const [offlineQueue, setOfflineQueue] = useState<{ taskId: string; payload: any; taskTitle: string }[]>(() => {
     try {
       const saved = localStorage.getItem("onsite_offline_queue");
@@ -403,51 +410,6 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
     return () => window.removeEventListener("popstate", handleBack);
   }, [selectedTask]);
 
-  const resolveSimulatedCoordinates = async () => {
-    // 1. Check if there's an in-progress task with coordinates
-    const inProgressTask = tasks.find((t) => t.status === "In Progress" && t.job?.project?.latitude && t.job?.project?.longitude);
-    if (inProgressTask) {
-      return {
-        latitude: inProgressTask.job.project.latitude,
-        longitude: inProgressTask.job.project.longitude,
-      };
-    }
-
-    // 2. Check if there's any pending task with coordinates
-    const pendingTask = tasks.find((t) => t.status === "Pending" && t.job?.project?.latitude && t.job?.project?.longitude);
-    if (pendingTask) {
-      return {
-        latitude: pendingTask.job.project.latitude,
-        longitude: pendingTask.job.project.longitude,
-      };
-    }
-
-    // 3. Check if there's a shift today with geofence coordinates
-    if (todayShift?.geofence?.latitude && todayShift?.geofence?.longitude) {
-      return {
-        latitude: todayShift.geofence.latitude,
-        longitude: todayShift.geofence.longitude,
-      };
-    }
-
-    // 4. Query the latest project created for this company in projects table
-    const { data: latestProjects } = await supabase
-      .from("projects")
-      .select("latitude, longitude")
-      .eq("company_id", staffProfile.company_id)
-      .order("created_at", { ascending: false })
-      .limit(1);
-
-    if (latestProjects && latestProjects.length > 0 && latestProjects[0].latitude && latestProjects[0].longitude) {
-      return {
-        latitude: latestProjects[0].latitude,
-        longitude: latestProjects[0].longitude,
-      };
-    }
-
-    // 5. Default to San Francisco
-    return { latitude: 37.7749, longitude: -122.4194 };
-  };
 
   const updateLocationClientSide = async (latitude: number, longitude: number, accuracy: number | null) => {
     try {
@@ -566,16 +528,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
 
     const handleLocationError = async (err: any) => {
       console.warn("Initial portal location update failed (browser blocked GPS):", err.message);
-      try {
-        const coords = await resolveSimulatedCoordinates();
-        // Shift simulated location slightly to avoid precise stacking on the geofence center
-        const offsetLat = (Math.random() - 0.5) * 0.0002;
-        const offsetLng = (Math.random() - 0.5) * 0.0002;
-        await updateLocationClientSide(coords.latitude + offsetLat, coords.longitude + offsetLng, 10.0);
-        console.log(`Automatically simulated GPS check-in at: ${coords.latitude}, ${coords.longitude}`);
-      } catch (e) {
-        console.error("Auto-simulation fallback failed:", e);
-      }
+      toast.error("Location access is required for check-in and geofencing. Please enable GPS.");
     };
 
     if (navigator.geolocation) {
@@ -607,36 +560,59 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
     };
   }, [isOfflineMode, staffProfile?.id, tasks, todayShift]);
 
-  async function syncOfflineQueue() {
-    if (offlineQueue.length === 0) return;
-    try {
-      for (const item of offlineQueue) {
-        const { error } = await supabase.from("tasks").update(item.payload).eq("id", item.taskId);
-        if (error) throw error;
+  // Listen for native online/offline events
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOfflineMode(false);
+      // We don't call syncOfflineQueue directly here because we need the latest state,
+      // but the toggleOfflineMode or useEffect on offlineQueue can handle it.
+    };
+    const handleOffline = () => {
+      setIsOfflineMode(true);
+      toast.warning("You are offline. Changes will be saved locally.");
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    // Initial check
+    if (!navigator.onLine) {
+      handleOffline();
+    }
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  // Auto-sync IndexedDB offline queue when network is restored
+  useEffect(() => {
+    const handleOnline = async () => {
+      setIsOfflineMode(false);
+      const { successCount } = await flushOfflineQueue();
+      if (successCount > 0) {
+        toast.success(`Network restored! Auto-synced ${successCount} offline updates.`);
+        queryClient.invalidateQueries({ queryKey: ["staff_tasks"] });
       }
-      queryClient.invalidateQueries({ queryKey: ["staff_tasks", staffProfile.id] });
-      toast.success(`Online! Synced ${offlineQueue.length} offline updates to server!`);
-      setOfflineQueue([]);
-    } catch (e: any) {
-      toast.error(`Sync error: ${e.message}`);
-    }
-  }
+    };
+    const handleOffline = () => {
+      setIsOfflineMode(true);
+      toast.warning("Network connection lost. Operating in offline mode.");
+    };
 
-  const toggleOfflineMode = () => {
-    const nextState = !isOfflineMode;
-    setIsOfflineMode(nextState);
-    if (!nextState && offlineQueue.length > 0) {
-      syncOfflineQueue();
-    } else if (nextState) {
-      toast.info("Offline mode simulated. Task changes will queue locally.");
-    }
-  };
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [queryClient]);
 
-  const handleUpdateTask = (taskId: string, payload: any, taskTitle: string) => {
+  const handleUpdateTask = async (taskId: string, payload: any, taskTitle: string) => {
     if (isOfflineMode) {
-      const newQueue = [...offlineQueue, { taskId, payload, taskTitle }];
-      setOfflineQueue(newQueue);
-      toast.warning(`Saved offline: queued update for "${taskTitle}"`);
+      await enqueueOfflineAction("UPDATE_TASK_STATUS", { taskId, status: payload.status });
+      toast.warning(`Saved offline: queued update for "${taskTitle}" in local IndexedDB.`);
     } else {
       updateTaskMutation.mutate({ taskId, payload });
     }
@@ -711,11 +687,20 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
         }
       }
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["staff_tasks", staffProfile.id] });
       toast.success("Task updated");
       // Reset form responses
       setFormResponses({});
+
+      if (variables.payload.status === "Completed") {
+        // Trigger Reputation Engine
+        processJobCompletion(
+          selectedTask?.job_id || selectedTask?.id,
+          selectedTask?.customer_id || "fallback-customer",
+          variables.payload.staff_notes || ""
+        );
+      }
     },
     onError: (err: any) => toast.error(err.message || "Failed to update task"),
   });
@@ -1186,12 +1171,11 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
           <div className="flex items-center gap-2">
             <Button
               variant={isOfflineMode ? "destructive" : "outline"}
-              onClick={toggleOfflineMode}
-              className="h-7 text-[10px] font-bold gap-1 px-2 border-dashed"
+              className="h-7 text-[10px] font-bold gap-1 px-2 border-dashed pointer-events-none"
               size="sm"
             >
-              <WifiOff className="h-3.5 w-3.5" />
-              {isOfflineMode ? "Simulated Offline" : "Go Offline"}
+              {isOfflineMode ? <WifiOff className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
+              {isOfflineMode ? "Offline" : "Online"}
             </Button>
             <img src="/favicon.png" alt="Ocrem" className="h-7 w-7 rounded-lg opacity-70" />
           </div>
@@ -1240,19 +1224,28 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
             size="xs"
             variant="outline"
             onClick={async () => {
-              try {
-                const coords = await resolveSimulatedCoordinates();
-                const offsetLat = (Math.random() - 0.5) * 0.0002;
-                const offsetLng = (Math.random() - 0.5) * 0.0002;
-                await updateLocationClientSide(coords.latitude + offsetLat, coords.longitude + offsetLng, 10.0);
-                toast.success("GPS check-in simulated successfully!");
-              } catch (e: any) {
-                toast.error(e.message || "Failed to simulate check-in");
+              if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                  async (position) => {
+                    try {
+                      await updateLocationClientSide(position.coords.latitude, position.coords.longitude, position.coords.accuracy);
+                      toast.success("Location updated successfully!");
+                    } catch (e: any) {
+                      toast.error(e.message || "Failed to sync check-in");
+                    }
+                  },
+                  (err) => {
+                    toast.error("Location access is required. Please enable GPS.");
+                  },
+                  { enableHighAccuracy: true }
+                );
+              } else {
+                toast.error("Geolocation is not supported by your device");
               }
             }}
             className="h-7 text-[10px] gap-1 px-2 border-dashed bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary font-bold shadow-sm"
           >
-            <MapPin className="h-3 w-3" /> Simulate GPS
+            <MapPin className="h-3 w-3" /> Refresh Location
           </Button>
         </div>
       </header>
@@ -1385,21 +1378,29 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
             {docSubTab === "files" ? (
               <>
                 <div className="flex items-center justify-between">
-                  <h2 className="text-base font-bold">Documents</h2>
-                  <Button
-                    size="sm"
-                    className="h-8 text-xs font-semibold gap-1.5"
-                    onClick={() => {
-                      if (!selectedProjectId) {
-                        toast.error("Select a project first");
-                        return;
-                      }
-                      setScannerOpen(true);
-                    }}
-                    disabled={!selectedProjectId}
-                  >
-                    <Plus className="h-3.5 w-3.5" /> Scan
-                  </Button>
+                  <h2 className="text-base font-bold">Documents & Assets</h2>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className="h-8 text-xs font-semibold gap-1.5"
+                      onClick={() => {
+                        if (!selectedProjectId) {
+                          toast.error("Select a project first");
+                          return;
+                        }
+                        setScannerOpen(true);
+                      }}
+                      disabled={!selectedProjectId}
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Scan Doc
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  <EquipmentScanner onScanComplete={(data) => {
+                    toast.success(`Scanned: ${data.make} ${data.model} - Asset saved.`);
+                  }} />
                 </div>
 
                 {assignments.length > 0 ? (
@@ -2709,6 +2710,18 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
         </DialogContent>
       </Dialog>
 
+      {/* ═══ AI COPILOT ═══ */}
+      {activeTab === "tasks" && (
+        <div className="fixed bottom-24 right-4 z-40">
+          <AICopilotButton 
+            jobId={todayShift?.job?.id || ""} 
+            onCopilotComplete={(data) => {
+
+            }} 
+          />
+        </div>
+      )}
+
       {/* ═══ BOTTOM NAVIGATION BAR ═══ */}
       {!selectedTask && !sheetOpen && (
         <nav className="bottom-nav glass-header border-t border-border/30">
@@ -2798,3 +2811,4 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
     );
   }
 }
+

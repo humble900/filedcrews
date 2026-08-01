@@ -105,8 +105,31 @@ export default function DocumentScanner({
       return;
     }
     const reader = new FileReader();
-    reader.onload = () => {
-      setImgSrc(reader.result as string);
+    reader.onload = async () => {
+      const result = reader.result as string;
+      setImgSrc(result);
+      
+      // Auto-extract OCR for document notes
+      const base64Data = result.split(',')[1];
+      try {
+        toast.info("Extracting document details...");
+        const { data, error } = await supabase.functions.invoke("ocr_processor", {
+          body: { imageBase64: base64Data, type: "receipt" }
+        });
+        
+        if (!error && data) {
+          const parts = [];
+          if (data.merchant_name) parts.push(`Merchant: ${data.merchant_name}`);
+          if (data.date) parts.push(`Date: ${data.date}`);
+          if (data.total_amount) parts.push(`Total: $${data.total_amount}`);
+          if (parts.length > 0) {
+            setDocNotes((prev) => prev ? prev + "\n" + parts.join(" | ") : parts.join(" | "));
+            toast.success("Document details extracted!");
+          }
+        }
+      } catch (err) {
+        console.error("OCR Error:", err);
+      }
     };
     reader.readAsDataURL(file);
   };

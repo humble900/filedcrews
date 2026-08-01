@@ -24,6 +24,8 @@ Deno.serve(async (req) => {
       job_title,
       company_id,
       global_role: rawRole,
+      gas_safe_registered,
+      trade_certifications,
     } = await req.json();
     const username = rawUsername?.toUpperCase();
     const VALID_ROLES = ["Admin", "Finance", "Dispatcher", "Field Crew"];
@@ -144,6 +146,8 @@ Deno.serve(async (req) => {
     if (phone) profilePayload.phone = phone;
     if (address) profilePayload.address = address;
     if (job_title) profilePayload.job_title = job_title;
+    if (gas_safe_registered !== undefined) profilePayload.gas_safe_registered = gas_safe_registered;
+    if (trade_certifications !== undefined) profilePayload.trade_certifications = trade_certifications;
 
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("staff_profiles")

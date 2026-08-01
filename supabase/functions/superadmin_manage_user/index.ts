@@ -1,12 +1,12 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import {
+  corsHeaders,
+  jsonResponse,
+  authenticateCaller,
+} from "../_shared/framework.ts";
 
 Deno.serve(async (req) => {
+  const requestId = crypto.randomUUID();
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -15,35 +15,29 @@ Deno.serve(async (req) => {
     const { action, target_user_id, password } = await req.json();
 
     if (!action || !target_user_id) {
-      return new Response(
-        JSON.stringify({ error: "action and target_user_id are required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      return jsonResponse(
+        { error: "action and target_user_id are required" },
+        400,
+        requestId
       );
     }
 
-    // Authenticate the caller using their JWT
-    const authHeader = req.headers.get("authorization") ?? "";
-    const callerClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { authorization: authHeader } } }
-    );
-    const { data: { user: callerUser }, error: userErr } = await callerClient.auth.getUser();
-
-    if (userErr || !callerUser) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized caller" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    // Authenticate caller JWT
+    const { user: callerUser, error: authError } = await authenticateCaller(req);
+    if (authError || !callerUser) {
+      return jsonResponse(
+        { error: authError || "Unauthorized caller" },
+        401,
+        requestId
       );
     }
 
-    // Create the privileged service role client
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Verify the caller is a registered Platform Superadmin in public.platform_admins
+    // Verify caller is listed in platform_admins
     const { data: adminRow, error: adminErr } = await supabaseAdmin
       .from("platform_admins")
       .select("user_id")
@@ -51,17 +45,22 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (adminErr || !adminRow) {
-      return new Response(
-        JSON.stringify({ error: "Access Denied: Platform Administrator privileges required" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      console.warn(
+        `[${requestId}] Unauthorized superadmin management attempt by user: ${callerUser.id}`
+      );
+      return jsonResponse(
+        { error: "Access Denied: Platform Administrator privileges required" },
+        403,
+        requestId
       );
     }
 
     if (action === "update_password") {
       if (!password) {
-        return new Response(
-          JSON.stringify({ error: "password is required to update credentials" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        return jsonResponse(
+          { error: "password is required to update credentials" },
+          400,
+          requestId
         );
       }
 
@@ -71,20 +70,21 @@ Deno.serve(async (req) => {
       );
 
       if (updateErr) {
-        return new Response(
-          JSON.stringify({ error: updateErr.message }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return jsonResponse({ error: updateErr.message }, 400, requestId);
       }
 
-      return new Response(
-        JSON.stringify({ success: true, message: "User password updated successfully." }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      console.log(
+        `[${requestId}] Password updated for target user: ${target_user_id} by superadmin: ${callerUser.id}`
+      );
+
+      return jsonResponse(
+        { success: true, message: "User password updated successfully." },
+        200,
+        requestId
       );
     }
 
     if (action === "delete_user") {
-      // Find staff profile first to wipe related database records
       const { data: profile } = await supabaseAdmin
         .from("staff_profiles")
         .select("id")
@@ -92,50 +92,48 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (profile) {
-        // Delete related child references
         await supabaseAdmin.from("geofence_events").delete().eq("staff_id", profile.id);
         await supabaseAdmin.from("staff_location_history").delete().eq("staff_id", profile.id);
         await supabaseAdmin.from("staff_locations").delete().eq("staff_id", profile.id);
-        
-        // Delete profile row
+
         const { error: profileDelErr } = await supabaseAdmin
           .from("staff_profiles")
           .delete()
           .eq("id", profile.id);
 
         if (profileDelErr) {
-          return new Response(
-            JSON.stringify({ error: profileDelErr.message }),
-            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+          return jsonResponse({ error: profileDelErr.message }, 500, requestId);
         }
       }
 
-      // Delete the auth user identity
       const { error: authDelErr } = await supabaseAdmin.auth.admin.deleteUser(target_user_id);
-      
+
       if (authDelErr) {
-        return new Response(
-          JSON.stringify({ error: authDelErr.message }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return jsonResponse({ error: authDelErr.message }, 400, requestId);
       }
 
-      return new Response(
-        JSON.stringify({ success: true, message: "User account deleted successfully." }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      console.log(
+        `[${requestId}] User deleted: ${target_user_id} by superadmin: ${callerUser.id}`
+      );
+
+      return jsonResponse(
+        { success: true, message: "User account deleted successfully." },
+        200,
+        requestId
       );
     }
 
-    return new Response(
-      JSON.stringify({ error: `Unsupported action: ${action}` }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    return jsonResponse(
+      { error: `Unsupported action: ${action}` },
+      400,
+      requestId
     );
-
   } catch (err: any) {
-    return new Response(
-      JSON.stringify({ error: err.message || "An unexpected error occurred." }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    console.error(`[${requestId}] Superadmin manage user error:`, err);
+    return jsonResponse(
+      { error: err.message || "An unexpected error occurred." },
+      500,
+      requestId
     );
   }
 });

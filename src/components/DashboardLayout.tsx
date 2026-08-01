@@ -37,11 +37,18 @@ import {
   Package,
   Search,
   Settings,
+  Store,
+  BrainCircuit,
+  CheckCircle,
+  BookOpen
 } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle";
+import { ConnectionStatus } from "./ConnectionStatus";
+import { AICommandBar } from "./ai/AICommandBar";
 import { cn } from "@/lib/utils";
 import NotificationCenter from "./NotificationCenter";
 import Omnisearch from "./Omnisearch";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import { usePermissions, type Feature } from "@/hooks/usePermissions";
 import { useTerminology } from "@/hooks/useTerminology";
 
@@ -56,6 +63,7 @@ interface DashboardLayoutProps {
 }
 
 const navItems: { id: string; label: string; mobileLabel?: string; icon: any; feature: Feature; group: string }[] = [
+  { id: "inbox", label: "Action Inbox", icon: CheckCircle, feature: "inbox" as Feature, group: "Operations" },
   { id: "overview", label: "Overview", mobileLabel: "Home", icon: LayoutDashboard, feature: "overview", group: "Operations" },
   { id: "projects", label: "Projects", icon: Briefcase, feature: "projects", group: "Operations" },
   { id: "work-orders", label: "Work Orders", mobileLabel: "Orders", icon: ClipboardList, feature: "jobs", group: "Operations" },
@@ -75,6 +83,8 @@ const navItems: { id: string; label: string; mobileLabel?: string; icon: any; fe
   { id: "compliance", label: "Compliance", icon: FileCheck, feature: "compliance", group: "Admin & Reports" },
   { id: "reports", label: "Reports & Logs", mobileLabel: "Reports", icon: BarChart3, feature: "reports", group: "Admin & Reports" },
   { id: "tracker", label: "Tracker App", icon: Smartphone, feature: "tracker", group: "Admin & Reports" },
+  { id: "knowledge", label: "Knowledge Base", icon: BookOpen, feature: "settings" as Feature, group: "Admin & Reports" },
+  { id: "marketplace", label: "Marketplace", icon: Store, feature: "marketplace", group: "Admin & Reports" },
   { id: "settings", label: "Settings", icon: Settings, feature: "settings", group: "Admin & Reports" },
 ];
 
@@ -129,6 +139,16 @@ function SidebarContent({
 
     return true;
   });
+
+  if ((company as any)?.ai_agent_enabled) {
+    visibleNavItems.splice(visibleNavItems.findIndex(i => i.id === 'settings'), 0, {
+      id: "ai-agent",
+      label: "AI Agent",
+      icon: BrainCircuit,
+      feature: "ai-agent" as any,
+      group: "AI & Automation"
+    });
+  }
 
   // Group items dynamically for modern sidebar presentation
   const groupedNavItems = useMemo(() => {
@@ -449,6 +469,10 @@ export default function DashboardLayout({
           navigate("/change-orders");
         } else if (itemId === "compliance") {
           navigate("/compliance");
+        } else if (itemId === "marketplace") {
+          navigate("/marketplace");
+        } else if (itemId === "ai-agent") {
+          navigate("/ai-agent");
         } else if (itemId === "billing" || itemId === "settings") {
           navigate("/settings?tab=billing");
         } else if (itemId === "map") {
@@ -456,7 +480,7 @@ export default function DashboardLayout({
         } else if (itemId === "tracker") {
           navigate("/", { state: { tab: "tracker" } });
         } else {
-          navigate("/tracker");
+          navigate("/");
         }
       }
     } else {
@@ -487,6 +511,10 @@ export default function DashboardLayout({
         navigate("/estimates");
       } else if (itemId === "compliance") {
         navigate("/compliance");
+      } else if (itemId === "marketplace") {
+        navigate("/marketplace");
+      } else if (itemId === "ai-agent") {
+        navigate("/ai-agent");
       } else {
         if (location.pathname !== "/") {
           navigate("/", { state: { tab: itemId } });
@@ -579,7 +607,10 @@ export default function DashboardLayout({
             </div>
           </div>
         )}
+        <ConnectionStatus />
+        <Outlet />
         {children}
+        <AICommandBar />
       </main>
 
       {/* ═══ MOBILE: Bottom Navigation Bar (hidden in project mode — project has its own tabs) ═══ */}
