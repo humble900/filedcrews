@@ -287,9 +287,24 @@ export function InteractiveParticlesCanvas({ color = "13, 148, 136" }: Interacti
       height = canvas.height = canvas.offsetHeight;
     };
 
-    window.addEventListener("resize", handleResize);
+    let isVisible = true;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isVisible = entry.isIntersecting;
+        if (isVisible && !animationFrameId) {
+          animationFrameId = requestAnimationFrame(render);
+        }
+      },
+      { threshold: 0.05 }
+    );
+    observer.observe(canvas);
 
     const render = () => {
+      if (!isVisible) {
+        animationFrameId = 0;
+        return;
+      }
+
       ctx.clearRect(0, 0, width, height);
 
       ctx.lineWidth = 0.5;
@@ -338,7 +353,8 @@ export function InteractiveParticlesCanvas({ color = "13, 148, 136" }: Interacti
     render();
 
     return () => {
-      cancelAnimationFrame(animationFrameId);
+      observer.disconnect();
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("mousemove", handleMouseMove);
       if (parent) {
@@ -606,6 +622,8 @@ export default function LandingPage() {
                   <img
                     src="/images/hvac-security.jpg"
                     alt="HVAC & Security Technicians"
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
                   />
                 </div>
@@ -634,6 +652,8 @@ export default function LandingPage() {
                   <img
                     src="/images/electrician-panel.jpg"
                     alt="Commercial Electrician Panel Work"
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
                   />
                 </div>
@@ -662,6 +682,8 @@ export default function LandingPage() {
                   <img
                     src="/images/plumber-sink.jpg"
                     alt="Plumbing Specialist Repair"
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
                   />
                 </div>
