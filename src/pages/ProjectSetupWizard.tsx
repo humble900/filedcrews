@@ -502,7 +502,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
     };
   }, [companyAddressAutocomplete]);
 
-  // Address autocomplete for Billing Address (Step 2)
+  // Address autocomplete for Billing Address (Step 2, subStep 1)
   useEffect(() => {
     if (!placesLibrary || !addressInputRef.current) return;
 
@@ -510,7 +510,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
       fields: ["address_components", "formatted_address", "name"],
     });
     setAddressAutocomplete(ac);
-  }, [placesLibrary, step]);
+  }, [placesLibrary, step, subStep]);
 
   useEffect(() => {
     if (!addressAutocomplete) return;
@@ -536,7 +536,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
       fields: ["geometry", "formatted_address"],
     });
     setMapSearchAutocomplete(ac);
-  }, [placesLibrary, step]);
+  }, [placesLibrary, step, subStep]);
 
   useEffect(() => {
     if (!mapSearchAutocomplete) return;
