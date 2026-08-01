@@ -2614,10 +2614,10 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
         {/* Centered Minimalist Flow */}
         <div className="flex-1 flex flex-col items-center pt-8 md:pt-16 p-4 overflow-y-auto">
           {/* Progress Bar Header */}
-          <div className="w-full max-w-2xl mb-12 flex items-center justify-between">
+          <div className="w-full max-w-2xl mb-10 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src="/favicon.png" alt="Ocrem Logo" className="h-8 w-8 rounded-lg shadow-sm" />
-              <span className="text-xl font-bold tracking-tight text-slate-900">OnSite</span>
+              <img src="/favicon.png" alt="FiledCrews Logo" className="h-8 w-8 rounded-lg shadow-sm" />
+              <span className="text-xl font-black tracking-tight text-slate-900">FiledCrews</span>
             </div>
             {step > 1 && (
               <Button variant="ghost" size="sm" onClick={() => {
@@ -2626,57 +2626,49 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                 } else {
                    setStep(step - 1);
                 }
-              }} className="text-slate-500 hover:text-slate-900">
+              }} className="text-slate-500 hover:text-slate-900 font-semibold">
                 <ArrowLeft className="w-4 h-4 mr-2" /> Back
               </Button>
             )}
           </div>
           <div className="w-full max-w-2xl">
             {step <= 6 && (
-              <Card className="border-0 shadow-none bg-transparent text-slate-900">
-                <CardHeader className="pb-8">
-                  <div className="space-y-2">
-                    <div className="flex justify-end items-center text-xs font-bold font-mono text-blue-400">
+              <Card className="border border-slate-200/80 shadow-xl bg-white text-slate-900 rounded-2xl overflow-hidden">
+                <CardHeader className="pb-6 pt-8 px-6 sm:px-8 border-b border-slate-100">
+                  <div className="space-y-2.5 mb-2">
+                    <div className="flex justify-end items-center text-xs font-black font-mono text-amber-500 tracking-wider">
                       <span>
                         {Math.round(((step - (wizardMode === "new-project" ? 1 : 0)) / (wizardMode === "new-project" ? 5 : 6)) * 100)}% COMPLETE
                       </span>
                     </div>
-                    <div className="h-1.5 w-full bg-slate-950/60 rounded-full border border-slate-300/30">
+                    <div className="h-2 w-full bg-slate-100 rounded-full border border-amber-500/20 p-0.5 overflow-hidden shadow-inner">
                       <div
-                        className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-500 ease-out shadow-[0_0_10px_rgba(59,130,246,0.85)]"
+                        className="h-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-400 rounded-full transition-all duration-500 ease-out shadow-[0_0_12px_rgba(249,115,22,0.85)]"
                         style={{
                           width: `${Math.round(((step - (wizardMode === "new-project" ? 1 : 0)) / (wizardMode === "new-project" ? 5 : 6)) * 100)}%`
                         }}
                       />
                     </div>
                   </div>
+
                   {step === 1 && (
-                    <>
-                      <CardTitle className="text-2xl font-bold mt-2 text-slate-900">Welcome to FiledCrews!</CardTitle>
-                      <CardDescription className="text-slate-500 mt-1 text-sm leading-relaxed">
-                        Your company profile and prefix (<span className="font-mono text-teal-600 font-bold">@{companyPrefix || "PREFIX"}</span>) are already set up! Now, let's guide you step-by-step to onboard your first <strong>Client</strong>, <strong>Project Worksite</strong>, and <strong>Crew Member</strong>.
+                    <div className="space-y-3 pt-2">
+                      <CardTitle className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                        Welcome to FiledCrews!
+                      </CardTitle>
+                      <CardDescription className="text-slate-600 text-base leading-relaxed font-normal pt-1">
+                        Let's get your business up and running in just a few steps. We'll help you add your first customer, create your first project and worksite, and invite your first crew member so you can start managing jobs right away.
                       </CardDescription>
-                    </>
+                    </div>
                   )}
 
                   {step === 2 && (
-                    <>
-                      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-4 flex items-start gap-3">
-                        <div className="bg-blue-500 text-white p-2 rounded-lg shrink-0">
-                          <Briefcase className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-blue-900 text-sm">Phase 2: Client & Project Setup</h3>
-                          <p className="text-blue-700 text-xs mt-1">
-                            Your company profile is set! Now, let's configure your very first client and project. This will set up the workspace for your field crew to log time, parts, and job updates.
-                          </p>
-                        </div>
-                      </div>
-                      <CardTitle className="text-2xl font-bold mt-2 text-slate-900">Who is your first client?</CardTitle>
-                      <CardDescription className="text-slate-500 mt-1 text-sm leading-relaxed">
+                    <div className="space-y-2 pt-2">
+                      <CardTitle className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Who is your first client?</CardTitle>
+                      <CardDescription className="text-slate-600 text-sm leading-relaxed">
                         Enter the details of the customer or project you are managing. You'll be able to attach multiple projects, invoices, and geofences to this client later.
                       </CardDescription>
-                    </>
+                    </div>
                   )}
 
                   {step === 3 && (
@@ -3558,29 +3550,29 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
                 {/* Back and Next navigation links */}
                 {step <= 5 && (
-                  <div className="border-t border-slate-300/40 p-4 sm:p-6 bg-slate-900/20 flex justify-between items-center gap-4">
+                  <div className="border-t border-slate-100 p-4 sm:p-6 bg-slate-50/80 flex justify-between items-center gap-4 rounded-b-2xl">
                     <Button
                       variant="ghost"
                       onClick={handleBack}
-                      disabled={step === 2}
-                      className="gap-1.5 text-slate-500 hover:text-slate-900"
+                      disabled={step === 1}
+                      className="gap-1.5 text-slate-500 hover:text-slate-900 font-semibold"
                     >
                       <ArrowLeft className="h-4 w-4" /> Back
                     </Button>
                     <Button
                       onClick={handleNext}
-                      className="gap-1.5 bg-blue-600 hover:bg-blue-500 text-slate-900 px-5 sm:px-6 shadow-md"
+                      className="gap-2 bg-[#0f172a] hover:bg-[#1e293b] text-white font-extrabold px-6 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer"
                     >
                       Next <ArrowRight className="h-4 w-4" />
                     </Button>
                   </div>
                 )}
                 {step === 6 && (
-                  <div className="border-t border-slate-300/40 p-4 bg-slate-900/20 flex justify-start items-center">
+                  <div className="border-t border-slate-100 p-4 bg-slate-50/80 flex justify-start items-center rounded-b-2xl">
                     <Button
                       variant="ghost"
                       onClick={handleBack}
-                      className="gap-1.5 text-slate-500 hover:text-slate-900"
+                      className="gap-1.5 text-slate-500 hover:text-slate-900 font-semibold"
                     >
                       <ArrowLeft className="h-4 w-4" /> Back
                     </Button>
