@@ -69,22 +69,18 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {
-            if (id.includes("react") || id.includes("react-dom") || id.includes("react-router-dom")) {
-              return "vendor-react";
-            }
-            if (id.includes("@radix-ui") || id.includes("lucide-react") || id.includes("clsx") || id.includes("tailwind-merge")) {
-              return "vendor-ui";
-            }
-            if (id.includes("@supabase") || id.includes("@tanstack")) {
-              return "vendor-data";
-            }
             if (id.includes("recharts") || id.includes("three") || id.includes("@react-three")) {
               return "vendor-charts";
             }
             if (id.includes("@vis.gl") || id.includes("google.maps")) {
               return "vendor-maps";
             }
-            return "vendor-core";
+            if (id.includes("lucide-react")) {
+              return "vendor-icons";
+            }
+            if (id.includes("framer-motion")) {
+              return "vendor-motion";
+            }
           }
         }
       }
