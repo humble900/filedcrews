@@ -18,7 +18,7 @@ import SEO from "@/components/SEO";
 // Define the content for each industry
 const USE_CASES: Record<string, any> = {
   hvac: {
-    title: "How Apex HVAC Scaled to 50 Trucks Using FiledCrew Agentic",
+    title: "How Apex HVAC Scaled to 50 Trucks Using FiledCrews Agentic",
     industry: "HVAC & Cooling",
     icon: Thermometer,
     color: "text-blue-500",
@@ -31,11 +31,11 @@ const USE_CASES: Record<string, any> = {
     ],
     paragraphs: [
       "Apex HVAC was struggling with the chaotic summer rush. Dispatchers were overwhelmed, field techs were driving across town inefficiently, and paper service agreements were getting lost in the shuffle.",
-      "By switching to the platform and enabling FiledCrew Agentic, the AI began automatically routing technicians based on real-time traffic and skill-matching. A job requiring a specialized EPA certification was instantly assigned to the closest qualified tech, entirely bypassing the human bottleneck.",
+      "By switching to the platform and enabling FiledCrews Agentic, the AI began automatically routing technicians based on real-time traffic and skill-matching. A job requiring a specialized EPA certification was instantly assigned to the closest qualified tech, entirely bypassing the human bottleneck.",
       "The Customer Portal completely changed how they sell Service Agreements. Homeowners can now see their active HVAC maintenance plans in a beautiful dashboard and book their seasonal tune-ups without calling the office."
     ],
     testimonial: {
-      quote: "FiledCrew Agentic took our dispatching off autopilot and put it into hyperdrive. We've reclaimed hours of wasted driving time every single day.",
+      quote: "FiledCrews Agentic took our dispatching off autopilot and put it into hyperdrive. We've reclaimed hours of wasted driving time every single day.",
       author: "Sarah Jenkins, Operations Manager at Apex HVAC"
     }
   },
@@ -76,7 +76,7 @@ const USE_CASES: Record<string, any> = {
     paragraphs: [
       "Volt Electric handles complex commercial wiring projects and massive residential generator installs. Tracking the service history of every installed panel and generator was a nightmare using standard CRM tools.",
       "Our Visual Asset Timelines transformed their workflow. Technicians now open the app and see a beautiful, glassmorphic timeline of every repair and maintenance visit ever performed on a specific generator. They know exactly when the warranty expires and when to pitch a replacement.",
-      "With FiledCrew Agentic, electricians can dictate their highly technical job notes using voice. The AI perfectly formats the text and automatically generates a pristine invoice for the customer."
+      "With FiledCrews Agentic, electricians can dictate their highly technical job notes using voice. The AI perfectly formats the text and automatically generates a pristine invoice for the customer."
     ],
     testimonial: {
       quote: "The Asset Timelines are beautiful. We can show a customer the exact history of their 22kW generator and prove exactly why it needs a replacement.",

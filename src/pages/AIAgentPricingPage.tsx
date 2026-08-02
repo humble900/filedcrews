@@ -199,7 +199,7 @@ export default function AIAgentPricingPage() {
             <CardFooter className="p-0">
               <Button 
                 onClick={() => {
-                  const text = encodeURIComponent("Hi there! We are interested in an Enterprise Custom Plan on FiledCrew. Please connect us with an Account Manager.");
+                  const text = encodeURIComponent("Hi there! We are interested in an Enterprise Custom Plan on FiledCrews. Please connect us with an Account Manager.");
                   window.open(`https://wa.me/14094229714?text=${text}`, "_blank");
                 }}
                 className="w-full bg-cyan-700 hover:bg-cyan-800 text-white text-xs font-bold"

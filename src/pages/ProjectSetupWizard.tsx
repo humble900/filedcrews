@@ -1460,13 +1460,13 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
       }
 
       if (tier === "growth") {
-        const text = encodeURIComponent(`Hi there! I just registered ${companyName || 'our company'} on FiledCrew and would like to activate our Growth Plan ($495/mo, 10 seats). Please assist with account activation.`);
+        const text = encodeURIComponent(`Hi there! I just registered ${companyName || 'our company'} on FiledCrews and would like to activate our Growth Plan ($495/mo, 10 seats). Please assist with account activation.`);
         window.open(`https://wa.me/14094229714?text=${text}`, "_blank");
       } else if (tier === "founding_partner") {
-        const text = encodeURIComponent(`Hi there! We are interested in enrolling ${companyName || 'our company'} in the Yearly Founding Partner Charter for FiledCrew ($2,899/yr, 20 seats). Please send us details on how we can customize our 20 seats.`);
+        const text = encodeURIComponent(`Hi there! We are interested in enrolling ${companyName || 'our company'} in the Yearly Founding Partner Charter for FiledCrews ($2,899/yr, 20 seats). Please send us details on how we can customize our 20 seats.`);
         window.open(`https://wa.me/14094229714?text=${text}`, "_blank");
       } else if (tier === "enterprise") {
-        const text = encodeURIComponent(`Hi there! We are interested in an Enterprise Custom Plan for ${companyName || 'our company'} on FiledCrew. Please connect us with an Enterprise Account Manager.`);
+        const text = encodeURIComponent(`Hi there! We are interested in an Enterprise Custom Plan for ${companyName || 'our company'} on FiledCrews. Please connect us with an Enterprise Account Manager.`);
         window.open(`https://wa.me/14094229714?text=${text}`, "_blank");
       }
 
@@ -1479,8 +1479,8 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
     return (
       <>
         <SEO
-          title="Select Your Plan — FiledCrew"
-          description="Choose a subscription plan to activate your FiledCrew workspace."
+          title="Select Your Plan — FiledCrews"
+          description="Choose a subscription plan to activate your FiledCrews workspace."
           path="/wizard"
           noIndex
         />
@@ -1489,8 +1489,8 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
             {/* Sticky Header Bar */}
             <header className="bg-white border-b border-slate-100 py-4 px-6 sm:px-8 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
-                <img src="/favicon.png" alt="FiledCrew Logo" className="h-8 w-8 rounded-lg shadow-sm" />
-                <span className="text-xl font-black text-slate-900 tracking-tight">FiledCrew</span>
+                <img src="/favicon.png" alt="FiledCrews Logo" className="h-8 w-8 rounded-lg shadow-sm" />
+                <span className="text-xl font-black text-slate-900 tracking-tight">FiledCrews</span>
               </div>
               <div className="flex items-center gap-3">
                 <Button
@@ -1727,8 +1727,8 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
               <div>
                 {/* Top Logo */}
               <div className="flex items-center gap-3 mb-8">
-                <img src="/favicon.png" alt="FiledCrew Logo" className="h-8 w-8 rounded-lg shadow-sm" />
-                <span className="text-xl font-black text-white tracking-tight">FiledCrew</span>
+                <img src="/favicon.png" alt="FiledCrews Logo" className="h-8 w-8 rounded-lg shadow-sm" />
+                <span className="text-xl font-black text-white tracking-tight">FiledCrews</span>
               </div>
 
               {/* Hero Copy */}
@@ -1991,8 +1991,8 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
             {/* Mobile Nav */}
             <div className="w-full max-w-xl flex items-center justify-between mb-8 lg:hidden z-10">
               <div className="flex items-center gap-3">
-                <img src="/favicon.png" alt="FiledCrew Logo" className="h-7 w-7 rounded-lg" />
-                <span className="text-sm font-extrabold text-slate-900 tracking-tight">FiledCrew</span>
+                <img src="/favicon.png" alt="FiledCrews Logo" className="h-7 w-7 rounded-lg" />
+                <span className="text-sm font-extrabold text-slate-900 tracking-tight">FiledCrews</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="h-1.5 w-20 bg-white rounded-full border border-slate-300/30 overflow-hidden">
@@ -2709,7 +2709,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                         }
 
                         localStorage.removeItem(SANDBOX_STORAGE_KEY);
-                        toast.success("Workspace activated! Welcome to FiledCrew.");
+                        toast.success("Workspace activated! Welcome to FiledCrews.");
                         navigate("/");
                         window.location.reload();
                       } catch (err: any) {

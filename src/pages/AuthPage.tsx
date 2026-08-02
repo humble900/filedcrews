@@ -252,12 +252,12 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
     <div className="w-full animate-in fade-in zoom-in-95 duration-300">
       <div className="space-y-2 mb-10 text-center sm:text-left">
         <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
-          {mode === "signin" ? "Welcome back 👋" : "Welcome to FiledCrew 👋"}
+          {mode === "signin" ? "Welcome back 👋" : "Welcome to FiledCrews 👋"}
         </h2>
         <p className="text-slate-500 text-sm">
           {mode === "signin"
             ? "Log in to manage your field team."
-            : "Managing a field team is complex. FiledCrew makes it easy."}
+            : "Managing a field team is complex. FiledCrews makes it easy."}
         </p>
       </div>
         <AnimatePresence mode="wait">
@@ -473,8 +473,8 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
             <div>
               {/* Top Logo */}
               <div className="flex items-center gap-3 mb-8">
-                <img src="/favicon.png" alt="FiledCrew Logo" className="h-8 w-8 rounded-lg shadow-sm" />
-                <span className="text-xl font-black text-white tracking-tight">FiledCrew</span>
+                <img src="/favicon.png" alt="FiledCrews Logo" className="h-8 w-8 rounded-lg shadow-sm" />
+                <span className="text-xl font-black text-white tracking-tight">FiledCrews</span>
               </div>
 
               {/* Hero Copy */}
@@ -537,8 +537,8 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
             {/* Top Right Toggle & Mobile Brand Header */}
             <div className="w-full flex items-center justify-between lg:justify-end text-sm text-slate-600 font-medium mb-10 lg:mb-16 pr-4">
               <div className="flex items-center gap-2.5 lg:hidden">
-                <img src="/favicon.png" alt="FiledCrew Logo" className="h-7 w-7 rounded-lg shadow-sm" />
-                <span className="text-base font-black text-slate-900 tracking-tight">FiledCrew</span>
+                <img src="/favicon.png" alt="FiledCrews Logo" className="h-7 w-7 rounded-lg shadow-sm" />
+                <span className="text-base font-black text-slate-900 tracking-tight">FiledCrews</span>
               </div>
               {mode === "signin" ? (
                  <span>Don't have an account? <button onClick={() => setMode("signup")} className="text-emerald-700 font-bold hover:underline cursor-pointer bg-transparent border-none">Sign up</button></span>

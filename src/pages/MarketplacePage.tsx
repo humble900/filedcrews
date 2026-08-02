@@ -23,7 +23,7 @@ const CATEGORIES: { label: string; value: AppCategory }[] = [
 ];
 
 const APP_DIRECTORY = [
-  { id: "ai_agent", name: "FiledCrew AI Agent", category: "ai", description: "Your autonomous AI coworker. Auto-dispatch, smart scheduling, natural language commands, and intelligent field operations automation.", logo: "/ai-agent-logo.jpg", status: "disconnected" as const },
+  { id: "ai_agent", name: "FiledCrews AI Agent", category: "ai", description: "Your autonomous AI coworker. Auto-dispatch, smart scheduling, natural language commands, and intelligent field operations automation.", logo: "/ai-agent-logo.jpg", status: "disconnected" as const },
   { id: "qbo", name: "QuickBooks Online", category: "accounting", description: "Two-way sync for invoices, payments, and customers.", icon: BarChart3, status: "disconnected" as const },
   { id: "xero", name: "Xero", category: "accounting", description: "Seamless accounting ledger synchronization.", icon: BarChart3, status: "disconnected" as const },
   { id: "ferguson", name: "Ferguson Supply", category: "supply_house", description: "Live catalog pricing and PO generation.", icon: Box, status: "coming_soon" as const },

@@ -74,7 +74,7 @@ export default function AIAgentProductPage() {
   return (
     <DashboardLayout activeTab="marketplace">
       <SEO 
-        title="FiledCrew AI Agent | Marketplace" 
+        title="FiledCrews AI Agent | Marketplace" 
         description="Your autonomous AI coworker for field operations." 
       />
       
@@ -103,7 +103,7 @@ export default function AIAgentProductPage() {
           <div className="flex-1">
             <div className="flex items-center gap-4 mb-2">
               <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900">
-                FiledCrew AI Agent
+                FiledCrews AI Agent
               </h1>
               {isAgentEnabled && (
                 <Badge className="bg-emerald-500 hover:bg-emerald-600 px-2.5 py-0.5 text-sm">
@@ -191,10 +191,10 @@ export default function AIAgentProductPage() {
             <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-8 flex flex-col items-center text-center max-w-2xl mx-auto shadow-sm">
               <h3 className="text-2xl font-bold text-slate-900 mb-3">Ready to automate your operations?</h3>
               <p className="text-slate-600 mb-8 text-lg max-w-md">
-                Activate the FiledCrew AI Agent add-on and start transforming how you manage your field teams.
+                Activate the FiledCrews AI Agent add-on and start transforming how you manage your field teams.
               </p>
               <Button onClick={() => navigate('/marketplace/ai-agent/terms')} size="lg" className="bg-blue-600 hover:bg-blue-700 h-12 px-8 text-base">
-                Activate FiledCrew AI Agent <ArrowRight className="ml-2 h-5 w-5" />
+                Activate FiledCrews AI Agent <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
           ) : (

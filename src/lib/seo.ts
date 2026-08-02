@@ -7,7 +7,7 @@
  * Example: VITE_SITE_URL=https://yourdomain.com
  */
 export const SITE_URL =
-  import.meta.env.VITE_SITE_URL || "https://staff-tracker-buddy.lovable.app";
+  import.meta.env.VITE_SITE_URL || "https://filedcrews.com";
 
 export const SITE_NAME = "FiledCrews";
 

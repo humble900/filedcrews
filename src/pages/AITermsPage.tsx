@@ -50,7 +50,7 @@ export default function AITermsPage() {
 
   return (
     <DashboardLayout activeTab="marketplace">
-      <SEO title="AI Agent Terms of Use | FiledCrew" />
+      <SEO title="AI Agent Terms of Use | FiledCrews" />
 
       <div className="mx-auto max-w-3xl px-4 py-8 pb-32">
         <div className="mb-8">
@@ -68,7 +68,7 @@ export default function AITermsPage() {
             <Bot className="h-6 w-6 text-blue-600" />
           </div>
           <h1 className="mb-2 text-3xl font-bold tracking-tight text-slate-900">
-            FiledCrew AI Agent — Terms of Use
+            FiledCrews AI Agent — Terms of Use
           </h1>
           <p className="text-sm text-slate-500">
             Effective Date: July 25, 2026 · Last Updated: July 25, 2026
@@ -81,10 +81,10 @@ export default function AITermsPage() {
               1. Service Description
             </h2>
             <p>
-              The FiledCrew AI Agent is an AI-powered operational assistant utilizing
+              The FiledCrews AI Agent is an AI-powered operational assistant utilizing
               third-party Large Language Model (LLM) providers. It is designed to
               assist with scheduling, dispatch, invoicing, estimating, and other
-              operational tasks within the FiledCrew platform. The AI Agent is NOT a
+              operational tasks within the FiledCrews platform. The AI Agent is NOT a
               replacement for human judgment, oversight, or decision-making.
             </p>
           </section>
@@ -99,7 +99,7 @@ export default function AITermsPage() {
               Anthropic). All API usage costs incurred from these providers are the
               sole responsibility of the User. Users must comply with their chosen
               LLM provider's terms of service and acceptable use policies. API keys
-              are stored securely and encrypted by FiledCrew.
+              are stored securely and encrypted by FiledCrews.
             </p>
           </section>
 
@@ -135,7 +135,7 @@ export default function AITermsPage() {
               5. Indemnification
             </h2>
             <p>
-              You agree to indemnify and hold harmless FiledCrew, its officers,
+              You agree to indemnify and hold harmless FiledCrews, its officers,
               directors, employees, and agents from any and all claims, liabilities,
               damages, and expenses (including legal fees) arising from your use of
               the AI Agent, misuse, failure to review AI outputs, violations of LLM
@@ -154,7 +154,7 @@ export default function AITermsPage() {
               operational data) to the third-party LLM provider associated with your
               API key. You are solely responsible for ensuring your use of the AI
               Agent complies with applicable privacy regulations (such as GDPR or
-              CCPA). FiledCrew does not use your operational data or API inputs to
+              CCPA). FiledCrews does not use your operational data or API inputs to
               train proprietary or third-party AI models.
             </p>
           </section>
@@ -177,7 +177,7 @@ export default function AITermsPage() {
             <p>
               The AI Agent is provided on an "as is" and "as available" basis.
               Performance is highly dependent on the availability and responsiveness
-              of your chosen LLM provider. FiledCrew reserves the right to modify,
+              of your chosen LLM provider. FiledCrews reserves the right to modify,
               suspend, or discontinue the AI Agent functionality at any time.
             </p>
           </section>
@@ -188,7 +188,7 @@ export default function AITermsPage() {
             </h2>
             <p>
               Users may deactivate the AI Agent at any time from their account
-              settings. FiledCrew reserves the right to suspend or terminate your
+              settings. FiledCrews reserves the right to suspend or terminate your
               access to the AI Agent immediately if a violation of these terms is
               suspected. In the event of a subscription downgrade, your AI
               configuration will be preserved for 90 days before permanent deletion.
@@ -200,7 +200,7 @@ export default function AITermsPage() {
               10. Amendments
             </h2>
             <p>
-              FiledCrew may update these Terms of Use at any time. Continued use of
+              FiledCrews may update these Terms of Use at any time. Continued use of
               the AI Agent after such modifications constitutes your acceptance of the
               revised terms.
             </p>
@@ -244,7 +244,7 @@ export default function AITermsPage() {
               htmlFor="accept-terms"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
-              I have read and agree to the FiledCrew AI Agent Terms of Use
+              I have read and agree to the FiledCrews AI Agent Terms of Use
             </Label>
           </div>
           <Button
