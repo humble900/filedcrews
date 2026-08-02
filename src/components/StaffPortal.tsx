@@ -95,7 +95,7 @@ function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number)
 export default function StaffPortal({ staffProfile, company, onSignOut }: StaffPortalProps) {
   const { isTrialExpired } = useAuth();
   const queryClient = useQueryClient();
-  const apkDownloadUrl = "/downloads/Ocrem.apk";
+  const apkDownloadUrl = "/downloads/FiledCrews.apk";
   const { processJobCompletion } = useReputationEngine(staffProfile.company_id);
 
   const [activeTab, setActiveTab] = useState<MobileTab>("tasks");
@@ -1177,7 +1177,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
               {isOfflineMode ? <WifiOff className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
               {isOfflineMode ? "Offline" : "Online"}
             </Button>
-            <img src="/favicon.png" alt="Ocrem" className="h-7 w-7 rounded-lg opacity-70" />
+            <img src="/favicon.png" alt="FiledCrews" className="h-7 w-7 rounded-lg opacity-70" />
           </div>
         </div>
 

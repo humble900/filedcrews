@@ -169,7 +169,7 @@ export default function GeofenceHistory({ companyId, projectId }: GeofenceHistor
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Ocrem_Logs_${format(new Date(), "yyyyMMdd_HHmmss")}.csv`);
+    link.setAttribute("download", `FiledCrews_Logs_${format(new Date(), "yyyyMMdd_HHmmss")}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

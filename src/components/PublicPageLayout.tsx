@@ -20,7 +20,7 @@ export default function PublicPageLayout({ children }: PublicPageLayoutProps) {
       <header className="border-b border-border bg-card">
         <div className="max-w-4xl mx-auto flex items-center justify-between px-6 py-4">
           <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <img src="/favicon.png" alt="Ocrem" className="h-7 w-7 rounded-lg" />
+            <img src="/favicon.png" alt="FiledCrews" className="h-7 w-7 rounded-lg" />
             <span className="text-lg font-bold text-foreground">FiledCrews</span>
           </Link>
           <nav className="hidden sm:flex items-center gap-6 text-sm">
@@ -41,7 +41,7 @@ export default function PublicPageLayout({ children }: PublicPageLayoutProps) {
         <div className="max-w-4xl mx-auto px-6 py-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <img src="/favicon.png" alt="Ocrem" className="h-5 w-5 rounded-md" />
+              <img src="/favicon.png" alt="FiledCrews" className="h-5 w-5 rounded-md" />
               <span className="font-semibold text-sm text-foreground">FiledCrews</span>
             </div>
             <nav className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm">

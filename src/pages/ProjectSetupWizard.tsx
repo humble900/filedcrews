@@ -55,7 +55,7 @@ import { toast } from "sonner";
 import SEO from "@/components/SEO";
 
 // Local storage key for pre-auth sandbox setup
-const SANDBOX_STORAGE_KEY = "ocrem_sandbox_onboarding";
+const SANDBOX_STORAGE_KEY = "filedcrews_sandbox_onboarding";
 
 // Standard Map styling constants
 const CLEAN_MAP_ID = "f3ab175d00da0a6b6e36641d";
@@ -1230,7 +1230,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
   };
 
   const handleCopyApkLink = () => {
-    const apkUrl = `${window.location.origin}/downloads/Ocrem.apk`;
+    const apkUrl = `${window.location.origin}/downloads/FiledCrews.apk`;
     navigator.clipboard.writeText(apkUrl);
     setCopiedLink(true);
     toast.success("App download link copied!");
@@ -1239,7 +1239,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
   const handleCopyCredentials = () => {
     const formattedUsername = `@${(companyPrefix + staffUsernameSuffix).toUpperCase()}`;
-    const text = `App Login Credentials:\nUsername: ${formattedUsername}\nPassword: ${staffPassword}\n\nDownload Link: ${window.location.origin}/downloads/Ocrem.apk`;
+    const text = `App Login Credentials:\nUsername: ${formattedUsername}\nPassword: ${staffPassword}\n\nDownload Link: ${window.location.origin}/downloads/FiledCrews.apk`;
     navigator.clipboard.writeText(text);
     setCopiedCreds(true);
     toast.success("Credentials copied!");
@@ -3870,7 +3870,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                       {/* WhatsApp */}
                       <a
                         href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                          `Hi ${staffName}, here are your login credentials for FiledCrews:\n\nUsername: ${formattedStaffUsername}\nPassword: ${staffPassword}\n\nDownload Link: ${window.location.origin}/downloads/Ocrem.apk`
+                          `Hi ${staffName}, here are your login credentials for FiledCrews:\n\nUsername: ${formattedStaffUsername}\nPassword: ${staffPassword}\n\nDownload Link: ${window.location.origin}/downloads/FiledCrews.apk`
                         )}`}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -3888,7 +3888,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
                       {/* Telegram */}
                       <a
-                        href={`https://t.me/share/url?url=${encodeURIComponent(window.location.origin + "/downloads/Ocrem.apk")}&text=${encodeURIComponent(
+                        href={`https://t.me/share/url?url=${encodeURIComponent(window.location.origin + "/downloads/FiledCrews.apk")}&text=${encodeURIComponent(
                           `Hi ${staffName}, here are your credentials for FiledCrews:\n\nUsername: ${formattedStaffUsername}\nPassword: ${staffPassword}`
                         )}`}
                         target="_blank"
@@ -3910,7 +3910,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                         href={`mailto:?subject=${encodeURIComponent(
                           "FiledCrews Login Credentials"
                         )}&body=${encodeURIComponent(
-                          `Hi ${staffName},\n\nHere are your login credentials for the FiledCrews app:\n\nUsername: ${formattedStaffUsername}\nPassword: ${staffPassword}\n\nDownload and install the app package here: ${window.location.origin}/downloads/Ocrem.apk\n\nBest regards,\nYour Operations Manager`
+                          `Hi ${staffName},\n\nHere are your login credentials for the FiledCrews app:\n\nUsername: ${formattedStaffUsername}\nPassword: ${staffPassword}\n\nDownload and install the app package here: ${window.location.origin}/downloads/FiledCrews.apk\n\nBest regards,\nYour Operations Manager`
                         )}`}
                         className="w-full"
                       >
@@ -3929,7 +3929,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                         variant="outline"
                         size="sm"
                         onClick={async () => {
-                          const text = `Hi ${staffName}, here are your login credentials for FiledCrews:\n\nUsername: ${formattedStaffUsername}\nPassword: ${staffPassword}\n\nDownload Link: ${window.location.origin}/downloads/Ocrem.apk`;
+                          const text = `Hi ${staffName}, here are your login credentials for FiledCrews:\n\nUsername: ${formattedStaffUsername}\nPassword: ${staffPassword}\n\nDownload Link: ${window.location.origin}/downloads/FiledCrews.apk`;
                           if (navigator.share) {
                             try {
                               await navigator.share({
@@ -3978,7 +3978,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                     </div>
                     <div className="flex flex-col items-center justify-center p-2 bg-white rounded-lg w-fit mx-auto">
                       <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(window.location.origin + "/downloads/Ocrem.apk")}`}
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(window.location.origin + "/downloads/FiledCrews.apk")}`}
                         alt="Download APK QR Code"
                         className="h-[130px] w-[130px]"
                       />

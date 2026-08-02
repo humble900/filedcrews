@@ -200,11 +200,11 @@ function SidebarContent({
         <div className="flex items-center justify-between gap-2">
           {!isCollapsed ? (
             <div className="flex items-center gap-2 truncate">
-              <img src="/favicon.png" alt="Ocrem" className="h-7 w-7 rounded-lg shrink-0" />
+              <img src="/favicon.png" alt="FiledCrews" className="h-7 w-7 rounded-lg shrink-0" />
               <span className="text-sm font-bold text-white truncate">FiledCrews</span>
             </div>
           ) : (
-            <img src="/favicon.png" alt="Ocrem" className="h-7 w-7 rounded-lg mx-auto shrink-0" />
+            <img src="/favicon.png" alt="FiledCrews" className="h-7 w-7 rounded-lg mx-auto shrink-0" />
           )}
           {!isCollapsed && companyId && <NotificationCenter companyId={companyId} />}
         </div>
@@ -545,7 +545,7 @@ export default function DashboardLayout({
       {/* ═══ MOBILE: Compact Top Header (always visible) ═══ */}
       <header className="md:hidden glass-header sticky top-0 z-40 flex items-center justify-between px-3 py-2.5 safe-top">
         <div className="flex items-center gap-2">
-          <img src="/favicon.png" alt="Ocrem" className="h-7 w-7 rounded-lg" />
+          <img src="/favicon.png" alt="FiledCrews" className="h-7 w-7 rounded-lg" />
           <div>
             <span className="font-bold text-xs leading-tight block">{companyName}</span>
             <span className="text-[9px] text-muted-foreground font-semibold">FiledCrews</span>
