@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/table";
 import {
   CreditCard, Crown, CheckCircle, AlertTriangle, Loader2, Users, Building,
-  Lock, Puzzle, Code, Clock, Plug, BrainCircuit, User, Key, Zap, ShieldCheck, MessageSquare, Trash2, Megaphone, Download,
+  Lock, Puzzle, Code, Clock, Plug, BrainCircuit, User, Key, Zap, ShieldCheck, MessageSquare, Trash2, Megaphone, Download, Bot,
 } from "lucide-react";
 import { format } from "date-fns";
 
