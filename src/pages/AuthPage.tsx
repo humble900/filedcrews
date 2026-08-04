@@ -4,12 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Eye, EyeOff, Mail, ArrowLeft, CheckCircle2, Lock, Shield, User, MapPin, Users } from "lucide-react";
+import { Eye, EyeOff, Mail, ArrowLeft, CheckCircle2, Lock, Shield, User, MapPin, Users, Smartphone, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { useAuth } from "@/hooks/useAuth";
+import MobileOnboardingModal from "@/components/MobileOnboardingModal";
 
 interface AuthPageProps {
   onSignIn: (email: string, password: string) => Promise<{ error: any }>;
@@ -25,6 +26,9 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>(
     searchParams.get("tab") === "signup" ? "signup" : "signin"
+  );
+  const [showOnboardingGuide, setShowOnboardingGuide] = useState(
+    searchParams.get("guide") === "true"
   );
 
   useEffect(() => {

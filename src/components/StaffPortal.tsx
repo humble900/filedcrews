@@ -40,6 +40,7 @@ import {
   Bold,
   Italic,
   List,
+  HelpCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -51,6 +52,7 @@ import InteractiveSpreadsheet from "./InteractiveSpreadsheet";
 import { AICopilotButton } from "./AICopilotButton";
 import { EquipmentScanner } from "./EquipmentScanner";
 import { ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import MobileOnboardingModal from "./MobileOnboardingModal";
 
 interface StaffProfile {
   id: string;
@@ -104,6 +106,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
   const [selectedDoc, setSelectedDoc] = useState<any | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [showMobileGuide, setShowMobileGuide] = useState(false);
 
   // Task detail sheet state
   const [selectedTask, setSelectedTask] = useState<any | null>(null);
@@ -1203,6 +1206,15 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
           </div>
           <div className="flex items-center gap-2">
             <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowMobileGuide(true)}
+              className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-lg shrink-0"
+              title="Mobile App & Sole Trader Guide"
+            >
+              <HelpCircle className="h-4 w-4" />
+            </Button>
+            <Button
               variant={isOfflineMode ? "destructive" : "outline"}
               className="h-7 text-[10px] font-bold gap-1 px-2 border-dashed pointer-events-none"
               size="sm"
@@ -1937,6 +1949,27 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
                   Set Up PIN
                 </Button>
               )}
+            </div>
+
+            {/* Mobile Onboarding Guide */}
+            <div className="p-4 rounded-xl border bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-card border-teal-500/30 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Smartphone className="h-4 w-4 text-teal-500" />
+                  <span className="font-bold text-sm">Mobile Onboarding & Guide</span>
+                </div>
+                <Badge className="bg-teal-500/15 text-teal-600 border-teal-500/30 text-[10px] font-bold">Interactive</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Explore how the mobile app connects to web dashboard, industry vertical workflows, and sole trader setup.
+              </p>
+              <Button
+                size="sm"
+                onClick={() => setShowMobileGuide(true)}
+                className="w-full h-9 text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white gap-1.5"
+              >
+                <HelpCircle className="h-3.5 w-3.5" /> Open Mobile Guide
+              </Button>
             </div>
 
             {/* File Incident Report */}
@@ -2784,6 +2817,12 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
           </div>
         </nav>
       )}
+
+      {/* ═══ MOBILE ONBOARDING GUIDE MODAL ═══ */}
+      <MobileOnboardingModal
+        isOpen={showMobileGuide}
+        onClose={() => setShowMobileGuide(false)}
+      />
     </div>
   );
 

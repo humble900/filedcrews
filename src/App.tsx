@@ -53,6 +53,7 @@ const AITermsPage = lazy(() => import("./pages/AITermsPage"));
 const AIAgentPage = lazy(() => import("./pages/AIAgentPage"));
 const ActionInboxPage = lazy(() => import("./pages/ActionInboxPage"));
 const KnowledgeBasePage = lazy(() => import("./pages/KnowledgeBasePage"));
+const MobileWelcomePage = lazy(() => import("./pages/MobileWelcomePage"));
 
 // ─── Page loading fallback ─────────────────────────────────────────
 function PageSkeleton() {
@@ -219,6 +220,8 @@ const App = () => (
               
               {/* Product/Marketing Pages */}
               <Route path="/use-cases/:industry" element={<UseCasePage />} />
+              <Route path="/mobile-welcome" element={<MobileWelcomePage />} />
+              <Route path="/mobile-guide" element={<MobileWelcomePage />} />
 
               <Route path="/book/:prefix" element={<OnlineBookingPage />} />
               <Route path="/affiliates" element={<AffiliatePortal />} />
