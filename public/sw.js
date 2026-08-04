@@ -35,6 +35,9 @@ self.addEventListener('activate', (event) => {
 
 // Fetch Event - Network First with Cache Fallback for Offline Resilience
 self.addEventListener('fetch', (event) => {
+  // Do not intercept localhost dev server requests
+  if (self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1') return;
+
   // Only intercept GET requests
   if (event.request.method !== 'GET') return;
 

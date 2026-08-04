@@ -14,7 +14,7 @@ const Index = () => {
   return (
     <>
       <SEO
-        title="FiledCrews — Sign In or Create Account"
+        title="Sign In or Create Account"
         description="Sign in to your FiledCrews dashboard or create a new account."
         path="/auth"
       />

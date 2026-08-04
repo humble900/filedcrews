@@ -150,8 +150,18 @@ export function usePermissions() {
     getPermission(feature) === true;
 
   /** Calculated seat quotas for current company tier */
-  const maxAdminSeats = company?.max_admin_seats ?? (tier === 'growth' ? 3 : (isFoundingPartner ? 5 : (tier === 'enterprise' ? 50 : 1)));
-  const maxFieldCrewSeats = company?.max_field_crew_seats ?? (tier === 'growth' ? 7 : (isFoundingPartner ? 15 : (tier === 'enterprise' ? 100 : 2)));
+  const isFreeTrial = tier === 'free_trial' || tier === 'Free';
+  const rawMaxAdmin = company?.max_admin_seats;
+  const rawMaxCrew = company?.max_field_crew_seats;
+
+  // Strict tier-based seat allocation (Free Trial = 1 Admin, 2 Field Crew)
+  const maxAdminSeats = isFreeTrial
+    ? 1
+    : (rawMaxAdmin ?? (tier === 'growth' ? 3 : (isFoundingPartner ? 20 : (tier === 'enterprise' ? 50 : 1))));
+
+  const maxFieldCrewSeats = isFreeTrial
+    ? 2
+    : (rawMaxCrew ?? (tier === 'growth' ? 7 : (isFoundingPartner ? 20 : (tier === 'enterprise' ? 100 : 2))));
 
   /**
    * Whether this user can access the admin dashboard (DashboardLayout)

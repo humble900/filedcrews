@@ -508,15 +508,16 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
     // Check seat limits (Enforced for all tiers based on DB quota or plan tier fallback)
     const tier = company?.subscription_tier || "free_trial";
     const isFP = tier === "founding_partner" || tier === "Founding Partner";
+    const isFreeTrial = tier === "free_trial" || tier === "Free";
     if (newStaffRole === "Field Crew") {
-      const maxFieldCrew = company?.max_field_crew_seats ?? (tier === "growth" ? 7 : (isFP ? 15 : (tier === "enterprise" ? 100 : 2)));
+      const maxFieldCrew = isFreeTrial ? 2 : (company?.max_field_crew_seats ?? (tier === "growth" ? 7 : (isFP ? 20 : (tier === "enterprise" ? 100 : 2))));
       if (activeFieldCrew >= maxFieldCrew) {
         setLimitWarningRole("Field Crew");
         setShowLimitWarning(true);
         return;
       }
     } else {
-      const maxAdmins = company?.max_admin_seats ?? (tier === "growth" ? 3 : (isFP ? 5 : (tier === "enterprise" ? 50 : 1)));
+      const maxAdmins = isFreeTrial ? 1 : (company?.max_admin_seats ?? (tier === "growth" ? 3 : (isFP ? 20 : (tier === "enterprise" ? 50 : 1))));
       if (activeAdmins >= maxAdmins) {
         setLimitWarningRole("Office Seat");
         setShowLimitWarning(true);

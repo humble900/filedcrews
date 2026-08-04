@@ -9,7 +9,7 @@ export default function TermsOfService() {
     <PublicPageLayout>
       <SEO
         title="Terms of Service"
-        description="Terms of Service for FiledCrews — mobile app and admin dashboard."
+        description="Terms of Service for FiledCrews mobile app and admin dashboard."
         path="/terms"
       />
       <article className="prose prose-sm sm:prose max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground/90 prose-li:text-foreground/90 prose-strong:text-foreground prose-a:text-primary">

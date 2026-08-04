@@ -40,7 +40,7 @@ export default function About() {
   return (
     <PublicPageLayout>
       <SEO
-        title="About — How It Works"
+        title="About FiledCrews"
         description="Learn how FiledCrews connects the mobile app for field staff with the admin dashboard for supervisors."
         path="/about"
       />

@@ -844,7 +844,7 @@ export default function ProjectDetailWorkspace() {
   return (
     <>
       <SEO
-        title={`${project.name} — Project Workspace`}
+        title={`${project.name} | Project Workspace`}
         description={`Manage all aspects of ${project.name} from one central workspace.`}
         path={`/projects/${id}`}
         noIndex

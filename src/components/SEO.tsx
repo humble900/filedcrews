@@ -13,8 +13,8 @@ interface SEOProps {
 const SEO = ({ title, description, path, noIndex = false, ogImage, ogImageAlt }: SEOProps) => {
   const canonical = `${SITE_URL}${path}`;
   const image = ogImage || DEFAULT_OG_IMAGE;
-  const fullTitle = path === "/" ? title : `${title} — ${SITE_NAME}`;
-  const imageAlt = ogImageAlt || `${fullTitle} — ${SITE_NAME}`;
+  const fullTitle = path === "/" ? title : `${title} | ${SITE_NAME}`;
+  const imageAlt = ogImageAlt || `${fullTitle} | ${SITE_NAME}`;
 
   return (
     <Helmet>

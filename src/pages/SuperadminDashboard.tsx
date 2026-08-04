@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PaginatedTableFull } from "@/components/PaginatedTable";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,14 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import {
   Table,
   TableBody,
@@ -62,6 +71,24 @@ import {
   CalendarDays,
   AlertTriangle,
   BarChart3,
+  Crown,
+  MessageSquare,
+  Filter,
+  Layers,
+  Sparkles,
+  ShieldAlert,
+  PieChart,
+  Zap,
+  Radio,
+  FileText,
+  SlidersHorizontal,
+  Info,
+  CheckCircle2,
+  Briefcase,
+  MapPin,
+  Coins,
+  ChevronRight,
+  Flame,
 } from "lucide-react";
 import { format } from "date-fns";
 import { Link, Navigate } from "react-router-dom";
@@ -78,7 +105,14 @@ interface Company {
   subscription_status: string;
   max_field_crew_seats: number;
   max_admin_seats: number;
-  staff_profiles: { count: number }[];
+  address?: string | null;
+  annual_revenue?: string | null;
+  currency?: string | null;
+  enabled_modules?: any;
+  industry?: string | null;
+  staff_count?: string | null;
+  website?: string | null;
+  staff_profiles?: any[];
 }
 
 interface PlatformAdmin {
@@ -107,9 +141,14 @@ export default function SuperadminDashboard() {
   const [isSuperadmin, setIsSuperadmin] = useState<boolean | null>(null);
   const [checkingAdmin, setCheckingAdmin] = useState(true);
 
-  // Search terms
+  // Search & Filter terms
   const [companySearch, setCompanySearch] = useState("");
   const [userSearch, setUserSearch] = useState("");
+  const [companyTierFilter, setCompanyTierFilter] = useState<"all" | "council" | "paid" | "trial" | "pending">("all");
+
+  // 360° Company Inspector Drawer State
+  const [selectedCompany360, setSelectedCompany360] = useState<Company | null>(null);
+  const [drawerTab, setDrawerTab] = useState<"profile" | "roster" | "modules">("profile");
 
   // Edit Subscription Modal States
   const [editingCompanyId, setEditingCompanyId] = useState<string | null>(null);
@@ -352,8 +391,8 @@ export default function SuperadminDashboard() {
         .update({
           subscription_status: "active",
           subscription_tier: "Founding Partner",
-          max_admin_seats: 5,
-          max_field_crew_seats: 15
+          max_admin_seats: 20,
+          max_field_crew_seats: 20
         })
         .eq("id", companyId);
       if (error) throw error;
@@ -383,14 +422,21 @@ export default function SuperadminDashboard() {
           subscription_status,
           max_admin_seats,
           max_field_crew_seats,
-          staff_profiles(count)
+          address,
+          annual_revenue,
+          currency,
+          enabled_modules,
+          industry,
+          staff_count,
+          website,
+          staff_profiles(*)
         `)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return (data || []).map((c: any) => ({
         ...c,
-        staff_profiles: Array.isArray(c.staff_profiles) ? c.staff_profiles : [{ count: 0 }],
+        staff_profiles: Array.isArray(c.staff_profiles) ? c.staff_profiles : [],
       })) as Company[];
     },
     enabled: !!isSuperadmin,
@@ -636,11 +682,54 @@ export default function SuperadminDashboard() {
     },
   });
 
-  // Filtered lists
-  const filteredCompanies = companies.filter((c) =>
-    c.name.toLowerCase().includes(companySearch.toLowerCase()) ||
-    c.prefix.toLowerCase().includes(companySearch.toLowerCase())
+  // Computed Financial & Segmentation Metrics
+  const councilCompanies = companies.filter((c) =>
+    c.subscription_tier === "Founding Partner" || c.subscription_tier === "founding_partner"
   );
+  const paidCompanies = companies.filter((c) =>
+    c.subscription_tier !== "free_trial" && c.subscription_tier !== "Free"
+  );
+  const trialCompanies = companies.filter((c) =>
+    c.subscription_tier === "free_trial" || c.subscription_tier === "Free"
+  );
+  const pendingCompanies = companies.filter((c) =>
+    c.subscription_status === "pending_approval"
+  );
+
+  const estimatedMRR = companies.reduce((acc, c) => {
+    const tier = c.subscription_tier;
+    if (tier === "Founding Partner" || tier === "founding_partner") return acc + 241.58;
+    if (tier === "growth") return acc + 495;
+    if (tier === "enterprise") return acc + 1200;
+    return acc;
+  }, 0);
+
+  const estimatedARR = estimatedMRR * 12;
+
+  // Filtered lists
+  const filteredCompanies = companies.filter((c) => {
+    const matchesSearch =
+      c.name.toLowerCase().includes(companySearch.toLowerCase()) ||
+      c.prefix.toLowerCase().includes(companySearch.toLowerCase()) ||
+      (c.industry || "").toLowerCase().includes(companySearch.toLowerCase()) ||
+      (c.auth_user_id || "").toLowerCase().includes(companySearch.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    if (companyTierFilter === "council") {
+      return c.subscription_tier === "Founding Partner" || c.subscription_tier === "founding_partner";
+    }
+    if (companyTierFilter === "paid") {
+      return c.subscription_tier !== "free_trial" && c.subscription_tier !== "Free";
+    }
+    if (companyTierFilter === "trial") {
+      return c.subscription_tier === "free_trial" || c.subscription_tier === "Free";
+    }
+    if (companyTierFilter === "pending") {
+      return c.subscription_status === "pending_approval";
+    }
+    return true;
+  });
 
   const filteredUsers = platformUsers.filter((u) =>
     u.full_name.toLowerCase().includes(userSearch.toLowerCase()) ||
@@ -664,11 +753,11 @@ export default function SuperadminDashboard() {
     <div className="min-h-screen bg-muted/10 flex flex-col font-sans">
       {/* Header */}
       <header className="border-b bg-background px-6 py-4 flex items-center justify-between shadow-sm z-10">
-        <div className="flex items-center gap-2">
-          <Building2 className="h-6 w-6 text-primary animate-pulse" />
-          <span className="font-extrabold text-xl tracking-tight text-foreground">OnSite SaaS Superadmin</span>
-          <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 ml-2">
-            Superuser operations
+        <div className="flex items-center gap-3">
+          <img src="/favicon.png" alt="FiledCrews" className="h-8 w-8 rounded-lg shadow-sm" />
+          <span className="font-extrabold text-xl tracking-tight text-foreground">FiledCrews Control Plane</span>
+          <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 ml-1 text-[10px] font-bold uppercase tracking-wider">
+            Superadmin
           </Badge>
         </div>
         <div className="flex items-center gap-4">
@@ -686,19 +775,19 @@ export default function SuperadminDashboard() {
       <main className="flex-1 p-4 sm:p-6 md:p-8 max-w-7xl w-full mx-auto space-y-6">
         <div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
-            SaaS Platform Analytics & Management
+            FiledCrews Platform Intelligence
           </h2>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Admin console for monitoring tenants, user credentials, active configurations, and platform controls.
+            Enterprise control plane for monitoring tenants, subscriptions, workforce capacity, and platform operations.
           </p>
         </div>
 
-        {/* Global Statistics Cards */}
+        {/* Global Statistics & Telemetry Bar (2026 Enterprise Console Design) */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-border/50 shadow-sm bg-card hover:shadow-md transition-shadow">
+          <Card className="border-border/60 shadow-sm bg-card hover:shadow-md transition-all relative overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-semibold uppercase text-muted-foreground">Total Tenancies</CardTitle>
-              <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+              <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total Tenancies</CardTitle>
+              <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
                 <Building2 className="h-4 w-4" />
               </div>
             </CardHeader>
@@ -706,15 +795,74 @@ export default function SuperadminDashboard() {
               {isLoadingStats ? (
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               ) : (
-                <div className="text-3xl font-black text-foreground">{stats?.companies}</div>
+                <div>
+                  <div className="text-3xl font-extrabold text-foreground tracking-tight">{stats?.companies}</div>
+                  <div className="flex items-center gap-2 mt-2 text-[11px] font-medium text-muted-foreground">
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">{paidCompanies.length} Paid</span>
+                    <span>·</span>
+                    <span>{trialCompanies.length} Trial</span>
+                    {pendingCompanies.length > 0 && (
+                      <>
+                        <span>·</span>
+                        <span className="text-amber-600 dark:text-amber-400 font-bold">{pendingCompanies.length} Waitlist</span>
+                      </>
+                    )}
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>
 
-          <Card className="border-border/50 shadow-sm bg-card hover:shadow-md transition-shadow">
+          <Card className="border-border/60 shadow-sm bg-card hover:shadow-md transition-all relative overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-semibold uppercase text-muted-foreground">Total Crew profiles</CardTitle>
-              <div className="p-2 rounded-lg bg-purple-500/10 text-purple-500">
+              <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Est. Platform MRR / ARR</CardTitle>
+              <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <DollarSign className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoadingStats ? (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : (
+                <div>
+                  <div className="text-3xl font-extrabold text-foreground tracking-tight">${Math.round(estimatedMRR).toLocaleString()}<span className="text-xs font-normal text-muted-foreground">/mo</span></div>
+                  <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
+                    <TrendingUp className="h-3 w-3" /> ARR: ${Math.round(estimatedARR).toLocaleString()}/yr
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/[0.04] via-card to-card shadow-sm hover:shadow-md transition-all relative overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300">Founding Partner Council</CardTitle>
+              <div className="p-2 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                <Crown className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoadingStats ? (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : (
+                <div>
+                  <div className="text-3xl font-extrabold text-foreground tracking-tight flex items-baseline gap-1">
+                    <span>{councilCompanies.length}</span>
+                    <span className="text-xs font-semibold text-muted-foreground">/ 20 Slots</span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden mt-2">
+                    <div className="h-full bg-amber-500 rounded-full transition-all duration-500" style={{ width: `${(councilCompanies.length / 20) * 100}%` }} />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1 font-medium">{20 - councilCompanies.length} Council seats available</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/60 shadow-sm bg-card hover:shadow-md transition-all relative overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total Workforce</CardTitle>
+              <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
                 <Users className="h-4 w-4" />
               </div>
             </CardHeader>
@@ -722,39 +870,12 @@ export default function SuperadminDashboard() {
               {isLoadingStats ? (
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               ) : (
-                <div className="text-3xl font-black text-foreground">{stats?.staff}</div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50 shadow-sm bg-card hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-semibold uppercase text-muted-foreground">Active Worksite Geofences</CardTitle>
-              <div className="p-2 rounded-lg bg-green-500/10 text-green-500">
-                <Circle className="h-4 w-4" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoadingStats ? (
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              ) : (
-                <div className="text-3xl font-black text-foreground">{stats?.geofences}</div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50 shadow-sm bg-card hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-semibold uppercase text-muted-foreground">Location Events Recorded</CardTitle>
-              <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
-                <Activity className="h-4 w-4" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoadingStats ? (
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              ) : (
-                <div className="text-3xl font-black text-foreground">{stats?.events}</div>
+                <div>
+                  <div className="text-3xl font-extrabold text-foreground tracking-tight">{stats?.staff}</div>
+                  <p className="text-[11px] font-medium text-muted-foreground mt-1">
+                    {stats?.geofences} Geofences · {stats?.events} GPS Events
+                  </p>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -768,14 +889,14 @@ export default function SuperadminDashboard() {
               Global Platform Signup Configuration
             </CardTitle>
             <CardDescription>
-              Toggle how new signups are onboarded. Founders Partner restricts new organizations behind a waitlist approval wall. Lite Mode allows immediate setup.
+              Toggle how new signups are onboarded. Founding Partner Council mode restricts new organizations behind a waitlist approval wall. Lite Mode allows immediate setup.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <p className="text-xs font-semibold text-muted-foreground">Active Signup Mode</p>
               <Badge variant="outline" className={signupMode === "founders_partner" ? "bg-amber-500/10 text-amber-500 border-amber-500/20" : "bg-green-500/10 text-green-500 border-green-500/20"}>
-                {signupMode === "founders_partner" ? "Founders Partner Program (Manual Vetting)" : "Lite Mode (Instant Self-Service Wizard)"}
+                {signupMode === "founders_partner" ? "Founding Partner Council (Manual Vetting)" : "Lite Mode (Instant Self-Service Wizard)"}
               </Badge>
             </div>
             <div className="flex items-center gap-2">
@@ -788,7 +909,7 @@ export default function SuperadminDashboard() {
                 className="gap-2"
               >
                 {toggleSignupModeMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                Switch to {signupMode === "founders_partner" ? "Lite Mode" : "Founders Partner Mode"}
+                Switch to {signupMode === "founders_partner" ? "Lite Mode" : "Founding Partner Council Mode"}
               </Button>
             </div>
           </CardContent>
@@ -796,8 +917,11 @@ export default function SuperadminDashboard() {
 
         {/* Superadmin Tab Section */}
         <Tabs defaultValue="tenants" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 max-w-[680px] bg-background border border-border/50 shadow-sm">
+          <TabsList className="grid w-full grid-cols-5 max-w-[850px] bg-background border border-border/50 shadow-sm">
             <TabsTrigger value="tenants" className="text-xs font-bold">Companies (Tenants)</TabsTrigger>
+            <TabsTrigger value="council" className="text-xs font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+              <Crown className="h-3.5 w-3.5" /> Founding Council ({councilCompanies.length}/20)
+            </TabsTrigger>
             <TabsTrigger value="users" className="text-xs font-bold">Platform Users</TabsTrigger>
             <TabsTrigger value="admins" className="text-xs font-bold">System Admins</TabsTrigger>
             <TabsTrigger value="affiliates" className="text-xs font-bold">Affiliates & Partners</TabsTrigger>
@@ -813,13 +937,13 @@ export default function SuperadminDashboard() {
                     Active SaaS Tenants
                   </CardTitle>
                   <CardDescription>
-                    Monitor and review all companies using the OnSite platform.
+                    Monitor and review all companies using the FiledCrews platform.
                   </CardDescription>
                 </div>
                 <div className="relative w-full sm:w-64">
                   <Search className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search company or prefix..."
+                    placeholder="Search company, prefix, or industry..."
                     value={companySearch}
                     onChange={(e) => setCompanySearch(e.target.value)}
                     className="pl-9 bg-background"
@@ -827,7 +951,62 @@ export default function SuperadminDashboard() {
                 </div>
               </CardHeader>
 
-              <CardContent className="pt-6">
+              <CardContent className="pt-6 space-y-4">
+                {/* Subscription Segmentation Filter Chips Bar */}
+                <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-2xl bg-muted/30 border border-border/40 text-xs">
+                  <div className="flex flex-wrap items-center gap-1.5 font-semibold">
+                    <span className="text-muted-foreground mr-1 flex items-center gap-1"><Filter className="h-3.5 w-3.5" /> Filter Tier:</span>
+                    <button
+                      onClick={() => setCompanyTierFilter("all")}
+                      className={cn(
+                        "px-3 py-1 rounded-lg transition-colors",
+                        companyTierFilter === "all" ? "bg-primary text-primary-foreground font-bold shadow-xs" : "bg-background text-muted-foreground hover:text-foreground border border-border/40"
+                      )}
+                    >
+                      All Orgs ({companies.length})
+                    </button>
+                    <button
+                      onClick={() => setCompanyTierFilter("council")}
+                      className={cn(
+                        "px-3 py-1 rounded-lg transition-colors flex items-center gap-1",
+                        companyTierFilter === "council" ? "bg-amber-500 text-slate-950 font-bold shadow-xs" : "bg-background text-amber-600 dark:text-amber-400 hover:text-foreground border border-amber-500/30"
+                      )}
+                    >
+                      <Crown className="h-3 w-3" /> Council VIP ({councilCompanies.length})
+                    </button>
+                    <button
+                      onClick={() => setCompanyTierFilter("paid")}
+                      className={cn(
+                        "px-3 py-1 rounded-lg transition-colors",
+                        companyTierFilter === "paid" ? "bg-emerald-600 text-white font-bold shadow-xs" : "bg-background text-muted-foreground hover:text-foreground border border-border/40"
+                      )}
+                    >
+                      Paid ({paidCompanies.length})
+                    </button>
+                    <button
+                      onClick={() => setCompanyTierFilter("trial")}
+                      className={cn(
+                        "px-3 py-1 rounded-lg transition-colors",
+                        companyTierFilter === "trial" ? "bg-blue-600 text-white font-bold shadow-xs" : "bg-background text-muted-foreground hover:text-foreground border border-border/40"
+                      )}
+                    >
+                      Free Trial ({trialCompanies.length})
+                    </button>
+                    {pendingCompanies.length > 0 && (
+                      <button
+                        onClick={() => setCompanyTierFilter("pending")}
+                        className={cn(
+                          "px-3 py-1 rounded-lg transition-colors flex items-center gap-1 animate-pulse",
+                          companyTierFilter === "pending" ? "bg-rose-600 text-white font-bold shadow-xs" : "bg-rose-500/10 text-rose-600 border border-rose-500/30"
+                        )}
+                      >
+                        Waitlist ({pendingCompanies.length})
+                      </button>
+                    )}
+                  </div>
+                  <span className="text-[11px] font-medium text-muted-foreground">Showing {filteredCompanies.length} organizations</span>
+                </div>
+
                 <PaginatedTableFull
                   data={filteredCompanies}
                   renderTable={(paginatedItems) => (
@@ -842,25 +1021,25 @@ export default function SuperadminDashboard() {
                           <TableHead>Office Seats</TableHead>
                           <TableHead>Crew Seats</TableHead>
                           <TableHead>Owner Auth ID</TableHead>
-                          <TableHead className="w-[100px]"></TableHead>
+                          <TableHead className="w-[120px] text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {isLoadingCompanies ? (
                           <TableRow>
-                            <TableCell colSpan={6} className="h-24 text-center">
+                            <TableCell colSpan={9} className="h-24 text-center">
                               <Loader2 className="h-5 w-5 animate-spin mx-auto text-primary" />
                             </TableCell>
                           </TableRow>
                         ) : paginatedItems.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground text-sm">
-                              No companies match search criteria.
+                            <TableCell colSpan={9} className="h-24 text-center text-muted-foreground text-sm">
+                              No companies match search or filter criteria.
                             </TableCell>
                           </TableRow>
                         ) : (
                           paginatedItems.map((c) => (
-                            <TableRow key={c.id} className="hover:bg-muted/15 transition-colors">
+                            <TableRow key={c.id} className="hover:bg-muted/15 transition-colors cursor-pointer" onClick={() => setSelectedCompany360(c)}>
                               <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
                                 {format(new Date(c.created_at), "yyyy-MM-dd HH:mm")}
                               </TableCell>
@@ -873,15 +1052,15 @@ export default function SuperadminDashboard() {
                                 </Badge>
                               </TableCell>
                               <TableCell className="font-semibold text-sm">
-                                {c.staff_profiles?.[0]?.count ?? 0} members
+                                {c.staff_profiles?.length || 0} members
                               </TableCell>
                               <TableCell className="space-y-1">
                                 <div>
                                   <Badge
-                                    variant={c.subscription_tier === "Founding Partner" ? "default" : "outline"}
+                                    variant={c.subscription_tier === "Founding Partner" || c.subscription_tier === "founding_partner" ? "default" : "outline"}
                                     className={
-                                      c.subscription_tier === "Founding Partner"
-                                        ? "bg-amber-500/10 text-amber-500 border-amber-500/20 font-bold"
+                                      c.subscription_tier === "Founding Partner" || c.subscription_tier === "founding_partner"
+                                        ? "bg-amber-500 text-slate-950 border-none font-bold"
                                         : "font-semibold"
                                     }
                                   >
@@ -908,16 +1087,25 @@ export default function SuperadminDashboard() {
                               <TableCell className="font-mono text-xs font-semibold">
                                 {c.max_field_crew_seats} seats
                               </TableCell>
-                              <TableCell className="font-mono text-xs text-muted-foreground">
+                              <TableCell className="font-mono text-xs text-muted-foreground truncate max-w-[120px]">
                                 {c.auth_user_id}
                               </TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-1.5">
+                              <TableCell onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center justify-end gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/50"
+                                    onClick={() => setSelectedCompany360(c)}
+                                    title="View 360° Profile & Roster"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
                                   {c.subscription_status === "pending_approval" && (
                                     <Button
                                       variant="default"
                                       size="sm"
-                                      className="bg-green-600 hover:bg-green-700 text-white font-bold text-xs gap-1.5 px-3 py-1.5 h-auto shrink-0"
+                                      className="bg-green-600 hover:bg-green-700 text-white font-bold text-xs gap-1 px-2.5 py-1 h-auto shrink-0"
                                       onClick={() => approveCompanyMutation.mutate(c.id)}
                                       disabled={approveCompanyMutation.isPending}
                                     >
@@ -956,6 +1144,169 @@ export default function SuperadminDashboard() {
                     </Table>
                   )}
                 />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Founding Partner Council Hub Tab */}
+          <TabsContent value="council" className="space-y-6">
+            {/* Slot Occupancy Hero Gauge */}
+            <Card className="border-amber-500/40 bg-gradient-to-r from-amber-500/[0.08] via-amber-500/[0.03] to-amber-500/[0.08] shadow-md">
+              <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Crown className="h-6 w-6 text-amber-500" />
+                    <h2 className="text-2xl font-black text-foreground tracking-tight">Founding Partner Council Hub</h2>
+                    <Badge className="bg-amber-500 text-slate-950 font-bold border-none text-xs">20 Slot Cap</Badge>
+                  </div>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-2xl">
+                    Exclusive invitation-only charter for 20 home service leaders. Council members receive 20 unified licenses, white-glove onboarding, and direct WhatsApp co-design access.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-card border border-amber-500/30 text-center shrink-0 w-full sm:w-56 space-y-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">Slots Claimed</span>
+                  <div className="text-3xl font-black text-foreground flex items-baseline justify-center gap-1">
+                    <span>{councilCompanies.length}</span>
+                    <span className="text-xs font-semibold text-muted-foreground">/ 20</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                    <div className="h-full bg-amber-500 rounded-full transition-all duration-500" style={{ width: `${(councilCompanies.length / 20) * 100}%` }} />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground font-semibold">{20 - councilCompanies.length} Open Slots Remaining</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Approved Founding Partner Council Roster */}
+            <Card className="border-border/60 shadow-sm">
+              <CardHeader className="border-b pb-4">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                  <Crown className="h-5 w-5 text-amber-500" />
+                  Approved Founding Partner Council Members ({councilCompanies.length})
+                </CardTitle>
+                <CardDescription>
+                  Companies currently enrolled in the Founding Partner Council with active $2,899/yr memberships.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                {councilCompanies.length === 0 ? (
+                  <div className="text-center p-8 border border-dashed rounded-2xl space-y-2">
+                    <Crown className="h-8 w-8 text-amber-500/40 mx-auto" />
+                    <p className="text-sm font-semibold text-foreground">No Approved Founding Partners Yet</p>
+                    <p className="text-xs text-muted-foreground">Approve waitlisted applications below to enroll companies into the Council.</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {councilCompanies.map((c) => (
+                      <div key={c.id} className="p-5 rounded-2xl bg-card border border-amber-500/30 hover:border-amber-500/60 shadow-xs transition-all space-y-4">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-extrabold text-base text-foreground">{c.name}</h3>
+                              <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 text-[10px] font-bold">
+                                {c.prefix}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">{c.industry || "Home Service Provider"} · {c.staff_count || "20 Seats"}</p>
+                          </div>
+                          <Badge className="bg-emerald-500/10 text-emerald-600 border-none text-[10px] font-bold">
+                            VIP Active
+                          </Badge>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-border/40">
+                          <div>
+                            <span className="text-muted-foreground">Office Seats:</span>
+                            <p className="font-bold text-foreground">{c.max_admin_seats} Seats</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Field Seats:</span>
+                            <p className="font-bold text-foreground">{c.max_field_crew_seats} Seats</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setSelectedCompany360(c)}
+                            className="text-xs font-semibold gap-1.5 h-8"
+                          >
+                            <Eye className="h-3.5 w-3.5" /> View 360° Profile
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            asChild
+                            className="border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 text-xs font-semibold h-8"
+                          >
+                            <a href="https://wa.me/14094229714" target="_blank" rel="noreferrer" className="flex items-center gap-1">
+                              <MessageSquare className="h-3.5 w-3.5" /> Founder WhatsApp
+                            </a>
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Waitlisted Applicant Queue */}
+            <Card className="border-border/60 shadow-sm">
+              <CardHeader className="border-b pb-4">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-amber-500" />
+                  Founding Partner Waitlist Queue ({pendingCompanies.length})
+                </CardTitle>
+                <CardDescription>
+                  Organizations that submitted applications during signup awaiting superadmin verification.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                {pendingCompanies.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic p-4 text-center border border-dashed rounded-xl">
+                    No pending waitlist applications at this time.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {pendingCompanies.map((c) => (
+                      <div key={c.id} className="p-4 rounded-xl bg-card border border-border/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-sm text-foreground">{c.name}</span>
+                            <Badge variant="outline" className="font-mono text-[10px]">{c.prefix}</Badge>
+                            <Badge className="bg-amber-500/10 text-amber-600 text-[10px]">Waitlisted</Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Size: <strong className="text-foreground">{c.staff_count || "Not listed"}</strong> · Industry: <strong className="text-foreground">{c.industry || "General"}</strong> · Registered: {format(new Date(c.created_at), "PPP")}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setSelectedCompany360(c)}
+                            className="text-xs font-semibold"
+                          >
+                            <Eye className="h-3.5 w-3.5 mr-1" /> Inspect
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white font-bold text-xs gap-1.5"
+                            onClick={() => approveCompanyMutation.mutate(c.id)}
+                            disabled={approveCompanyMutation.isPending}
+                          >
+                            {approveCompanyMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserCheck className="h-3.5 w-3.5" />}
+                            Approve for Council (20 Seats)
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -1638,8 +1989,10 @@ export default function SuperadminDashboard() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Free">Free (Standard Limits)</SelectItem>
-                  <SelectItem value="Founding Partner">Founding Partner ($2,899/yr Charter · 20 Seats Cap)</SelectItem>
+                  <SelectItem value="Free">Free Trial (Standard Limits)</SelectItem>
+                  <SelectItem value="growth">Growth ($495/mo · 10 Seats)</SelectItem>
+                  <SelectItem value="Founding Partner">Founding Partner Council ($2,899/yr · 20 Seats)</SelectItem>
+                  <SelectItem value="enterprise">Enterprise (Custom SLA · Unlimited)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1788,6 +2141,265 @@ export default function SuperadminDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 360° Company Inspector Slide-Over Drawer */}
+      <Sheet open={!!selectedCompany360} onOpenChange={(open) => !open && setSelectedCompany360(null)}>
+        <SheetContent side="right" className="sm:max-w-xl w-full bg-background border-l border-border shadow-2xl p-0 flex flex-col h-full overflow-hidden">
+          {selectedCompany360 && (
+            <>
+              {/* Drawer Top Header Banner */}
+              <div className="p-6 bg-slate-950 text-slate-100 space-y-3 relative shrink-0">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 uppercase tracking-wider text-[10px] font-bold">
+                      {selectedCompany360.prefix}
+                    </Badge>
+                    <Badge variant="outline" className={
+                      selectedCompany360.subscription_tier === "Founding Partner" || selectedCompany360.subscription_tier === "founding_partner"
+                        ? "bg-amber-500 text-slate-950 border-none font-bold text-[10px]"
+                        : "bg-slate-800 text-slate-300 border-slate-700 text-[10px]"
+                    }>
+                      {selectedCompany360.subscription_tier}
+                    </Badge>
+                  </div>
+                  <Badge variant="outline" className={selectedCompany360.subscription_status === "pending_approval" ? "bg-amber-500/10 text-amber-400 border-amber-500/30 text-[10px]" : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-[10px]"}>
+                    {selectedCompany360.subscription_status}
+                  </Badge>
+                </div>
+
+                <div>
+                  <h2 className="text-2xl font-extrabold tracking-tight text-white">{selectedCompany360.name}</h2>
+                  <p className="text-xs text-slate-400 mt-1 flex items-center gap-2 font-mono">
+                    <span>ID: {selectedCompany360.id.slice(0, 18)}...</span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(selectedCompany360.id);
+                        toast.success("Organization ID copied!");
+                      }}
+                      className="hover:text-white"
+                      title="Copy Org ID"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </button>
+                  </p>
+                </div>
+
+                {/* Sub Tab Switcher */}
+                <div className="flex items-center gap-2 pt-2 border-t border-slate-800 text-xs font-semibold">
+                  <button
+                    onClick={() => setDrawerTab("profile")}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5",
+                      drawerTab === "profile" ? "bg-slate-800 text-white font-bold" : "text-slate-400 hover:text-slate-200"
+                    )}
+                  >
+                    <Building2 className="h-3.5 w-3.5" /> 360° Profile
+                  </button>
+                  <button
+                    onClick={() => setDrawerTab("roster")}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5",
+                      drawerTab === "roster" ? "bg-slate-800 text-white font-bold" : "text-slate-400 hover:text-slate-200"
+                    )}
+                  >
+                    <Users className="h-3.5 w-3.5" /> Workforce ({selectedCompany360.staff_profiles?.length || 0})
+                  </button>
+                  <button
+                    onClick={() => setDrawerTab("modules")}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5",
+                      drawerTab === "modules" ? "bg-slate-800 text-white font-bold" : "text-slate-400 hover:text-slate-200"
+                    )}
+                  >
+                    <Layers className="h-3.5 w-3.5" /> Quotas & Modules
+                  </button>
+                </div>
+              </div>
+
+              {/* Drawer Scrollable Content */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {drawerTab === "profile" && (
+                  <div className="space-y-6">
+                    {/* Submitted Signup Metadata Section */}
+                    <div className="space-y-3">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        <FileText className="h-3.5 w-3.5 text-primary" /> Submitted Onboarding Profile
+                      </h3>
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div className="p-3 rounded-xl bg-muted/30 border border-border/40 space-y-1">
+                          <span className="text-muted-foreground font-semibold flex items-center gap-1"><Users className="h-3 w-3" /> Company Size</span>
+                          <p className="font-bold text-foreground">{selectedCompany360.staff_count || "Not specified"}</p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-muted/30 border border-border/40 space-y-1">
+                          <span className="text-muted-foreground font-semibold flex items-center gap-1"><Briefcase className="h-3 w-3" /> Trade / Industry</span>
+                          <p className="font-bold text-foreground">{selectedCompany360.industry || "General Services"}</p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-muted/30 border border-border/40 space-y-1">
+                          <span className="text-muted-foreground font-semibold flex items-center gap-1"><Coins className="h-3 w-3" /> Annual Revenue</span>
+                          <p className="font-bold text-foreground">{selectedCompany360.annual_revenue || "Undisclosed"}</p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-muted/30 border border-border/40 space-y-1">
+                          <span className="text-muted-foreground font-semibold flex items-center gap-1"><Globe className="h-3 w-3" /> Primary Website</span>
+                          {selectedCompany360.website ? (
+                            <a href={selectedCompany360.website.startsWith("http") ? selectedCompany360.website : `https://${selectedCompany360.website}`} target="_blank" rel="noreferrer" className="font-bold text-blue-600 hover:underline flex items-center gap-1 truncate">
+                              {selectedCompany360.website} <ExternalLink className="h-2.5 w-2.5 shrink-0" />
+                            </a>
+                          ) : (
+                            <p className="font-bold text-muted-foreground">None listed</p>
+                          )}
+                        </div>
+                        <div className="p-3 rounded-xl bg-muted/30 border border-border/40 space-y-1 col-span-2">
+                          <span className="text-muted-foreground font-semibold flex items-center gap-1"><MapPin className="h-3 w-3" /> Operating Address</span>
+                          <p className="font-bold text-foreground">{selectedCompany360.address || "No address provided"}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Operational Details */}
+                    <div className="space-y-3">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        <Activity className="h-3.5 w-3.5 text-primary" /> Technical & Registration Details
+                      </h3>
+                      <div className="p-4 rounded-xl bg-card border border-border/60 space-y-2 text-xs">
+                        <div className="flex justify-between py-1 border-b border-border/40">
+                          <span className="text-muted-foreground">Registration Timestamp</span>
+                          <span className="font-mono font-semibold">{format(new Date(selectedCompany360.created_at), "PPP 'at' p")}</span>
+                        </div>
+                        <div className="flex justify-between py-1 border-b border-border/40">
+                          <span className="text-muted-foreground">Auth Owner UID</span>
+                          <span className="font-mono font-semibold text-[11px]">{selectedCompany360.auth_user_id}</span>
+                        </div>
+                        <div className="flex justify-between py-1 border-b border-border/40">
+                          <span className="text-muted-foreground">Billing Currency</span>
+                          <span className="font-semibold">{selectedCompany360.currency || "USD ($)"}</span>
+                        </div>
+                        <div className="flex justify-between py-1">
+                          <span className="text-muted-foreground">Subscribed Tier</span>
+                          <span className="font-bold text-primary">{selectedCompany360.subscription_tier}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {drawerTab === "roster" && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        Registered Team Profiles ({selectedCompany360.staff_profiles?.length || 0})
+                      </h3>
+                    </div>
+                    {(!selectedCompany360.staff_profiles || selectedCompany360.staff_profiles.length === 0) ? (
+                      <p className="text-xs text-muted-foreground italic p-4 text-center border border-dashed rounded-xl">
+                        No team profiles created yet for this organization.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {selectedCompany360.staff_profiles.map((staff: any) => (
+                          <div key={staff.id} className="p-3 rounded-xl bg-card border border-border/50 flex items-center justify-between text-xs">
+                            <div>
+                              <p className="font-bold text-foreground">{staff.full_name || staff.username}</p>
+                              <p className="text-[11px] text-muted-foreground font-mono">@{staff.username} · {staff.job_title || staff.global_role}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className={staff.global_role === "Admin" ? "bg-purple-500/10 text-purple-600" : "bg-blue-500/10 text-blue-600"}>
+                                {staff.global_role}
+                              </Badge>
+                              <Badge className={staff.is_active ? "bg-emerald-500/10 text-emerald-600 border-none" : "bg-rose-500/10 text-rose-600 border-none"}>
+                                {staff.is_active ? "Active" : "Inactive"}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {drawerTab === "modules" && (
+                  <div className="space-y-6">
+                    {/* Seat Allocations Bar */}
+                    <div className="space-y-3">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Seat Allocations</h3>
+                      <div className="p-4 rounded-xl bg-card border border-border/60 space-y-4 text-xs">
+                        <div>
+                          <div className="flex justify-between font-semibold mb-1">
+                            <span>Office Seats Cap</span>
+                            <span className="text-primary font-bold">{selectedCompany360.max_admin_seats} Seats</span>
+                          </div>
+                          <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                            <div className="h-full bg-blue-600 rounded-full" style={{ width: "100%" }} />
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex justify-between font-semibold mb-1">
+                            <span>Field Crew Seats Cap</span>
+                            <span className="text-primary font-bold">{selectedCompany360.max_field_crew_seats} Seats</span>
+                          </div>
+                          <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                            <div className="h-full bg-purple-600 rounded-full" style={{ width: "100%" }} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Enabled Modules Badges */}
+                    <div className="space-y-3">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Enabled Modules & Features</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {["geofencing", "aiAgent", "invoices", "estimates", "timesheets", "crm", "safety", "compliance"].map((mod) => {
+                          const isEnabled = (selectedCompany360.enabled_modules as any)?.[mod] !== false;
+                          return (
+                            <Badge
+                              key={mod}
+                              variant={isEnabled ? "default" : "outline"}
+                              className={isEnabled ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" : "text-muted-foreground opacity-50"}
+                            >
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              {mod.toUpperCase()}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Drawer Sticky Footer Actions */}
+              <div className="p-4 bg-muted/40 border-t border-border flex items-center justify-between gap-2 shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setEditingCompanyId(selectedCompany360.id);
+                    setEditTier(selectedCompany360.subscription_tier);
+                    setEditMaxAdmins(selectedCompany360.max_admin_seats);
+                    setEditMaxFieldCrew(selectedCompany360.max_field_crew_seats);
+                    setSelectedCompany360(null);
+                  }}
+                  className="gap-1.5 text-xs font-semibold"
+                >
+                  <Edit2 className="h-3.5 w-3.5" /> Edit Subscription & Seats
+                </Button>
+                {selectedCompany360.subscription_status === "pending_approval" && (
+                  <Button
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700 text-white font-bold text-xs gap-1.5"
+                    onClick={() => {
+                      approveCompanyMutation.mutate(selectedCompany360.id);
+                      setSelectedCompany360(null);
+                    }}
+                  >
+                    <UserCheck className="h-3.5 w-3.5" /> Approve Company
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

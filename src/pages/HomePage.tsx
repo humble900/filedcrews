@@ -119,7 +119,7 @@ const HomePage = () => {
       return (
         <>
           <SEO
-            title="Staff Portal — Download App"
+            title="Staff Portal"
             description="Download the FiledCrews mobile application to check in and record shift updates."
             path="/"
             noIndex

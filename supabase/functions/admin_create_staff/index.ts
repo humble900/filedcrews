@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     // Fetch the company to validate prefix and seat limits
     const { data: company, error: companyError } = await supabaseAdmin
       .from("companies")
-      .select("prefix, subscription_tier, max_admin_seats, max_field_crew_seats")
+      .select("prefix, subscription_tier, subscription_status, max_admin_seats, max_field_crew_seats, created_at")
       .eq("id", company_id)
       .single();
 
@@ -69,12 +69,36 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Server-side Subscription Expiration & Trial Check
+    const tier = company.subscription_tier || "free_trial";
+    const status = company.subscription_status || "trialing";
+    const isFP = tier === "founding_partner" || tier === "Founding Partner";
+    const isFreeTrial = tier === "free_trial" || tier === "Free";
+
+    if (isFreeTrial && status !== "active") {
+      const trialDurationDays = 14;
+      const createdAtDate = new Date(company.created_at || Date.now());
+      const trialEndDate = new Date(createdAtDate.getTime() + trialDurationDays * 24 * 60 * 60 * 1000);
+      if (Date.now() > trialEndDate.getTime()) {
+        return new Response(
+          JSON.stringify({ error: "Your 14-day Free Trial has expired. Please upgrade your plan in Settings to add staff." }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    if (status === "expired" || status === "past_due") {
+      return new Response(
+        JSON.stringify({ error: "Your subscription is currently inactive/expired. Please update your billing to add staff." }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Server-side Seat Limit Enforcement
     const isFieldCrew = global_role === "Field Crew";
-    const tier = company.subscription_tier || "free_trial";
     const maxAllowedSeats = isFieldCrew
-      ? (company.max_field_crew_seats ?? (tier === "growth" ? 7 : (tier === "founding_partner" ? 15 : (tier === "enterprise" ? 100 : 2))))
-      : (company.max_admin_seats ?? (tier === "growth" ? 3 : (tier === "founding_partner" ? 5 : (tier === "enterprise" ? 50 : 1))));
+      ? (isFreeTrial ? 2 : (company.max_field_crew_seats ?? (tier === "growth" ? 7 : (isFP ? 20 : (tier === "enterprise" ? 100 : 2)))))
+      : (isFreeTrial ? 1 : (company.max_admin_seats ?? (tier === "growth" ? 3 : (isFP ? 20 : (tier === "enterprise" ? 50 : 1)))));
 
     const { data: existingStaff } = await supabaseAdmin
       .from("staff_profiles")

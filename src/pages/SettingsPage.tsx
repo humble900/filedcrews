@@ -306,12 +306,13 @@ export default function SettingsPage() {
   // ─── Computed ───
   const activeAdmins = staffList.filter((s: any) => ["Admin", "Finance", "Dispatcher"].includes(s.global_role)).length;
   const activeFieldCrew = staffList.filter((s: any) => s.global_role === "Field Crew").length;
-  const maxAdmins = company?.max_admin_seats ?? (isFoundingPartner ? 5 : (company?.subscription_tier === "growth" ? 3 : 1));
-  const maxFieldCrew = company?.max_field_crew_seats ?? (isFoundingPartner ? 15 : (company?.subscription_tier === "growth" ? 7 : 2));
-  const isFoundingPartner = company?.subscription_tier === "Founding Partner";
+  const isFoundingPartner = company?.subscription_tier === "Founding Partner" || company?.subscription_tier === "founding_partner";
+  const isFreeTrial = company?.subscription_tier === "free_trial" || company?.subscription_tier === "Free" || !company?.subscription_tier;
+  const maxAdmins = isFreeTrial ? 1 : (company?.max_admin_seats ?? (isFoundingPartner ? 20 : (company?.subscription_tier === "growth" ? 3 : 1)));
+  const maxFieldCrew = isFreeTrial ? 2 : (company?.max_field_crew_seats ?? (isFoundingPartner ? 20 : (company?.subscription_tier === "growth" ? 7 : 2)));
   const adminPercent = Math.min((activeAdmins / maxAdmins) * 100, 100);
   const fieldPercent = Math.min((activeFieldCrew / maxFieldCrew) * 100, 100);
-  const whatsappMessage = encodeURIComponent("Hi there! We are interested in joining the Founding Partner Charter for FiledCrews.");
+  const whatsappMessage = encodeURIComponent("Hi there! We are interested in joining the Founding Partner Council for FiledCrews.");
   const whatsappUrl = `https://wa.me/14094229714?text=${whatsappMessage}`;
 
   // ─── Handlers ───
@@ -629,88 +630,95 @@ export default function SettingsPage() {
     {
       id: "free_trial" as const,
       name: "Free Trial",
-      titleGradient: "from-emerald-400 via-teal-400 to-emerald-500 drop-shadow-[0_2px_8px_rgba(16,185,129,0.45)]",
+      badge: "14-Day Evaluation",
+      badgeClass: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700",
+      borderClass: "border-border/60 hover:border-slate-400 dark:hover:border-slate-600",
       price: "$0",
       period: "/ 14 days",
-      description: "14 days full access for new business accounts — set up your team and explore all platform features.",
+      description: "Full access to core field dispatching and geofence tracking for initial evaluation.",
       specs: [
-        "1 Office Staff (Account Creator)",
-        "2 Field Crew Members",
-        "14 Days Trial Duration"
+        "1 Office Administrator Seat",
+        "2 Mobile Field Crew Seats",
+        "14-Day Complete Platform Access"
       ],
       features: [
-        "Run unlimited projects with Worksite Map",
-        "Geofence time tracking & GPS logs",
-        "Track job costs and cost categories",
-        "Create & send digital Work Orders",
-        "Mobile App access for field crews"
+        "Worksite Map & Job Location Markers",
+        "Geofence Time Audit & GPS Location Logs",
+        "Cost Category Tracking & Expense Logs",
+        "Digital Work Order Creation & Dispatch",
+        "Native Android Field Crew Application"
       ]
     },
     {
       id: "growth" as const,
       name: "Growth",
-      titleGradient: "from-amber-400 via-orange-500 to-amber-500 drop-shadow-[0_2px_8px_rgba(245,158,11,0.45)]",
+      badge: "Standard Business",
+      badgeClass: "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
+      borderClass: "border-blue-200 dark:border-blue-900/60 hover:border-blue-400 dark:hover:border-blue-700",
       price: "$495",
       period: "/mo",
-      description: "Supercharge your company with 10 total seats, AI dispatching, and safety hub compliance.",
+      description: "Complete operational suite for growing field teams needing AI dispatch and safety compliance.",
       specs: [
-        "3 Office Staff",
-        "7 Field Crew Members",
-        "10 Total Seats Included"
+        "3 Office Administrator Seats",
+        "7 Mobile Field Crew Seats",
+        "10 Total Team Licenses"
       ],
       features: [
-        "Everything in Free Trial plus...",
-        "AI Agent Autonomous Dispatcher",
-        "Safety Hub & Compliance Forms",
-        "Auto-sync timesheets & payroll export",
-        "Change Orders & Client Approval Portal",
-        "Priority WhatsApp & phone support"
+        "Everything in Free Trial, plus:",
+        "Autonomous AI Agent Crew Dispatcher",
+        "Safety Hub & Compliance Form Builder",
+        "Automated Timesheet Export & Payroll Sync",
+        "Change Order Workflow & Client Approval Portal",
+        "Priority Phone & Direct Technical Support"
       ]
     },
     {
       id: "founding_partner" as const,
-      name: "Founding Partner",
-      titleGradient: "from-purple-400 via-indigo-500 to-purple-500 drop-shadow-[0_2px_8px_rgba(168,85,247,0.45)]",
+      name: "Founding Partner Council",
+      badge: "Invitation-Only Council · Best Value",
+      badgeClass: "bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700 font-bold",
+      borderClass: "border-amber-400/80 dark:border-amber-500/70 bg-gradient-to-b from-amber-500/[0.03] via-card to-card shadow-md ring-1 ring-amber-400/20",
       price: "$2,899",
       period: "/yr",
-      description: "Exclusive VIP annual charter membership (20 seats included). Lifetime locked-in pricing and direct co-design access.",
+      description: "Invitation-only council membership for growing home service businesses to co-design platform features.",
       specs: [
-        "20 Total Seats Included (Custom Split)",
-        "🔒 Locked-in pricing forever",
-        "Yearly VIP Charter License"
+        "20 Included Licenses (Custom Role Split)",
+        "Direct Founder Council Channel",
+        "Save $9,101/yr vs Standard ($12k/yr)"
       ],
       features: [
-        "Everything in Growth plus...",
-        "🔒 Locked-in pricing forever ($2,899/yr)",
-        "20 Seats with custom role allocation",
-        "👥 Direct access to the founders",
-        "🗳️ Vote on the product roadmap",
-        "📞 Quarterly strategy calls",
-        "🚀 Priority feature requests",
-        "🤝 White-glove onboarding & data migration",
-        "⚡ Early access to every new feature",
-        "🌟 Featured on Founding Partner wall",
-        "💬 Invitation to private WhatsApp group"
+        "Everything in Growth, plus:",
+        "Permanent Founding Partner pricing",
+        "Up to 20 active staff included",
+        "Direct WhatsApp access to the founders",
+        "White-glove onboarding & data migration",
+        "Monthly product feedback council access",
+        "Early access to new features before release",
+        "Priority support with faster response times",
+        "Private Founding Partner community",
+        "Recognition as a founding builder"
       ]
     },
     {
       id: "enterprise" as const,
       name: "Enterprise",
-      titleGradient: "from-cyan-500 via-blue-600 to-indigo-600 drop-shadow-[0_2px_8px_rgba(6,182,212,0.45)]",
+      badge: "Custom Scale",
+      badgeClass: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700",
+      borderClass: "border-border/60 hover:border-slate-400 dark:hover:border-slate-600",
       price: "Custom",
       period: "",
-      description: "Custom tailored deployment for large multi-site enterprises with unlimited seat requirements.",
+      description: "Tailored multi-regional infrastructure with custom SLA guarantees and unlimited seat options.",
       specs: [
-        "Custom Unlimited Seats",
-        "Dedicated Infrastructure & SLA",
-        "Dedicated Account Manager"
+        "Unlimited Custom Seat Allocations",
+        "Dedicated Enterprise Infrastructure",
+        "24/7 Dedicated Account Manager"
       ],
       features: [
-        "Everything in Founding Partner plus...",
-        "Unlimited seat scaling across teams",
-        "Custom API & ERP Integrations",
-        "Custom SLA & Uptime Guarantee",
-        "24/7 Dedicated Account Manager"
+        "Everything in Founding Partner, plus:",
+        "Custom API & ERP integrations (SAP, Oracle, QuickBooks)",
+        "99.9% Service Level Agreement (SLA)",
+        "Custom compliance & audit trail retention",
+        "Dedicated solution architect & team training"
       ]
     }
   ];
@@ -718,7 +726,7 @@ export default function SettingsPage() {
   const activeSelectedPlan = plans.find(p => p.id === selectedPlanId) || plans[0];
 
   const handleConfirmPlanChange = () => {
-    toast.success(`Plan request submitted for ${activeSelectedPlan.name}! Our account manager will contact you via WhatsApp / Email for manual activation.`);
+    toast.success(`Plan request submitted for ${activeSelectedPlan.name}! Our account specialist will contact you for manual activation.`);
     setBillingViewMode("select");
   };
 
@@ -799,11 +807,33 @@ export default function SettingsPage() {
       {billingViewMode === "select" ? (
         /* STEP 1: PLAN SELECTION GRID */
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h2 className="text-xl font-bold text-foreground tracking-tight">Plan Selection</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Select the plan that best fits your business workforce size.</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Select the subscription tier that matches your workforce size and operational requirements.</p>
             </div>
+          </div>
+
+          {/* Executive Smart ROI Anchor Banner */}
+          <div className="p-4 sm:p-5 rounded-2xl border border-amber-500/30 bg-amber-500/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="px-2.5 py-1 rounded-xl bg-amber-500/15 text-amber-800 dark:text-amber-300 font-extrabold text-xs shrink-0">
+                51% ROI SAVINGS
+              </div>
+              <div className="text-xs sm:text-sm">
+                <p className="font-bold text-foreground">Why 80% of scaling operations choose the Founding Partner VIP Charter</p>
+                <p className="text-muted-foreground text-xs mt-0.5">
+                  At $2,899/yr for 20 seats ($12.08/seat/mo), Founding Partner saves <strong className="text-foreground font-semibold">$3,041/yr</strong> compared to Growth ($5,940/yr for 10 seats) and includes direct WhatsApp access to founders.
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => setSelectedPlanId("founding_partner")}
+              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs h-9 px-4 shrink-0 rounded-xl transition-all shadow-xs"
+            >
+              Select VIP Charter ($2,899/yr)
+            </Button>
           </div>
 
           <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 max-w-7xl w-full mx-auto">
@@ -815,42 +845,50 @@ export default function SettingsPage() {
                   key={p.id}
                   onClick={() => setSelectedPlanId(p.id)}
                   className={cn(
-                    "relative rounded-3xl border-2 transition-all cursor-pointer p-6 sm:p-7 flex flex-col justify-between bg-card hover:shadow-xl",
-                    isFounding
-                      ? "border-purple-500/80 bg-gradient-to-b from-purple-500/5 via-card to-card shadow-lg ring-2 ring-purple-500/20"
-                      : isSelected
-                      ? "border-blue-600 shadow-md ring-2 ring-blue-600/20 dark:border-blue-500"
-                      : "border-border/60 hover:border-border"
+                    "relative rounded-2xl border transition-all cursor-pointer p-6 flex flex-col justify-between bg-card hover:shadow-lg",
+                    p.borderClass,
+                    isSelected && "ring-2 ring-blue-600 dark:ring-blue-500 border-blue-600 dark:border-blue-500"
                   )}
                 >
-                  {/* Top Header & Radio Badge */}
                   <div>
-                    <div className="flex items-center justify-end mb-2">
+                    {/* Badge & Radio Selector */}
+                    <div className="flex items-center justify-between gap-2 mb-4">
+                      <span className={cn("px-2.5 py-0.5 rounded-full text-[10px] font-semibold border", p.badgeClass)}>
+                        {p.badge}
+                      </span>
                       <div className={cn(
-                        "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
-                        isSelected ? "border-amber-500 bg-amber-500 text-white" : "border-slate-300 dark:border-slate-600"
+                        "w-5 h-5 rounded-full border flex items-center justify-center transition-colors shrink-0",
+                        isSelected ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300 dark:border-slate-600"
                       )}>
-                        {isSelected && <CheckCircle className="h-4 w-4 fill-amber-500 text-white" />}
+                        {isSelected && <CheckCircle className="h-3.5 w-3.5 fill-blue-600 text-white" />}
                       </div>
                     </div>
 
-                    <h3 className={cn("text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r", p.titleGradient)}>
+                    <h3 className="text-xl font-bold tracking-tight text-foreground">
                       {p.name}
                     </h3>
-                    <div className="flex items-baseline gap-1 mt-2 mb-3">
-                      <span className="text-3xl font-black text-foreground tracking-tight">{p.price}</span>
+                    <div className="flex items-baseline gap-1 mt-2 mb-1">
+                      <span className="text-3xl font-extrabold text-foreground tracking-tight">{p.price}</span>
                       <span className="text-xs text-muted-foreground font-medium">{p.period}</span>
+                    </div>
+
+                    {/* Sub-price Math Indicator */}
+                    <div className="mb-3 text-[11px] font-medium">
+                      {p.id === "growth" && <span className="text-muted-foreground">$5,940/yr annualized standard</span>}
+                      {isFounding && <span className="text-emerald-600 dark:text-emerald-400 font-bold">Save $3,041/yr (51% Off) · $12/seat/mo</span>}
+                      {p.id === "free_trial" && <span className="text-muted-foreground">100% Free · No credit card required</span>}
+                      {p.id === "enterprise" && <span className="text-muted-foreground">Custom enterprise contract & SLA</span>}
                     </div>
 
                     <p className="text-xs text-muted-foreground leading-relaxed mb-4 min-h-[36px]">
                       {p.description}
                     </p>
 
-                    {/* Specs Clean List (No inner frames, no emojis) */}
-                    <div className="space-y-2 mb-6">
+                    {/* Specs Bullet Summary */}
+                    <div className="space-y-2 mb-5 p-3 rounded-xl bg-muted/40 border border-border/40">
                       {p.specs.map((spec, i) => (
                         <div key={i} className="flex items-center gap-2 text-xs font-semibold text-foreground">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                          <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", isFounding ? "bg-amber-500" : "bg-blue-600 dark:bg-blue-400")} />
                           <span>{spec}</span>
                         </div>
                       ))}
@@ -859,22 +897,12 @@ export default function SettingsPage() {
                     {/* Features List */}
                     <div className="space-y-2.5 pt-4 border-t border-border/40">
                       {p.features.map((feat, idx) => (
-                        <div key={idx} className="flex items-start gap-2 text-xs text-foreground/90">
-                          <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                        <div key={idx} className="flex items-start gap-2 text-xs text-foreground/90 leading-snug">
+                          <CheckCircle className={cn("h-4 w-4 shrink-0 mt-0.5", isFounding ? "text-amber-600 dark:text-amber-400" : "text-blue-600 dark:text-blue-400")} />
                           <span>{feat}</span>
                         </div>
                       ))}
                     </div>
-                  </div>
-
-                  {/* Selected Indicator Footer */}
-                  <div className="pt-4 mt-6 border-t border-border/30 flex items-center justify-between text-xs">
-                    <span className={cn(
-                      "font-bold transition-colors",
-                      isSelected ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"
-                    )}>
-                      {isSelected ? "✓ Active Selection" : "Click card to select"}
-                    </span>
                   </div>
                 </div>
               );
@@ -884,166 +912,244 @@ export default function SettingsPage() {
           {/* Bottom Action Footer Bar */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 rounded-2xl bg-card border border-border/60 shadow-sm mt-6">
             <div>
-              <p className="text-xs font-semibold text-muted-foreground">Selected Plan Tier:</p>
+              <p className="text-xs font-semibold text-muted-foreground">Currently Selected Plan:</p>
               <p className="text-base font-extrabold text-foreground flex items-center gap-2">
-                <span className={cn("text-transparent bg-clip-text bg-gradient-to-r", activeSelectedPlan.titleGradient)}>
-                  {activeSelectedPlan.name}
-                </span>
+                <span>{activeSelectedPlan.name} Tier</span>
                 <span className="text-xs font-normal text-muted-foreground">({activeSelectedPlan.price}{activeSelectedPlan.period})</span>
               </p>
             </div>
             <Button
-              className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold px-8 rounded-xl h-11 text-xs shadow-md transition-all flex items-center justify-center gap-2"
+              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 rounded-xl h-11 text-xs shadow-sm transition-all flex items-center justify-center gap-2"
               onClick={() => setBillingViewMode("review")}
             >
-              Review Plan Selection ({activeSelectedPlan.name}) ➔
+              Review Plan Selection ({activeSelectedPlan.name}) →
             </Button>
           </div>
         </div>
       ) : (
-        /* STEP 2: REVIEW & MANUAL ACTIVATION CHECKOUT VIEW */
-        <div className="space-y-6 max-w-5xl mx-auto">
-          {/* Header Back Navigation */}
-          <div className="flex items-center gap-3">
+        /* STEP 2: REVIEW & MANUAL ACTIVATION CHECKOUT VIEW (2026 Modern Mobile-Friendly Layout) */
+        <div className="space-y-8 max-w-5xl mx-auto">
+          {/* Header & Back Navigation */}
+          <div className="space-y-4">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setBillingViewMode("select")}
-              className="text-xs font-semibold text-muted-foreground hover:text-foreground gap-1.5 p-0 hover:bg-transparent"
+              className="text-xs font-semibold text-muted-foreground hover:text-foreground gap-1.5 px-0 hover:bg-transparent"
             >
-              ← Plan selection
+              ← Back to Plan Selection
             </Button>
-          </div>
 
-          <div>
-            <h1 className="text-2xl font-black text-foreground tracking-tight">Checkout Review</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">Confirm your business plan request for manual account activation.</p>
-          </div>
-
-          {/* Founding Partner Program Explanation Banner & Comparison Table Section */}
-          <div className="p-6 rounded-3xl border-2 border-purple-500/70 bg-gradient-to-b from-purple-500/10 via-card to-card shadow-lg space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-2xl bg-purple-600 text-white shadow-md">
-                  <Crown className="h-6 w-6" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-black text-foreground tracking-tight">Founding Partner Charter Program</h2>
-                    <Badge className="bg-purple-600 text-white text-[10px]">VIP Membership</Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">Why join the Founding Partner Charter & how it compares to standard plans.</p>
-                </div>
-              </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">Plan Review & Activation</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">Review your subscription plan details and submit an account activation request.</p>
             </div>
+          </div>
 
-            <div className="space-y-3 text-xs text-foreground/90 leading-relaxed bg-purple-500/5 p-4 rounded-2xl border border-purple-500/20">
-              <h3 className="font-extrabold text-sm text-purple-950 dark:text-purple-300">Why Join the Founding Partner Program?</h3>
-              <p>
-                The Founding Partner Charter is an exclusive program reserved for visionary operational leaders who want to co-design the future of field crew management. Rather than operating as a typical customer, Founding Partners receive lifetime price-lock protection, direct private WhatsApp access to our founders, white-glove data migration, and direct voting rights on our product engineering roadmap.
+          {/* Executive Upgrade Switcher Alert (If non-Founding Plan is currently selected) */}
+          {selectedPlanId !== "founding_partner" && selectedPlanId !== "enterprise" && (
+            <div className="p-4 sm:p-5 rounded-2xl border border-amber-500/40 bg-amber-500/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all">
+              <div className="space-y-1 text-xs sm:text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-foreground text-sm">Operational Savings Alert</span>
+                  <span className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-800 dark:text-amber-300 text-[10px] font-bold">Save $3,041/yr</span>
+                </div>
+                <p className="text-muted-foreground leading-relaxed">
+                  You currently have <strong className="text-foreground">{activeSelectedPlan.name}</strong> selected. Upgrading to the <strong className="text-foreground">Founding Partner VIP Charter ($2,899/yr)</strong> doubles your licenses to 20 seats while saving your company <strong className="text-foreground">$3,041/yr</strong> compared to Growth ($5,940/yr).
+                </p>
+              </div>
+              <Button
+                onClick={() => setSelectedPlanId("founding_partner")}
+                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs h-10 px-5 rounded-xl shrink-0 transition-all shadow-xs"
+              >
+                Switch to VIP Charter ($2,899/yr)
+              </Button>
+            </div>
+          )}
+
+          {/* Founding Partner Council Section (Value-Driven Copy) */}
+          <div className="space-y-6 pt-2">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border border-amber-500/30 text-amber-700 dark:text-amber-400 bg-amber-500/10">
+                  Limited to 20 Home Service Companies
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+                Founding Partner Council
+              </h2>
+              <p className="text-sm sm:text-base font-semibold text-foreground">
+                Help shape the future of field service management while securing permanent Founding Partner privileges.
+              </p>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-3xl">
+                The Founding Partner Council is an invitation-only membership for a small group of growing home service companies that want more than just software. As a Founding Partner, you'll work directly with our leadership team, influence the product roadmap, and receive benefits that will never be available again once the program closes.
               </p>
             </div>
 
-            {/* Plan Comparison Table matching exact user schema */}
-            <div className="space-y-3">
-              <h4 className="text-xs font-extrabold text-foreground uppercase tracking-wider">Plan Comparison Table</h4>
-              <div className="overflow-x-auto rounded-2xl border border-purple-500/30 bg-card shadow-sm">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-purple-500/20 bg-purple-500/10 text-foreground">
-                      <th className="p-3.5 font-bold">Feature / Capability</th>
-                      <th className="p-3.5 font-bold text-center text-amber-600 dark:text-amber-400">Growth Plan</th>
-                      <th className="p-3.5 font-bold text-center text-purple-600 dark:text-purple-400 bg-purple-500/15">Founding Partner VIP</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/40 font-medium">
-                    <tr className="hover:bg-muted/30">
-                      <td className="p-3.5 text-foreground font-semibold">Staff Included</td>
-                      <td className="p-3.5 text-center text-muted-foreground font-bold">10</td>
-                      <td className="p-3.5 text-center font-bold text-purple-700 dark:text-purple-300 bg-purple-500/5">20</td>
-                    </tr>
-                    <tr className="hover:bg-muted/30">
-                      <td className="p-3.5 text-foreground font-semibold">Annual Cost</td>
-                      <td className="p-3.5 text-center text-muted-foreground">$5,868</td>
-                      <td className="p-3.5 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-purple-500/5">$2,899 (Save 50%+)</td>
-                    </tr>
-                    <tr className="hover:bg-muted/30">
-                      <td className="p-3.5 text-foreground font-semibold">Founder Access</td>
-                      <td className="p-3.5 text-center text-rose-500">❌</td>
-                      <td className="p-3.5 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-purple-500/5">✅ Direct WhatsApp & Phone</td>
-                    </tr>
-                    <tr className="hover:bg-muted/30">
-                      <td className="p-3.5 text-foreground font-semibold">Roadmap Influence</td>
-                      <td className="p-3.5 text-center text-rose-500">❌</td>
-                      <td className="p-3.5 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-purple-500/5">✅ Direct Co-Design & Voting</td>
-                    </tr>
-                    <tr className="hover:bg-muted/30">
-                      <td className="p-3.5 text-foreground font-semibold">Price Locked Forever</td>
-                      <td className="p-3.5 text-center text-rose-500">❌</td>
-                      <td className="p-3.5 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-purple-500/5">✅ Guaranteed Locked Forever</td>
-                    </tr>
-                    <tr className="hover:bg-muted/30">
-                      <td className="p-3.5 text-foreground font-semibold">Quarterly Strategy Calls</td>
-                      <td className="p-3.5 text-center text-rose-500">❌</td>
-                      <td className="p-3.5 text-center font-bold text-purple-700 dark:text-purple-300 bg-purple-500/5">✅ Included (1-on-1 Sessions)</td>
-                    </tr>
-                    <tr className="hover:bg-muted/30">
-                      <td className="p-3.5 text-foreground font-semibold">Priority Feature Requests</td>
-                      <td className="p-3.5 text-center text-rose-500">❌</td>
-                      <td className="p-3.5 text-center font-bold text-purple-700 dark:text-purple-300 bg-purple-500/5">✅ Expedited Engineering</td>
-                    </tr>
-                    <tr className="hover:bg-muted/30">
-                      <td className="p-3.5 text-foreground font-semibold">White-Glove Onboarding</td>
-                      <td className="p-3.5 text-center text-muted-foreground">Self-serve</td>
-                      <td className="p-3.5 text-center font-bold text-purple-700 dark:text-purple-300 bg-purple-500/5">✅ Full Migration & Setup</td>
-                    </tr>
-                  </tbody>
-                </table>
+            {/* Founding Membership Pricing Box */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/5 border border-amber-500/30 space-y-2 max-w-3xl">
+              <h3 className="text-xs font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wider">Founding Membership</h3>
+              <div className="flex flex-wrap items-baseline gap-3">
+                <span className="text-3xl font-extrabold text-foreground tracking-tight">$2,899/year</span>
+                <span className="text-xs sm:text-sm text-muted-foreground">
+                  <strong className="text-foreground font-semibold">Standard Membership:</strong> $12,000/year <span className="text-muted-foreground font-normal">(available after the Founding Partner Program closes)</span>
+                </span>
+              </div>
+              <p className="text-xs font-semibold text-foreground pt-1">
+                Includes up to <strong className="text-amber-700 dark:text-amber-300">20 active staff members</strong>.
+              </p>
+            </div>
+
+            {/* What You'll Receive */}
+            <div className="space-y-3 p-4 sm:p-5 rounded-2xl bg-muted/30 border border-border/50">
+              <h3 className="text-sm font-bold text-foreground tracking-tight">What You'll Receive</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs sm:text-sm text-foreground/90">
+                {[
+                  "Permanent Founding Partner pricing for as long as you remain a customer",
+                  "Up to 20 active staff included",
+                  "Direct WhatsApp access to the founders",
+                  "White-glove onboarding and complimentary data migration",
+                  "Priority support with faster response times",
+                  "Early access to new features before public release",
+                  "Direct influence over product decisions and feature priorities",
+                  "Exclusive access to the private Founding Partner community",
+                  "Recognition as one of the first companies helping build FiledCrews"
+                ].map((b, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <span>{b}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* What We Ask From You */}
+            <div className="space-y-3 p-4 sm:p-5 rounded-2xl bg-muted/20 border border-border/40 max-w-3xl">
+              <div>
+                <h3 className="text-sm font-bold text-foreground tracking-tight">What We Ask From You</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">We're looking for companies that want to help build a better field service platform.</p>
+              </div>
+              <div className="space-y-2 text-xs sm:text-sm text-foreground/90">
+                <p className="font-semibold text-xs text-muted-foreground uppercase tracking-wider">As a Founding Partner, you'll:</p>
+                {[
+                  "Use FiledCrews as your primary field service platform",
+                  "Join one monthly product feedback session",
+                  "Share honest operational feedback from your team",
+                  "Help us validate new features before they're released",
+                  "Be open to becoming a customer success story after achieving measurable results"
+                ].map((req, idx) => (
+                  <div key={idx} className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0 mt-2" />
+                    <span>{req}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Who Should Apply */}
+            <div className="space-y-1.5 max-w-3xl">
+              <h3 className="text-sm font-bold text-foreground">Who Should Apply</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                The Founding Partner Council is ideal for growing HVAC, plumbing, electrical, garage door, pest control, roofing, and other home service companies that want a direct voice in the software they rely on every day.
+              </p>
+            </div>
+
+            {/* Membership Closes Permanently After 20 Companies */}
+            <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 space-y-1 max-w-3xl">
+              <h4 className="text-xs sm:text-sm font-bold text-foreground">Membership Closes Permanently After 20 Companies</h4>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Once all 20 Founding Partner memberships have been accepted, this program will close permanently. New customers will join under Standard Membership pricing and will not receive Founding Partner privileges or pricing.
+              </p>
+            </div>
+
+            {/* Apply CTA Button */}
+            <div className="max-w-3xl">
+              <Button
+                asChild
+                className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm h-12 px-8 rounded-xl transition-all shadow-sm"
+              >
+                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Apply to Become a Founding Partner
+                </a>
+              </Button>
+            </div>
+          </div>
+
+          {/* In-Screen Responsive Capability Comparison Grid (Zero Horizontal Scrollbars) */}
+          <div className="space-y-3 pt-4">
+            <h3 className="text-xs sm:text-sm font-bold text-foreground uppercase tracking-wider">Plan Capability Comparison</h3>
+            
+            <div className="rounded-2xl border border-border/60 bg-card overflow-hidden text-xs sm:text-sm">
+              {/* Header */}
+              <div className="grid grid-cols-12 border-b border-border/60 bg-muted/40 p-3 sm:p-4 font-bold text-foreground items-center gap-1">
+                <div className="col-span-5 sm:col-span-6">Capability</div>
+                <div className="col-span-3 sm:col-span-3 text-center text-slate-700 dark:text-slate-300">Growth</div>
+                <div className="col-span-4 sm:col-span-3 text-center text-amber-700 dark:text-amber-400 bg-amber-500/10 py-1 rounded-md text-[11px] sm:text-xs">Founding VIP</div>
+              </div>
+
+              {/* Rows */}
+              <div className="divide-y divide-border/40 font-medium">
+                {[
+                  { feat: "Included Team Licenses", growth: "10 Seats ($49.50/seat)", vip: "20 Seats ($12.08/seat)" },
+                  { feat: "Annualized Investment", growth: "$5,940/yr ($495/mo)", vip: "$2,899/yr (Save $3,041/yr)" },
+                  { feat: "Founder Channel Access", growth: "Standard queue", vip: "Direct WhatsApp & Phone" },
+                  { feat: "Roadmap Co-Design", growth: "Feature queue", vip: "Direct Priority Voting" },
+                  { feat: "Quarterly Strategy Reviews", growth: "—", vip: "1-on-1 Sessions Included" },
+                  { feat: "White-Glove Onboarding", growth: "Self-serve", vip: "Free Data Migration & Setup" },
+                ].map((row, idx) => (
+                  <div key={idx} className="grid grid-cols-12 p-3 sm:p-4 items-center hover:bg-muted/20 text-xs sm:text-sm gap-1">
+                    <div className="col-span-5 sm:col-span-6 text-foreground font-semibold pr-1 leading-snug">{row.feat}</div>
+                    <div className="col-span-3 sm:col-span-3 text-center text-muted-foreground text-[11px] sm:text-xs leading-snug">{row.growth}</div>
+                    <div className="col-span-4 sm:col-span-3 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-amber-500/5 py-1 px-1 rounded-md text-[11px] sm:text-xs leading-snug">{row.vip}</div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
 
-          <div className="grid gap-8 lg:grid-cols-12 items-start">
+          {/* Form & Summary Breakdown Grid (Fully Mobile Responsive) */}
+          <div className="grid gap-6 lg:gap-8 grid-cols-1 lg:grid-cols-12 items-start pt-4">
             {/* Left Column: Form & Manual Payment Info */}
             <div className="lg:col-span-7 space-y-6">
-              {/* Contact Information */}
-              <div className="space-y-3 p-5 rounded-2xl border border-border/60 bg-card">
-                <h3 className="text-sm font-bold text-foreground">Contact Information</h3>
+              {/* Account Information */}
+              <div className="space-y-3 p-4 sm:p-6 rounded-2xl border border-border/60 bg-card">
+                <h3 className="text-sm font-bold text-foreground">Account Information</h3>
                 <div className="space-y-1.5">
                   <label className="text-xs text-muted-foreground font-medium">Work Email</label>
                   <Input
                     value={user?.email || ""}
                     disabled
-                    className="bg-muted/40 border-border/50 text-foreground text-xs h-10"
+                    className="bg-muted/40 border-border/50 text-foreground text-xs sm:text-sm h-10 sm:h-11"
                   />
                 </div>
               </div>
 
-              {/* Payment Date */}
-              <div className="space-y-3 p-5 rounded-2xl border border-border/60 bg-card">
-                <h3 className="text-sm font-bold text-foreground">Activation Schedule</h3>
-                <div className="p-3.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-800/60 text-xs">
-                  <p className="font-bold text-blue-900 dark:text-blue-300">Immediately (Today)</p>
-                  <p className="text-blue-700 dark:text-blue-400 mt-0.5 text-[11px]">
-                    Plan updates and seat quotas will take effect upon confirmation by your account manager.
+              {/* Activation Timeline */}
+              <div className="space-y-3 p-4 sm:p-6 rounded-2xl border border-border/60 bg-card">
+                <h3 className="text-sm font-bold text-foreground">Activation Timeline</h3>
+                <div className="p-3.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-800/60 text-xs sm:text-sm">
+                  <p className="font-bold text-blue-900 dark:text-blue-300">Immediate Provisioning</p>
+                  <p className="text-blue-700 dark:text-blue-400 mt-0.5 text-[11px] sm:text-xs">
+                    Your account limits and seat quotas will be provisioned immediately upon confirmation by operations.
                   </p>
                 </div>
               </div>
 
-              {/* Manual Activation Payment Notice (No Credit Card required) */}
-              <div className="space-y-3 p-5 rounded-2xl border border-border/60 bg-card">
+              {/* Billing Details */}
+              <div className="space-y-3 p-4 sm:p-6 rounded-2xl border border-border/60 bg-card">
                 <div className="flex items-center gap-2">
                   <Building className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                  <h3 className="text-sm font-bold text-foreground">Payment Method & Activation</h3>
+                  <h3 className="text-sm font-bold text-foreground">Billing Details</h3>
                 </div>
 
-                <div className="p-4 rounded-xl border border-dashed border-blue-300 dark:border-blue-700/60 bg-blue-50/40 dark:bg-blue-950/20 space-y-2 text-xs">
-                  <div className="flex items-center gap-2 text-blue-800 dark:text-blue-300 font-semibold">
+                <div className="p-4 rounded-xl border border-border/60 bg-muted/30 space-y-2 text-xs sm:text-sm">
+                  <div className="flex items-center gap-2 text-foreground font-semibold">
                     <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                    <span>Direct Invoicing / Manual Activation Mode</span>
+                    <span>Invoice & Bank Transfer Activation</span>
                   </div>
-                  <p className="text-muted-foreground text-[11px] leading-relaxed">
-                    We currently process payment activations directly via bank transfer / wire invoice. Submitting this request notifies your account specialist to provision your license limits without delay.
+                  <p className="text-muted-foreground text-[11px] sm:text-xs leading-relaxed">
+                    Plan activations are handled via direct company invoice. Submitting this request sends an automated notification to your designated specialist for instant setup.
                   </p>
                 </div>
 
@@ -1053,7 +1159,7 @@ export default function SettingsPage() {
                     <Input
                       value={company?.name || ""}
                       readOnly
-                      className="bg-muted/40 border-border/50 text-foreground text-xs h-10"
+                      className="bg-muted/40 border-border/50 text-foreground text-xs sm:text-sm h-10 sm:h-11"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -1062,7 +1168,7 @@ export default function SettingsPage() {
                       placeholder="e.g. 123456789"
                       value={businessTaxId}
                       onChange={(e) => setBusinessTaxId(e.target.value)}
-                      className="bg-card border-border/50 text-foreground text-xs h-10"
+                      className="bg-card border-border/50 text-foreground text-xs sm:text-sm h-10 sm:h-11"
                     />
                   </div>
                 </div>
@@ -1073,68 +1179,68 @@ export default function SettingsPage() {
                     placeholder="Enter company billing address"
                     value={billingAddress}
                     onChange={(e) => setBillingAddress(e.target.value)}
-                    className="bg-card border-border/50 text-foreground text-xs h-10"
+                    className="bg-card border-border/50 text-foreground text-xs sm:text-sm h-10 sm:h-11"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Right Column: Summary Card Sidebar */}
+            {/* Right Column: Summary Card Sidebar (Mobile Stacked / Desktop Sticky) */}
             <div className="lg:col-span-5 space-y-6">
-              <div className="p-6 rounded-2xl border border-border/60 bg-card shadow-sm space-y-6 sticky top-6">
-                {/* Plan Header */}
+              <div className="p-5 sm:p-6 rounded-2xl border border-border/60 bg-card shadow-sm space-y-6 lg:sticky lg:top-6">
+                {/* Plan Header (No Crown Icon) */}
                 <div className="flex items-center gap-3.5 pb-4 border-b border-border/40">
                   <div className="p-3 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                    <Crown className="h-6 w-6" />
+                    <ShieldCheck className="h-6 w-6" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-foreground">{activeSelectedPlan.name} Plan</h3>
-                    <p className="text-xs text-muted-foreground">Billed monthly / annual schedule</p>
+                    <h3 className="text-base font-bold text-foreground">{activeSelectedPlan.name} Tier</h3>
+                    <p className="text-xs text-muted-foreground">Selected subscription plan</p>
                   </div>
                 </div>
 
                 {/* Line Items */}
-                <div className="space-y-3 text-xs">
+                <div className="space-y-3 text-xs sm:text-sm">
                   <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground font-medium">Base Plan Subscription</span>
+                    <span className="text-muted-foreground font-medium">Plan Rate</span>
                     <span className="font-bold text-foreground">{activeSelectedPlan.price}{activeSelectedPlan.period}</span>
                   </div>
                   <div className="flex items-center justify-between text-muted-foreground">
-                    <span>Office & Crew Seat Quotas</span>
+                    <span>License Quota</span>
                     <span className="text-foreground font-medium">Included</span>
                   </div>
                   <div className="flex items-center justify-between text-muted-foreground">
-                    <span>Setup & Onboarding Fee</span>
-                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">$0.00 (Waived)</span>
+                    <span>Onboarding & Setup</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">$0.00 (Complimentary)</span>
                   </div>
                 </div>
 
                 {/* Subtotal & Total */}
                 <div className="pt-4 border-t border-border/40 space-y-2">
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="flex items-center justify-between text-xs sm:text-sm text-muted-foreground">
                     <span>Subtotal</span>
                     <span>{activeSelectedPlan.price}.00</span>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="flex items-center justify-between text-xs sm:text-sm text-muted-foreground">
                     <span>Tax</span>
-                    <span className="text-[11px]">Calculated upon invoice</span>
+                    <span className="text-[11px] sm:text-xs">Itemized on invoice</span>
                   </div>
                   <div className="flex items-baseline justify-between pt-2">
-                    <span className="text-sm font-bold text-foreground">Total due today</span>
-                    <span className="text-2xl font-black text-foreground">{activeSelectedPlan.price}.00</span>
+                    <span className="text-sm sm:text-base font-bold text-foreground">Total Due</span>
+                    <span className="text-2xl sm:text-3xl font-black text-foreground">{activeSelectedPlan.price}.00</span>
                   </div>
                 </div>
 
                 {/* Submit Action Button */}
                 <Button
                   onClick={handleConfirmPlanChange}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-11 text-xs rounded-xl shadow-md transition-all"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-11 sm:h-12 text-xs sm:text-sm rounded-xl shadow-sm transition-all"
                 >
                   Submit Plan Activation Request
                 </Button>
 
-                <p className="text-[10px] text-center text-muted-foreground leading-relaxed px-2">
-                  By confirming, you submit a manual plan activation request to FiledCrews account operations. No auto-charge will occur until manual confirmation.
+                <p className="text-[10px] sm:text-[11px] text-center text-muted-foreground leading-relaxed px-2">
+                  By clicking submit, you request manual plan activation. Our team will verify your account details and issue invoice documentation.
                 </p>
               </div>
             </div>

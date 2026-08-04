@@ -213,7 +213,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const formattedPrefix = prefix.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3).padEnd(3, 'X');
     const { data, error } = await supabase
       .from('companies')
-      .insert({ auth_user_id: state.user.id, name, prefix: formattedPrefix, currency: 'USD' })
+      .insert({
+        auth_user_id: state.user.id,
+        name,
+        prefix: formattedPrefix,
+        currency: 'USD',
+        subscription_tier: 'free_trial',
+        subscription_status: 'trialing',
+        max_admin_seats: 1,
+        max_field_crew_seats: 2,
+      })
       .select('*')
       .single();
     if (!error && data) {

@@ -10,7 +10,7 @@ export default function PrivacyPolicy() {
     <PublicPageLayout>
       <SEO
         title="Privacy Policy"
-        description="Privacy Policy for FiledCrews — mobile app and admin dashboard."
+        description="Privacy Policy for FiledCrews mobile app and admin dashboard."
         path="/privacy"
       />
       <article className="prose prose-sm sm:prose max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground/90 prose-li:text-foreground/90 prose-strong:text-foreground prose-a:text-primary">

@@ -15,7 +15,7 @@ export default function MobileWelcomePage() {
   return (
     <>
       <SEO
-        title="Mobile App Guide & Sole Trader Quickstart — FiledCrews"
+        title="Mobile App Guide & Sole Trader Quickstart"
         description="Learn how FiledCrews connects mobile field crews with the web admin dashboard, explore industry vertical workflows, and start your free workspace."
         path="/mobile-welcome"
       />

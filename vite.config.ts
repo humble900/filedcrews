@@ -6,8 +6,9 @@ import path from "path";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "::",
+    host: true,
     port: 8080,
+    strictPort: false,
     hmr: {
       overlay: false,
     },
@@ -16,28 +17,18 @@ export default defineConfig(({ mode }) => ({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      includeAssets: ['favicon.ico', 'favicon.png', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'Mila Staff Coordinator',
-        short_name: 'Mila',
+        name: 'FiledCrews Staff Coordinator & Mobile Dispatch',
+        short_name: 'FiledCrews',
         description: 'Field Service Management platform with offline sync',
-        theme_color: '#ffffff',
-        background_color: '#ffffff',
+        theme_color: '#0f766e',
+        background_color: '#090d16',
         display: 'standalone',
         icons: [
           {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
+            src: 'favicon.png',
+            sizes: 'any',
             type: 'image/png',
             purpose: 'any maskable'
           }

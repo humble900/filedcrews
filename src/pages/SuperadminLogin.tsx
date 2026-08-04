@@ -82,8 +82,8 @@ export default function SuperadminLogin() {
   return (
     <>
       <SEO
-        title="Platform Console Login — Secure Administrative Gateway"
-        description="Secure gateway for authenticated platform superadministrators."
+        title="FiledCrews Admin Console"
+        description="Secure gateway for authenticated FiledCrews platform administrators."
         path="/superadmin/login"
         noIndex
       />
@@ -94,11 +94,14 @@ export default function SuperadminLogin() {
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
 
         <div className="w-full max-w-md bg-slate-950/60 border border-slate-900 backdrop-blur-2xl p-8 rounded-2xl shadow-2xl z-10 space-y-6">
-          <div className="text-center space-y-2">
-            <div className="mx-auto w-12 h-12 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-500 border border-indigo-500/20">
-              <Shield className="h-6 w-6 animate-pulse" />
+          <div className="text-center space-y-3">
+            <div className="mx-auto flex items-center justify-center gap-3">
+              <img src="/favicon.png" alt="FiledCrews" className="h-10 w-10 rounded-xl shadow-lg" />
+              <div className="mx-auto w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-500 border border-indigo-500/20">
+                <Shield className="h-5 w-5 animate-pulse" />
+              </div>
             </div>
-            <h2 className="text-xl font-bold text-white tracking-tight">Platform Admin Gateway</h2>
+            <h2 className="text-xl font-bold text-white tracking-tight">FiledCrews Admin Gateway</h2>
             <p className="text-xs text-indigo-400 font-medium uppercase tracking-widest">Secure Administrative Console</p>
           </div>
 
@@ -107,7 +110,7 @@ export default function SuperadminLogin() {
               <Label className="text-xs font-semibold text-slate-400">Administrator Email</Label>
               <Input
                 type="email"
-                placeholder="admin@platform.com"
+                placeholder="admin@filedcrews.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="bg-slate-900/50 border-slate-850 text-white placeholder-slate-600 focus-visible:ring-indigo-500 text-sm"

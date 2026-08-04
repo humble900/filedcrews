@@ -421,7 +421,7 @@ export default function LandingPage() {
   return (
     <>
       <SEO
-        title="FiledCrews — Free Field Service Management (FSM) & Dispatch Software"
+        title="FiledCrews | Free Field Service Management (FSM) & Dispatch Software"
         description="Manage field operations with FiledCrews, the best free Field Service Management (FSM) software. Features live GPS map tracking, automatic geofence audits, customer job dispatching, custom category cost tracking, and biometric face check verification."
         path="/"
         ogImageAlt="FiledCrews FSM dashboard showing live map tracking, geofence zones, and mobile dispatching."

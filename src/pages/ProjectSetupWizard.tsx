@@ -490,7 +490,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
   const [introStep, setIntroStep] = useState(1); // 1 to 6 for clay-style card introduction
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [showCrewPassword, setShowCrewPassword] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<'free_trial' | 'growth' | 'enterprise'>('free_trial');
+  const [selectedPlan, setSelectedPlan] = useState<'free_trial' | 'growth' | 'founding_partner' | 'enterprise'>('free_trial');
   const [includeSampleData, setIncludeSampleData] = useState<boolean>(true);
 
   // Signup fields (for Mode 1 Step 6)
@@ -916,6 +916,8 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
             annual_revenue: companyAnnualRevenue.trim() || null,
             max_admin_seats: 1,
             max_field_crew_seats: 2,
+            subscription_tier: 'free_trial',
+            subscription_status: 'trialing',
           })
           .select()
           .single();
@@ -1447,14 +1449,16 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
     const handlePlanSelection = async (tier: "free_trial" | "growth" | "founding_partner" | "enterprise") => {
       const activeUserRes = await supabase.auth.getUser();
       const activeUserId = activeUserRes.data.user?.id || user?.id;
+      // Map internal tier IDs to DB-canonical values
+      const dbTier = tier === "founding_partner" ? "Founding Partner" : tier;
       if (activeUserId) {
         const { data: comp } = await supabase.from("companies").select("id").eq("auth_user_id", activeUserId).maybeSingle();
         if (comp) {
           await (supabase as any).from("companies").update({
-            subscription_tier: tier,
+            subscription_tier: dbTier,
             subscription_status: tier === "free_trial" ? "trialing" : "pending_activation",
-            max_admin_seats: tier === "growth" ? 3 : (tier === "founding_partner" ? 5 : (tier === "enterprise" ? 50 : 1)),
-            max_field_crew_seats: tier === "growth" ? 7 : (tier === "founding_partner" ? 15 : (tier === "enterprise" ? 100 : 2))
+            max_admin_seats: tier === "growth" ? 3 : (tier === "founding_partner" ? 20 : (tier === "enterprise" ? 50 : 1)),
+            max_field_crew_seats: tier === "growth" ? 7 : (tier === "founding_partner" ? 20 : (tier === "enterprise" ? 100 : 2))
           }).eq("id", comp.id);
         }
       }
@@ -1463,7 +1467,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
         const text = encodeURIComponent(`Hi there! I just registered ${companyName || 'our company'} on FiledCrews and would like to activate our Growth Plan ($495/mo, 10 seats). Please assist with account activation.`);
         window.open(`https://wa.me/14094229714?text=${text}`, "_blank");
       } else if (tier === "founding_partner") {
-        const text = encodeURIComponent(`Hi there! We are interested in enrolling ${companyName || 'our company'} in the Yearly Founding Partner Charter for FiledCrews ($2,899/yr, 20 seats). Please send us details on how we can customize our 20 seats.`);
+        const text = encodeURIComponent(`Hi there! We are interested in enrolling ${companyName || 'our company'} in the Founding Partner Council for FiledCrews ($2,899/yr, 20 seats). Please send us details on how to get started.`);
         window.open(`https://wa.me/14094229714?text=${text}`, "_blank");
       } else if (tier === "enterprise") {
         const text = encodeURIComponent(`Hi there! We are interested in an Enterprise Custom Plan for ${companyName || 'our company'} on FiledCrews. Please connect us with an Enterprise Account Manager.`);
@@ -1479,7 +1483,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
     return (
       <>
         <SEO
-          title="Select Your Plan — FiledCrews"
+          title="Select Your Plan"
           description="Choose a subscription plan to activate your FiledCrews workspace."
           path="/wizard"
           noIndex
@@ -1622,77 +1626,68 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                   </Button>
                 </div>
 
-                {/* Plan 3: Founding Partner Program (VIP Featured Card) */}
-                <div className="bg-gradient-to-b from-purple-500/5 via-white to-purple-500/5 rounded-3xl border-2 border-purple-500/80 hover:border-purple-600 p-6 sm:p-7 shadow-xl ring-2 ring-purple-500/20 transition-all flex flex-col justify-between space-y-6 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 bg-gradient-to-l from-purple-600 to-indigo-600 text-white text-[9px] font-extrabold px-3 py-1 rounded-bl-xl uppercase tracking-wider shadow-sm">
-                    VIP Charter
+                {/* Plan 3: Founding Partner Council (Featured Card) */}
+                <div className="bg-gradient-to-b from-amber-500/5 via-white to-amber-500/5 rounded-3xl border-2 border-amber-500/80 hover:border-amber-600 p-6 sm:p-7 shadow-xl ring-2 ring-amber-500/20 transition-all flex flex-col justify-between space-y-6 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 bg-gradient-to-l from-amber-600 to-amber-500 text-slate-950 text-[9px] font-extrabold px-3 py-1 rounded-bl-xl uppercase tracking-wider shadow-sm">
+                    Best Value
                   </div>
 
                   <div className="space-y-4">
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <Crown className="h-5 w-5 text-purple-600" />
-                        <h2 className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-500 via-indigo-600 to-purple-600 drop-shadow-[0_2px_8px_rgba(168,85,247,0.4)]">
-                          Founding Partner
+                        <h2 className="text-xl font-black tracking-tight text-slate-900">
+                          Founding Partner Council
                         </h2>
                       </div>
                       <div className="text-3xl font-black text-slate-900 mt-2">
                         $2,899 <span className="text-xs font-normal text-slate-500">/ yr</span>
                       </div>
-                      <p className="text-xs text-purple-900/80 font-medium mt-2 leading-relaxed">
-                        Exclusive VIP annual charter membership (20 seats included). Enjoy lifetime locked pricing and direct co-design access.
+                      <p className="text-xs text-slate-600 font-medium mt-2 leading-relaxed">
+                        Invitation-only council membership for growing home service businesses. Limited to 20 companies.
                       </p>
                     </div>
 
-                    <ul className="text-xs text-slate-700 space-y-2 pt-4 border-t border-purple-200/60 font-medium">
-                      <li className="flex items-center gap-2 text-purple-950 font-bold">
-                        <CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" />
-                        <span>🔒 Locked-in pricing forever</span>
+                    <ul className="text-xs text-slate-700 space-y-2 pt-4 border-t border-amber-200/60 font-medium">
+                      <li className="flex items-center gap-2 text-slate-950 font-bold">
+                        <CheckCircle2 className="h-4 w-4 text-amber-600 shrink-0" />
+                        <span>Permanent Founding Partner pricing</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" />
-                        <span><strong>20 Total Seats</strong> (Custom Office vs Field Split)</span>
+                        <CheckCircle2 className="h-4 w-4 text-amber-600 shrink-0" />
+                        <span><strong>20 Total Seats</strong> (assign however you want)</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" />
-                        <span>👥 Direct access to the founders</span>
+                        <CheckCircle2 className="h-4 w-4 text-amber-600 shrink-0" />
+                        <span>Direct WhatsApp access to the founders</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" />
-                        <span>🗳️ Vote on the product roadmap</span>
+                        <CheckCircle2 className="h-4 w-4 text-amber-600 shrink-0" />
+                        <span>Direct influence over product decisions</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" />
-                        <span>📞 Quarterly strategy calls</span>
+                        <CheckCircle2 className="h-4 w-4 text-amber-600 shrink-0" />
+                        <span>White-glove onboarding & data migration</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" />
-                        <span>🚀 Priority feature requests</span>
+                        <CheckCircle2 className="h-4 w-4 text-amber-600 shrink-0" />
+                        <span>Early access to new features before release</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" />
-                        <span>🤝 White-glove onboarding & migration</span>
+                        <CheckCircle2 className="h-4 w-4 text-amber-600 shrink-0" />
+                        <span>Priority support with faster response times</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" />
-                        <span>⚡ Early access to every new feature</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" />
-                        <span>🌟 Featured on Founding Partner wall</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" />
-                        <span>💬 Private WhatsApp VIP group</span>
+                        <CheckCircle2 className="h-4 w-4 text-amber-600 shrink-0" />
+                        <span>Private Founding Partner community</span>
                       </li>
                     </ul>
                   </div>
 
                   <Button
                     onClick={() => handlePlanSelection("founding_partner")}
-                    className="w-full bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white font-extrabold text-xs h-11 rounded-xl shadow-lg shadow-purple-600/20 transition-all flex items-center justify-center gap-1.5 mt-4"
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs h-11 rounded-xl shadow-lg shadow-amber-600/20 transition-all flex items-center justify-center gap-1.5 mt-4"
                   >
-                    Join VIP Charter ($2,899/yr) ➔
+                    Apply to Join Council ($2,899/yr) ➔
                   </Button>
                 </div>
 
@@ -1753,7 +1748,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
     return (
       <>
         <SEO
-          title="Onboarding — FiledCrews"
+          title="Onboarding"
           description="Clay-style enterprise onboarding wizard."
           path="/wizard"
           noIndex
@@ -2673,7 +2668,10 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                             address: companyAddress.trim() || null,
                             website: companyWebsite.trim() || null,
                             staff_count: companyStaffCount.trim() || null,
-                            annual_revenue: companyAnnualRevenue.trim() || null,
+                            subscription_tier: 'free_trial',
+                            subscription_status: 'trialing',
+                            max_admin_seats: 1,
+                            max_field_crew_seats: 2,
                           })
                           .select()
                           .single();
@@ -2733,8 +2731,10 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                           await (supabase as any)
                             .from("companies")
                             .update({
-                              subscription_tier: selectedPlan,
-                              subscription_status: selectedPlan === 'free_trial' ? 'trialing' : 'active'
+                              subscription_tier: selectedPlan === 'founding_partner' ? 'Founding Partner' : selectedPlan,
+                              subscription_status: selectedPlan === 'free_trial' ? 'trialing' : 'active',
+                              max_admin_seats: selectedPlan === 'growth' ? 3 : (selectedPlan === 'founding_partner' ? 20 : (selectedPlan === 'enterprise' ? 50 : 1)),
+                              max_field_crew_seats: selectedPlan === 'growth' ? 7 : (selectedPlan === 'founding_partner' ? 20 : (selectedPlan === 'enterprise' ? 100 : 2)),
                             })
                             .eq("id", comp.id);
 
