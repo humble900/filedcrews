@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -85,6 +85,22 @@ export default function SettingsPage() {
   const [aiApiKey, setAiApiKey] = useState(
     company?.ai_api_key || (company?.id ? localStorage.getItem(`fc_ai_key_${company.id}`) : "") || "sk-filedcrews-ai-seeded-v1-prod-key"
   );
+
+  useEffect(() => {
+    if (company) {
+      if (!companyName) setCompanyName(company.name || "");
+      if (!companyIndustry) setCompanyIndustry((company as any).industry || "");
+      const settings = (company as any).automation_settings || {};
+      const stripe = settings.stripe || {};
+      const qb = settings.quickbooks || {};
+      if (!stripePubKey) setStripePubKey(stripe.publishable_key || settings.stripe_publishable_key || "");
+      if (!stripeSecKey) setStripeSecKey(stripe.secret_key_masked || (settings.stripe_secret_key ? maskApiKey(settings.stripe_secret_key) : ""));
+      if (!qbClientId) setQbClientId(qb.client_id || settings.quickbooks_client_id || "");
+      if (!qbClientSecret) setQbClientSecret(qb.client_secret_masked || (settings.quickbooks_client_secret ? maskApiKey(settings.quickbooks_client_secret) : ""));
+      if (!aiProvider) setAiProvider(company.ai_provider || "openai");
+      if (!aiApiKey) setAiApiKey(company.ai_api_key || localStorage.getItem(`fc_ai_key_${company.id}`) || "sk-filedcrews-ai-seeded-v1-prod-key");
+    }
+  }, [company]);
 
   const [savingBYOK, setSavingBYOK] = useState(false);
   const [testingStripe, setTestingStripe] = useState(false);
@@ -175,7 +191,7 @@ export default function SettingsPage() {
 
   const visibleTabs = TABS.filter(t => !t.ownerOnly || isOwner || userRole === "Admin");
 
-  // ─── Queries ───
+  // ─── Queries (Tab Scoped for Instant Page Load Speed) ───
   const { data: staffList = [], isLoading: loadingStaff } = useQuery({
     queryKey: ["billing_staff_usage", company?.id],
     queryFn: async () => {
@@ -184,7 +200,8 @@ export default function SettingsPage() {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!company?.id,
+    enabled: !!company?.id && (activeTab === "billing" || activeTab === "company" || activeTab === "profile"),
+    staleTime: 60000,
   });
 
   const { data: campaigns = [], isLoading: loadingCampaigns } = useQuery({
@@ -195,7 +212,8 @@ export default function SettingsPage() {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!company?.id,
+    enabled: !!company?.id && activeTab === "company",
+    staleTime: 60000,
   });
 
   const { data: apiKeys = [], isLoading: loadingKeys } = useQuery({
@@ -206,7 +224,8 @@ export default function SettingsPage() {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!company?.id,
+    enabled: !!company?.id && activeTab === "developer",
+    staleTime: 60000,
   });
 
   const { data: migrationTasks = [], isLoading: loadingMigrations } = useQuery({
@@ -217,8 +236,9 @@ export default function SettingsPage() {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!company?.id,
-    refetchInterval: 3000, // Poll every 3 seconds for live updates
+    enabled: !!company?.id && activeTab === "integrations",
+    refetchInterval: activeTab === "integrations" ? 5000 : false,
+    staleTime: 30000,
   });
 
   // ─── Mutations ───
