@@ -116,9 +116,11 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
   const [formResponses, setFormResponses] = useState<Record<string, any>>({});
   const [isJobContextExpanded, setIsJobContextExpanded] = useState(false);
 
+  const getStoredPinHash = () => localStorage.getItem("filedcrews_pin_hash") || localStorage.getItem("onsite_pin_hash");
+
   // PIN Lock state
   const [isPinLocked, setIsPinLocked] = useState(() => {
-    return !!localStorage.getItem("onsite_pin_hash");
+    return !!getStoredPinHash();
   });
   const [showPinSetup, setShowPinSetup] = useState(false);
   const [pinInput, setPinInput] = useState("");
@@ -126,7 +128,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
   const [tempPin, setTempPin] = useState("");
   const [pinError, setPinError] = useState("");
   const [isAppLocked, setIsAppLocked] = useState(() => {
-    return !!localStorage.getItem("onsite_pin_hash");
+    return !!getStoredPinHash();
   });
 
   // Incident/Field report state
@@ -163,7 +165,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
   const [isOfflineMode, setIsOfflineMode] = useState(!navigator.onLine);
   const [offlineQueue, setOfflineQueue] = useState<{ taskId: string; payload: any; taskTitle: string }[]>(() => {
     try {
-      const saved = localStorage.getItem("onsite_offline_queue");
+      const saved = localStorage.getItem("filedcrews_offline_queue") || localStorage.getItem("onsite_offline_queue");
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
@@ -341,19 +343,49 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
       return data || [];
     },
   });
+
   useEffect(() => {
     try {
-      localStorage.setItem("onsite_offline_queue", JSON.stringify(offlineQueue));
+      localStorage.setItem("filedcrews_offline_queue", JSON.stringify(offlineQueue));
     } catch (e) {
       console.warn("Failed to save offline queue to localStorage:", e);
     }
   }, [offlineQueue]);
+
+  // Offline queue sync handler
+  const syncOfflineQueue = async () => {
+    if (isOfflineMode) {
+      toast.warning("Cannot sync while offline. Please check your network connection.");
+      return;
+    }
+    try {
+      const { successCount, failCount } = await flushOfflineQueue();
+      if (offlineQueue.length > 0) {
+        setOfflineQueue([]);
+        localStorage.removeItem("filedcrews_offline_queue");
+        localStorage.removeItem("onsite_offline_queue");
+      }
+      queryClient.invalidateQueries({ queryKey: ["staff_tasks", staffProfile.id] });
+      queryClient.invalidateQueries({ queryKey: ["staff_shifts", staffProfile.id] });
+      if (successCount > 0) {
+        toast.success(`Synced ${successCount} offline update${successCount > 1 ? "s" : ""}!`);
+      } else if (failCount === 0 && offlineQueue.length === 0) {
+        toast.info("Offline queue is already synced.");
+      }
+      if (failCount > 0) {
+        toast.error(`Failed to sync ${failCount} item${failCount > 1 ? "s" : ""}. Will retry automatically.`);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to sync offline queue.");
+    }
+  };
 
   // Network connection listeners
   useEffect(() => {
     const handleOnline = () => {
       setIsOfflineMode(false);
       toast.success("Connection restored! Syncing offline updates.");
+      syncOfflineQueue();
     };
 
     const handleOffline = () => {
@@ -780,7 +812,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
   };
 
   // ── PIN Lock Handlers ──
-  const hashPin = (pin: string) => btoa(pin + "_onsite_salt");
+  const hashPin = (pin: string) => btoa(pin + "_filedcrews_salt");
 
   const handlePinKeyPress = (digit: string) => {
     if (digit === "clear") {
@@ -804,7 +836,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
           setPinInput("");
         } else {
           if (next === tempPin) {
-            localStorage.setItem("onsite_pin_hash", hashPin(next));
+            localStorage.setItem("filedcrews_pin_hash", hashPin(next));
             setIsPinLocked(true);
             setShowPinSetup(false);
             setPinInput("");
@@ -819,8 +851,8 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
           }
         }
       } else if (isAppLocked) {
-        const stored = localStorage.getItem("onsite_pin_hash");
-        if (stored && hashPin(next) === stored) {
+        const stored = getStoredPinHash();
+        if (stored && (hashPin(next) === stored || btoa(next + "_onsite_salt") === stored)) {
           setIsAppLocked(false);
           setPinInput("");
         } else {
@@ -832,6 +864,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
   };
 
   const removePinLock = () => {
+    localStorage.removeItem("filedcrews_pin_hash");
     localStorage.removeItem("onsite_pin_hash");
     setIsPinLocked(false);
     setIsAppLocked(false);

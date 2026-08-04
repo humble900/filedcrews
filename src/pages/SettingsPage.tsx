@@ -244,7 +244,7 @@ export default function SettingsPage() {
     mutationFn: async () => {
       if (!company?.id || !apiKeyName.trim()) throw new Error("Key name required");
       const rand = Array.from({ length: 24 }, () => Math.random().toString(36)[2]).join("");
-      const rawKey = `sk_onsite_live_${rand}`;
+      const rawKey = `sk_filedcrews_live_${rand}`;
       const maskedKey = `${rawKey.slice(0, 15)}...${rawKey.slice(-4)}`;
       const { error } = await supabase.from("api_keys").insert({ company_id: company.id, name: apiKeyName.trim(), key_hash: maskedKey, is_active: true });
       if (error) throw error;

@@ -1,7 +1,7 @@
 // IndexedDB Queue Manager for Native Offline Persistence
 import { supabase } from "@/integrations/supabase/client";
 
-const DB_NAME = "OnSiteOfflineDB";
+const DB_NAME = "FiledCrewsOfflineDB";
 const STORE_NAME = "pending_actions";
 const DB_VERSION = 1;
 
