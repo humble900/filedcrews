@@ -43,6 +43,8 @@ import {
   TrendingUp,
   ArrowUpRight,
   Activity,
+  Crown,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -1749,6 +1751,117 @@ export default function LandingPage() {
                 </div>
               </div>
 
+            </div>
+          </div>
+        </section>
+
+        {/* ──── PRICING & FOUNDING PARTNER CHARTER SECTION ──── */}
+        <section id="pricing" className="py-12 md:py-20 bg-stone-50/80 border-b border-stone-200/60">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 space-y-12">
+            <div className="text-center max-w-3xl mx-auto space-y-3">
+              <span className="text-xs font-extrabold text-teal-700 uppercase tracking-widest bg-teal-50 border border-teal-200/80 px-3.5 py-1 rounded-full">
+                Transparent Pricing & VIP Charter
+              </span>
+              <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
+                Simple plans for teams of any size
+              </h2>
+              <p className="text-slate-500 text-base md:text-lg leading-relaxed">
+                Start with a 14-day free trial or join our exclusive Founding Partner Charter for lifetime locked-in pricing and direct founder access.
+              </p>
+            </div>
+
+            {/* 4 Cards Responsive Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl w-full mx-auto">
+              {/* Free Trial */}
+              <div className="bg-white rounded-3xl border border-stone-200 p-6 sm:p-7 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900">Free Trial</h3>
+                    <div className="text-3xl font-black text-slate-900 mt-2">$0 <span className="text-xs text-slate-500 font-normal">/ 14 days</span></div>
+                    <p className="text-xs text-slate-500 mt-2 leading-relaxed">14 days full access for new accounts — test live GPS check-in & dispatching.</p>
+                  </div>
+                  <ul className="text-xs text-slate-600 space-y-2.5 pt-4 border-t border-stone-100">
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-teal-600 shrink-0" /><span><strong>1 Office Staff Seat</strong></span></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-teal-600 shrink-0" /><span><strong>2 Field Crew Members</strong></span></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-teal-600 shrink-0" /><span>Live GPS Map & Geofences</span></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-teal-600 shrink-0" /><span>Automated Timesheets & Invoices</span></li>
+                  </ul>
+                </div>
+                <Link to="/wizard">
+                  <Button className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs h-11 rounded-xl">Start Free Trial ➔</Button>
+                </Link>
+              </div>
+
+              {/* Growth */}
+              <div className="bg-white rounded-3xl border-2 border-amber-500/40 p-6 sm:p-7 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-[10px] font-extrabold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full uppercase">10 Seats</span>
+                    <h3 className="text-xl font-black text-slate-900 mt-1">Growth</h3>
+                    <div className="text-3xl font-black text-slate-900 mt-2">$495 <span className="text-xs text-slate-500 font-normal">/ mo</span></div>
+                    <p className="text-xs text-slate-500 mt-2 leading-relaxed">Supercharge your business with 10 total seats, AI dispatching, & safety hub.</p>
+                  </div>
+                  <ul className="text-xs text-slate-600 space-y-2.5 pt-4 border-t border-stone-100">
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" /><span><strong>3 Office Staff Seats</strong></span></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" /><span><strong>7 Field Crew Members</strong></span></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" /><span>AI Dispatcher & Mila Copilot</span></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" /><span>Safety Hub & Compliance</span></li>
+                  </ul>
+                </div>
+                <Link to="/wizard?plan=growth">
+                  <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs h-11 rounded-xl">Get Growth Plan ➔</Button>
+                </Link>
+              </div>
+
+              {/* Founding Partner VIP Charter */}
+              <div className="bg-gradient-to-b from-purple-500/5 via-white to-purple-500/5 rounded-3xl border-2 border-purple-500/80 p-6 sm:p-7 shadow-xl ring-2 ring-purple-500/20 transition-all flex flex-col justify-between space-y-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-gradient-to-l from-purple-600 to-indigo-600 text-white text-[9px] font-extrabold px-3 py-1 rounded-bl-xl uppercase tracking-wider">VIP Charter</div>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <Crown className="h-5 w-5 text-purple-600" />
+                      <h3 className="text-xl font-black text-slate-900">Founding Partner</h3>
+                    </div>
+                    <div className="text-3xl font-black text-slate-900 mt-2">$2,899 <span className="text-xs text-slate-500 font-normal">/ yr</span></div>
+                    <p className="text-xs text-purple-950/80 font-medium mt-2 leading-relaxed">Exclusive annual VIP membership with 20 seats, locked pricing, & founder access.</p>
+                  </div>
+                  <ul className="text-xs text-slate-700 space-y-2 pt-4 border-t border-purple-200/60 font-medium">
+                    <li className="flex items-center gap-2 text-purple-950 font-bold"><CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" /><span>🔒 Locked-in pricing forever</span></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" /><span><strong>20 Total Seats</strong> (Custom Split)</span></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" /><span>👥 Direct access to founders</span></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" /><span>🗳️ Vote on product roadmap</span></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" /><span>📞 Quarterly strategy calls</span></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" /><span>🚀 Priority feature requests</span></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" /><span>🤝 White-glove onboarding</span></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" /><span>⚡ Early feature access</span></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" /><span>🌟 Featured Founding Partner</span></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" /><span>💬 Private WhatsApp VIP group</span></li>
+                  </ul>
+                </div>
+                <Link to="/wizard?plan=founding_partner">
+                  <Button className="w-full bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white font-extrabold text-xs h-11 rounded-xl shadow-lg shadow-purple-600/20">Join VIP Charter ($2,899/yr) ➔</Button>
+                </Link>
+              </div>
+
+              {/* Enterprise */}
+              <div className="bg-white rounded-3xl border border-stone-200 p-6 sm:p-7 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900">Enterprise</h3>
+                    <div className="text-3xl font-black text-slate-900 mt-2">Custom</div>
+                    <p className="text-xs text-slate-500 mt-2 leading-relaxed">Tailored deployment for large multi-site enterprises with custom seat scaling.</p>
+                  </div>
+                  <ul className="text-xs text-slate-600 space-y-2.5 pt-4 border-t border-stone-100">
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-teal-600 shrink-0" /><span><strong>Custom Unlimited Seats</strong></span></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-teal-600 shrink-0" /><span>Dedicated Infrastructure & SLA</span></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-teal-600 shrink-0" /><span>Custom API & ERP Integrations</span></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-teal-600 shrink-0" /><span>Dedicated Account Manager</span></li>
+                  </ul>
+                </div>
+                <Link to="/wizard?plan=enterprise">
+                  <Button className="w-full bg-cyan-700 hover:bg-cyan-800 text-white font-extrabold text-xs h-11 rounded-xl">Contact Sales ➔</Button>
+                </Link>
+              </div>
             </div>
           </div>
         </section>

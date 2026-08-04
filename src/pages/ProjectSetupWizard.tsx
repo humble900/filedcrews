@@ -1528,27 +1528,30 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                 </p>
               </div>
 
-              {/* 4 Pricing Cards Responsive Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl w-full mx-auto">
+              {/* Pricing Cards Responsive Grid with Expanded Width */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl w-full mx-auto px-2">
                 {/* Plan 1: 14-Day Free Trial */}
-                <div className="bg-white rounded-2xl border-2 border-slate-200 hover:border-emerald-500/60 p-5 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
+                <div className="bg-white rounded-3xl border-2 border-slate-200 hover:border-emerald-500/60 p-6 sm:p-7 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
                   <div className="space-y-4">
                     <div>
-                      <h2 className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 drop-shadow-[0_2px_8px_rgba(16,185,129,0.4)]">
-                        Free Trial
-                      </h2>
-                      <div className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 drop-shadow-[0_2px_8px_rgba(16,185,129,0.4)]">
+                          Free Trial
+                        </h2>
+                        <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px] font-bold">14 Days</Badge>
+                      </div>
+                      <div className="text-3xl font-black text-slate-900 mt-2">
                         $0 <span className="text-xs font-normal text-slate-500">/ 14 days</span>
                       </div>
                       <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                        14 days full access for new business accounts — set up your team and explore all features.
+                        Full access for new business accounts — test all mobile check-in & dispatch features.
                       </p>
                     </div>
 
                     <ul className="text-xs text-slate-600 space-y-2.5 pt-4 border-t border-slate-100">
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                        <span><strong>1 Office Staff</strong></span>
+                        <span><strong>1 Office Staff Seat</strong></span>
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
@@ -1556,31 +1559,34 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                        <span>14 Days Full Access</span>
+                        <span>Live GPS Tracking & Geofences</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                        <span>Live GPS Map & Geofences</span>
+                        <span>Automated Timesheets & Invoicing</span>
                       </li>
                     </ul>
                   </div>
 
                   <Button
                     onClick={() => handlePlanSelection("free_trial")}
-                    className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs h-10 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+                    className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs h-11 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 mt-4"
                   >
                     Start Free Trial <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
                 </div>
 
                 {/* Plan 2: Growth Plan */}
-                <div className="bg-white rounded-2xl border-2 border-slate-200 hover:border-amber-500/60 p-5 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
+                <div className="bg-white rounded-3xl border-2 border-slate-200 hover:border-amber-500/60 p-6 sm:p-7 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
                   <div className="space-y-4">
                     <div>
-                      <h2 className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 drop-shadow-[0_2px_8px_rgba(245,158,11,0.4)]">
-                        Growth
-                      </h2>
-                      <div className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 drop-shadow-[0_2px_8px_rgba(245,158,11,0.4)]">
+                          Growth
+                        </h2>
+                        <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px] font-bold">10 Seats</Badge>
+                      </div>
+                      <div className="text-3xl font-black text-slate-900 mt-2">
                         $495 <span className="text-xs font-normal text-slate-500">/ mo</span>
                       </div>
                       <p className="text-xs text-slate-500 mt-2 leading-relaxed">
@@ -1591,7 +1597,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                     <ul className="text-xs text-slate-600 space-y-2.5 pt-4 border-t border-slate-100">
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                        <span><strong>3 Office Staff</strong></span>
+                        <span><strong>3 Office Staff Seats</strong></span>
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
@@ -1599,78 +1605,112 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                        <span>AI Dispatcher & Safety Hub</span>
+                        <span>AI Dispatcher & Mila Copilot</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                        <span>Priority Phone Support</span>
+                        <span>Safety Hub & Field Reports</span>
                       </li>
                     </ul>
                   </div>
 
                   <Button
                     onClick={() => handlePlanSelection("growth")}
-                    className="w-full bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs h-10 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+                    className="w-full bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs h-11 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 mt-4"
                   >
                     Activate via WhatsApp ➔
                   </Button>
                 </div>
 
-                {/* Plan 3: Founding Partner Program */}
-                <div className="bg-white rounded-2xl border-2 border-slate-200 hover:border-purple-500/60 p-5 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
+                {/* Plan 3: Founding Partner Program (VIP Featured Card) */}
+                <div className="bg-gradient-to-b from-purple-500/5 via-white to-purple-500/5 rounded-3xl border-2 border-purple-500/80 hover:border-purple-600 p-6 sm:p-7 shadow-xl ring-2 ring-purple-500/20 transition-all flex flex-col justify-between space-y-6 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 bg-gradient-to-l from-purple-600 to-indigo-600 text-white text-[9px] font-extrabold px-3 py-1 rounded-bl-xl uppercase tracking-wider shadow-sm">
+                    VIP Charter
+                  </div>
+
                   <div className="space-y-4">
                     <div>
-                      <h2 className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-indigo-500 to-purple-500 drop-shadow-[0_2px_8px_rgba(168,85,247,0.4)]">
-                        Founding Partner
-                      </h2>
-                      <div className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">
+                      <div className="flex items-center gap-1.5">
+                        <Crown className="h-5 w-5 text-purple-600" />
+                        <h2 className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-500 via-indigo-600 to-purple-600 drop-shadow-[0_2px_8px_rgba(168,85,247,0.4)]">
+                          Founding Partner
+                        </h2>
+                      </div>
+                      <div className="text-3xl font-black text-slate-900 mt-2">
                         $2,899 <span className="text-xs font-normal text-slate-500">/ yr</span>
                       </div>
-                      <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                        VIP annual charter with 20 seats included. Customize your field vs office seat split.
+                      <p className="text-xs text-purple-900/80 font-medium mt-2 leading-relaxed">
+                        Exclusive VIP annual charter membership (20 seats included). Enjoy lifetime locked pricing and direct co-design access.
                       </p>
                     </div>
 
-                    <ul className="text-xs text-slate-600 space-y-2.5 pt-4 border-t border-slate-100">
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                        <span><strong>20 Total Seats Included</strong></span>
+                    <ul className="text-xs text-slate-700 space-y-2 pt-4 border-t border-purple-200/60 font-medium">
+                      <li className="flex items-center gap-2 text-purple-950 font-bold">
+                        <CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" />
+                        <span>🔒 Locked-in pricing forever</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                        <span>Custom Office vs Field Split</span>
+                        <CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" />
+                        <span><strong>20 Total Seats</strong> (Custom Office vs Field Split)</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                        <span>Yearly VIP Charter License</span>
+                        <CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" />
+                        <span>👥 Direct access to the founders</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                        <span>Direct Roadmap Co-Design</span>
+                        <CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" />
+                        <span>🗳️ Vote on the product roadmap</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" />
+                        <span>📞 Quarterly strategy calls</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" />
+                        <span>🚀 Priority feature requests</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" />
+                        <span>🤝 White-glove onboarding & migration</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" />
+                        <span>⚡ Early access to every new feature</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" />
+                        <span>🌟 Featured on Founding Partner wall</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" />
+                        <span>💬 Private WhatsApp VIP group</span>
                       </li>
                     </ul>
                   </div>
 
                   <Button
                     onClick={() => handlePlanSelection("founding_partner")}
-                    className="w-full bg-purple-700 hover:bg-purple-800 text-white font-extrabold text-xs h-10 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+                    className="w-full bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white font-extrabold text-xs h-11 rounded-xl shadow-lg shadow-purple-600/20 transition-all flex items-center justify-center gap-1.5 mt-4"
                   >
-                    Join Yearly Charter ➔
+                    Join VIP Charter ($2,899/yr) ➔
                   </Button>
                 </div>
 
                 {/* Plan 4: Enterprise Plan */}
-                <div className="bg-white rounded-2xl border-2 border-slate-200 hover:border-cyan-500/60 p-5 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
+                <div className="bg-white rounded-3xl border-2 border-slate-200 hover:border-cyan-500/60 p-6 sm:p-7 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
                   <div className="space-y-4">
                     <div>
-                      <h2 className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 drop-shadow-[0_2px_8px_rgba(6,182,212,0.4)]">
-                        Enterprise
-                      </h2>
-                      <div className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 drop-shadow-[0_2px_8px_rgba(6,182,212,0.4)]">
+                          Enterprise
+                        </h2>
+                        <Badge className="bg-cyan-500/10 text-cyan-600 border-cyan-500/20 text-[10px] font-bold">Custom</Badge>
+                      </div>
+                      <div className="text-3xl font-black text-slate-900 mt-2">
                         Custom
                       </div>
                       <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                        Custom tailored deployment for large multi-site enterprises with unlimited seat requirements.
+                        Tailored deployment for large multi-site enterprises with unlimited seat requirements.
                       </p>
                     </div>
 
@@ -1685,7 +1725,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                        <span>Custom API & Webhooks</span>
+                        <span>Custom API & ERP Integrations</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
@@ -1696,7 +1736,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
                   <Button
                     onClick={() => handlePlanSelection("enterprise")}
-                    className="w-full bg-cyan-700 hover:bg-cyan-800 text-white font-extrabold text-xs h-10 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+                    className="w-full bg-cyan-700 hover:bg-cyan-800 text-white font-extrabold text-xs h-11 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 mt-4"
                   >
                     Contact Sales ➔
                   </Button>

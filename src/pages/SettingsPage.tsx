@@ -653,19 +653,24 @@ export default function SettingsPage() {
       titleGradient: "from-purple-400 via-indigo-500 to-purple-500 drop-shadow-[0_2px_8px_rgba(168,85,247,0.45)]",
       price: "$2,899",
       period: "/yr",
-      description: "VIP annual charter with 20 seats included. Customize your field vs office seat split.",
+      description: "Exclusive VIP annual charter membership (20 seats included). Lifetime locked-in pricing and direct co-design access.",
       specs: [
-        "20 Total Seats Included",
-        "Customizable Office vs Field Split",
+        "20 Total Seats Included (Custom Split)",
+        "🔒 Locked-in pricing forever",
         "Yearly VIP Charter License"
       ],
       features: [
         "Everything in Growth plus...",
+        "🔒 Locked-in pricing forever ($2,899/yr)",
         "20 Seats with custom role allocation",
-        "Founding Partner VIP Charter membership",
-        "White-glove data migration & setup",
-        "Direct Roadmap Co-Design & Access",
-        "Priority VIP WhatsApp Line"
+        "👥 Direct access to the founders",
+        "🗳️ Vote on the product roadmap",
+        "📞 Quarterly strategy calls",
+        "🚀 Priority feature requests",
+        "🤝 White-glove onboarding & data migration",
+        "⚡ Early access to every new feature",
+        "🌟 Featured on Founding Partner wall",
+        "💬 Invitation to private WhatsApp group"
       ]
     },
     {
@@ -781,16 +786,19 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 max-w-7xl w-full mx-auto">
             {plans.map((p) => {
               const isSelected = selectedPlanId === p.id;
+              const isFounding = p.id === "founding_partner";
               return (
                 <div
                   key={p.id}
                   onClick={() => setSelectedPlanId(p.id)}
                   className={cn(
-                    "relative rounded-2xl border-2 transition-all cursor-pointer p-6 flex flex-col justify-between bg-card hover:shadow-lg",
-                    isSelected
+                    "relative rounded-3xl border-2 transition-all cursor-pointer p-6 sm:p-7 flex flex-col justify-between bg-card hover:shadow-xl",
+                    isFounding
+                      ? "border-purple-500/80 bg-gradient-to-b from-purple-500/5 via-card to-card shadow-lg ring-2 ring-purple-500/20"
+                      : isSelected
                       ? "border-blue-600 shadow-md ring-2 ring-blue-600/20 dark:border-blue-500"
                       : "border-border/60 hover:border-border"
                   )}

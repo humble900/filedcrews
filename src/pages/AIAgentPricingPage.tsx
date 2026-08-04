@@ -65,15 +65,15 @@ export default function AIAgentPricingPage() {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto px-4">
           {/* Free Trial Card */}
-          <Card className="relative border-slate-200 p-6 flex flex-col justify-between">
+          <Card className="relative border-slate-200 p-6 sm:p-7 rounded-3xl flex flex-col justify-between">
             <CardHeader className="p-0 mb-4">
               <CardTitle className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 drop-shadow-[0_2px_8px_rgba(16,185,129,0.4)]">
                 Free Trial
               </CardTitle>
               <CardDescription className="mt-2">
-                <span className="text-2xl sm:text-3xl font-black text-slate-900">$0</span>
+                <span className="text-3xl font-black text-slate-900">$0</span>
                 <span className="text-slate-500 ml-1 font-medium text-xs">/ 14 days</span>
               </CardDescription>
             </CardHeader>
@@ -100,13 +100,13 @@ export default function AIAgentPricingPage() {
           </Card>
           
           {/* Growth Plan Card */}
-          <Card className="relative border-amber-500/50 shadow-md border-2 p-6 flex flex-col justify-between">
+          <Card className="relative border-amber-500/50 shadow-md border-2 p-6 sm:p-7 rounded-3xl flex flex-col justify-between">
             <CardHeader className="p-0 mb-4">
               <CardTitle className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 drop-shadow-[0_2px_8px_rgba(245,158,11,0.4)]">
                 Growth
               </CardTitle>
               <CardDescription className="mt-2">
-                <span className="text-2xl sm:text-3xl font-black text-slate-900">$495</span>
+                <span className="text-3xl font-black text-slate-900">$495</span>
                 <span className="text-slate-500 ml-1 font-medium text-xs">/ mo</span>
               </CardDescription>
             </CardHeader>
@@ -135,38 +135,70 @@ export default function AIAgentPricingPage() {
             </CardFooter>
           </Card>
           
-          {/* Founding Partner Card */}
-          <Card className="relative border-purple-500/50 shadow-md border-2 p-6 flex flex-col justify-between">
+          {/* Founding Partner Card (VIP Featured Card) */}
+          <Card className="relative border-purple-500/80 shadow-xl border-2 p-6 sm:p-7 rounded-3xl flex flex-col justify-between bg-gradient-to-b from-purple-500/5 via-white to-purple-500/5 ring-2 ring-purple-500/20 overflow-hidden">
+            <div className="absolute top-0 right-0 bg-gradient-to-l from-purple-600 to-indigo-600 text-white text-[9px] font-extrabold px-3 py-1 rounded-bl-xl uppercase tracking-wider shadow-sm">
+              VIP Charter
+            </div>
             <CardHeader className="p-0 mb-4">
               <CardTitle className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-indigo-500 to-purple-500 drop-shadow-[0_2px_8px_rgba(168,85,247,0.4)]">
                 Founding Partner
               </CardTitle>
               <CardDescription className="mt-2">
-                <span className="text-2xl sm:text-3xl font-black text-slate-900">$2,899</span>
+                <span className="text-3xl font-black text-slate-900">$2,899</span>
                 <span className="text-slate-500 ml-1 font-medium text-xs">/ yr</span>
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0 mb-6">
-              <ul className="space-y-3 text-xs">
-                {[
-                  "20 Total Seats Included",
-                  "Custom Office vs Field Split",
-                  "Yearly VIP Charter License",
-                  "Direct Roadmap Co-Design"
-                ].map((feature, i) => (
-                  <li key={i} className="flex items-center text-slate-700">
-                    <CheckCircle2 className="w-4 h-4 mr-2.5 text-purple-500 shrink-0" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
+              <ul className="space-y-2 text-xs font-medium text-slate-700">
+                <li className="flex items-center text-purple-950 font-bold">
+                  <CheckCircle2 className="w-4 h-4 mr-2 text-purple-600 shrink-0" />
+                  <span>🔒 Locked-in pricing forever</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle2 className="w-4 h-4 mr-2 text-purple-600 shrink-0" />
+                  <span><strong>20 Total Seats Included</strong></span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle2 className="w-4 h-4 mr-2 text-purple-600 shrink-0" />
+                  <span>👥 Direct access to the founders</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle2 className="w-4 h-4 mr-2 text-purple-600 shrink-0" />
+                  <span>🗳️ Vote on the product roadmap</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle2 className="w-4 h-4 mr-2 text-purple-600 shrink-0" />
+                  <span>📞 Quarterly strategy calls</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle2 className="w-4 h-4 mr-2 text-purple-600 shrink-0" />
+                  <span>🚀 Priority feature requests</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle2 className="w-4 h-4 mr-2 text-purple-600 shrink-0" />
+                  <span>🤝 White-glove onboarding</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle2 className="w-4 h-4 mr-2 text-purple-600 shrink-0" />
+                  <span>⚡ Early access to new features</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle2 className="w-4 h-4 mr-2 text-purple-600 shrink-0" />
+                  <span>🌟 Featured Founding Partner</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle2 className="w-4 h-4 mr-2 text-purple-600 shrink-0" />
+                  <span>💬 Private WhatsApp VIP group</span>
+                </li>
               </ul>
             </CardContent>
             <CardFooter className="p-0">
               <Button 
                 onClick={handleFoundingPartnerUpgrade}
-                className="w-full bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold"
+                className="w-full bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white text-xs font-bold h-11 rounded-xl shadow-lg shadow-purple-600/20"
               >
-                Join Yearly Charter →
+                Join VIP Charter ($2,899/yr) →
               </Button>
             </CardFooter>
           </Card>
