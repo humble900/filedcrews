@@ -2,9 +2,9 @@ import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions, type Feature } from '@/hooks/usePermissions';
-import { Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import PageSkeleton from './PageSkeleton';
 
 interface ProtectedRouteProps {
   /** The feature this route requires access to */
@@ -40,11 +40,7 @@ export default function ProtectedRoute({ feature, children }: ProtectedRouteProp
   });
 
   if (loading || (user && loadingAdmin)) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   // Not logged in → send to home (which shows landing page)

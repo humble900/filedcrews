@@ -526,11 +526,13 @@ export default function CRMPage({ projectId }: { projectId?: string }) {
 
   const crmPagination = useTablePagination(filteredCustomers);
 
-  if (authLoading || custLoading) {
+  if (custLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <DashboardLayout activeTab="crm" companyName={company?.name || ""} companyPrefix={company?.prefix || ""} companyId={company?.id || ""}>
+        <div className="flex justify-center items-center py-32">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
     );
   }
 

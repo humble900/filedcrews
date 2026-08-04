@@ -499,11 +499,13 @@ export default function WorkOrdersPage({ projectId }: { projectId?: string }) {
 
   const selectedJob = jobs.find((j) => j.id === selectedJobId);
 
-  if (authLoading || jobsLoading) {
+  if (jobsLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <DashboardLayout activeTab="jobs" companyName={company?.name || ""} companyPrefix={company?.prefix || ""} companyId={company?.id || ""}>
+        <div className="flex justify-center items-center py-32">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
     );
   }
 

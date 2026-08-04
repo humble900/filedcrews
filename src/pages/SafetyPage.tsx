@@ -477,11 +477,13 @@ export default function SafetyPage({ projectId }: { projectId?: string }) {
     return matchesSearch && matchesSeverity && matchesStatus;
   });
 
-  if (authLoading || incsLoading || talksLoading) {
+  if (incsLoading || talksLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <DashboardLayout activeTab="safety" companyName={company?.name || ""} companyPrefix={company?.prefix || ""} companyId={company?.id || ""}>
+        <div className="flex justify-center items-center py-32">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
     );
   }
 

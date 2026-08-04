@@ -188,11 +188,13 @@ export default function CompliancePage() {
     setTplFields(updated);
   };
 
-  if (authLoading || templatesLoading || responsesLoading) {
+  if (templatesLoading || responsesLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <DashboardLayout activeTab="compliance" companyName={company?.name || ""} companyPrefix={company?.prefix || ""} companyId={company?.id || ""}>
+        <div className="flex justify-center items-center py-32">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
     );
   }
 

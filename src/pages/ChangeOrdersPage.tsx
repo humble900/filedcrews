@@ -339,11 +339,13 @@ export default function ChangeOrdersPage() {
 
   const selectedOrder = orders.find((o) => o.id === selectedOrderId);
 
-  if (authLoading || ordersLoading) {
+  if (ordersLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <DashboardLayout activeTab="change-orders" companyName={company?.name || ""} companyPrefix={company?.prefix || ""} companyId={company?.id || ""}>
+        <div className="flex justify-center items-center py-32">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
     );
   }
 

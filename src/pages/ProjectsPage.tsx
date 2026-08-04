@@ -731,11 +731,18 @@ export default function ProjectsPage() {
     return matchesSearch && matchesStatus;
   });
 
-  if (authLoading || projectsLoading) {
+  if (projectsLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <DashboardLayout
+        activeTab="projects"
+        companyName={company?.name || ""}
+        companyPrefix={company?.prefix || ""}
+        companyId={company?.id || ""}
+      >
+        <div className="flex justify-center items-center py-32">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
     );
   }
 

@@ -9,6 +9,7 @@ import { Loader2 } from "lucide-react";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./hooks/useAuth";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import PageSkeleton from "./components/PageSkeleton";
 
 // ─── Eagerly loaded (instant render, no loading fallbacks) ───────────
 import Index from "./pages/Index";
@@ -55,18 +56,7 @@ const ActionInboxPage = lazy(() => import("./pages/ActionInboxPage"));
 const KnowledgeBasePage = lazy(() => import("./pages/KnowledgeBasePage"));
 const MobileWelcomePage = lazy(() => import("./pages/MobileWelcomePage"));
 
-// ─── Page loading fallback ─────────────────────────────────────────
-function PageSkeleton() {
-  return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-3 animate-in fade-in duration-200">
-      <img src="/favicon.png" alt="FiledCrews" className="h-10 w-10 animate-pulse rounded-lg shadow-sm" />
-      <div className="flex items-center gap-2 text-slate-400 text-sm font-medium">
-        <Loader2 className="h-4 w-4 animate-spin text-teal-600" />
-        <span>Loading...</span>
-      </div>
-    </div>
-  );
-}
+
 
 const queryClient = new QueryClient({
   defaultOptions: {

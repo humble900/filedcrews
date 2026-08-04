@@ -10,8 +10,8 @@ import CrewManagement from "@/components/CrewManagement";
 import { useTerminology } from "@/hooks/useTerminology";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SEO from "@/components/SEO";
-import { Loader2 } from "lucide-react";
-import { useCallback, useEffect, useState, Suspense, lazy } from "react";
+import { useCallback, useEffect, useState } from "react";
+import PageSkeleton from "@/components/PageSkeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useLocation, Navigate } from "react-router-dom";
 import { APIProvider } from "@vis.gl/react-google-maps";
@@ -96,12 +96,7 @@ const HomePage = () => {
   }
 
   if (loading || (user && loadingAdmin)) {
-    return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-3">
-        <img src="/favicon.png" alt="FiledCrews" className="h-10 w-10 animate-pulse rounded-lg shadow-sm" />
-        <Loader2 className="h-5 w-5 animate-spin text-teal-600" />
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   if (!user) {

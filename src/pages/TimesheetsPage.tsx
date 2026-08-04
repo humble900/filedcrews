@@ -189,11 +189,13 @@ export default function TimesheetsPage() {
     return { pending, hours: (totalMinutes / 60).toFixed(1), driveHours: (driveMinutes / 60).toFixed(1) };
   }, [timesheets]);
 
-  if (authLoading || timesheetsLoading) {
+  if (timesheetsLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <DashboardLayout activeTab="timesheets" companyName={company?.name || ""} companyPrefix={company?.prefix || ""} companyId={company?.id || ""}>
+        <div className="flex justify-center items-center py-32">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
     );
   }
 

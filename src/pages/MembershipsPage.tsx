@@ -322,11 +322,13 @@ export default function MembershipsPage() {
     return memberships.filter(m => m.renewal_status === "in_renewal_window").length;
   }, [memberships]);
 
-  if (authLoading || plansLoading || membershipsLoading) {
+  if (plansLoading || membershipsLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <DashboardLayout activeTab="memberships" companyName={company?.name || ""} companyPrefix={company?.prefix || ""} companyId={company?.id || ""}>
+        <div className="flex justify-center items-center py-32">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
     );
   }
 
