@@ -847,24 +847,14 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  {/* Card Select Button */}
-                  <div className="pt-6 mt-6 border-t border-border/30">
-                    <Button
-                      variant={isSelected ? "default" : "outline"}
-                      className={cn(
-                        "w-full text-xs font-bold rounded-xl h-10 transition-all",
-                        isSelected
-                          ? "bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
-                          : "border-border hover:bg-muted"
-                      )}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedPlanId(p.id);
-                        setBillingViewMode("review");
-                      }}
-                    >
-                      {isSelected ? "Review Plan Selection" : `Select ${p.name}`}
-                    </Button>
+                  {/* Selected Indicator Footer */}
+                  <div className="pt-4 mt-6 border-t border-border/30 flex items-center justify-between text-xs">
+                    <span className={cn(
+                      "font-bold transition-colors",
+                      isSelected ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"
+                    )}>
+                      {isSelected ? "✓ Active Selection" : "Click card to select"}
+                    </span>
                   </div>
                 </div>
               );
@@ -872,12 +862,21 @@ export default function SettingsPage() {
           </div>
 
           {/* Bottom Action Footer Bar */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-border/40">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 rounded-2xl bg-card border border-border/60 shadow-sm mt-6">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground">Selected Plan Tier:</p>
+              <p className="text-base font-extrabold text-foreground flex items-center gap-2">
+                <span className={cn("text-transparent bg-clip-text bg-gradient-to-r", activeSelectedPlan.titleGradient)}>
+                  {activeSelectedPlan.name}
+                </span>
+                <span className="text-xs font-normal text-muted-foreground">({activeSelectedPlan.price}{activeSelectedPlan.period})</span>
+              </p>
+            </div>
             <Button
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 rounded-xl h-11 text-xs"
+              className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold px-8 rounded-xl h-11 text-xs shadow-md transition-all flex items-center justify-center gap-2"
               onClick={() => setBillingViewMode("review")}
             >
-              Review Changes
+              Review Plan Selection ({activeSelectedPlan.name}) ➔
             </Button>
           </div>
         </div>
@@ -899,6 +898,89 @@ export default function SettingsPage() {
           <div>
             <h1 className="text-2xl font-black text-foreground tracking-tight">Checkout Review</h1>
             <p className="text-xs text-muted-foreground mt-0.5">Confirm your business plan request for manual account activation.</p>
+          </div>
+
+          {/* Founding Partner Program Explanation Banner & Comparison Table Section */}
+          <div className="p-6 rounded-3xl border-2 border-purple-500/70 bg-gradient-to-b from-purple-500/10 via-card to-card shadow-lg space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-2xl bg-purple-600 text-white shadow-md">
+                  <Crown className="h-6 w-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-black text-foreground tracking-tight">Founding Partner Charter Program</h2>
+                    <Badge className="bg-purple-600 text-white text-[10px]">VIP Membership</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">Why join the Founding Partner Charter & how it compares to standard plans.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3 text-xs text-foreground/90 leading-relaxed bg-purple-500/5 p-4 rounded-2xl border border-purple-500/20">
+              <h3 className="font-extrabold text-sm text-purple-950 dark:text-purple-300">Why Join the Founding Partner Program?</h3>
+              <p>
+                The Founding Partner Charter is an exclusive program reserved for visionary operational leaders who want to co-design the future of field crew management. Rather than operating as a typical customer, Founding Partners receive lifetime price-lock protection, direct private WhatsApp access to our founders, white-glove data migration, and direct voting rights on our product engineering roadmap.
+              </p>
+            </div>
+
+            {/* Plan Comparison Table matching exact user schema */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-extrabold text-foreground uppercase tracking-wider">Plan Comparison Table</h4>
+              <div className="overflow-x-auto rounded-2xl border border-purple-500/30 bg-card shadow-sm">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-purple-500/20 bg-purple-500/10 text-foreground">
+                      <th className="p-3.5 font-bold">Feature / Capability</th>
+                      <th className="p-3.5 font-bold text-center text-amber-600 dark:text-amber-400">Growth Plan</th>
+                      <th className="p-3.5 font-bold text-center text-purple-600 dark:text-purple-400 bg-purple-500/15">Founding Partner VIP</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/40 font-medium">
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3.5 text-foreground font-semibold">Staff Included</td>
+                      <td className="p-3.5 text-center text-muted-foreground font-bold">10</td>
+                      <td className="p-3.5 text-center font-bold text-purple-700 dark:text-purple-300 bg-purple-500/5">20</td>
+                    </tr>
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3.5 text-foreground font-semibold">Annual Cost</td>
+                      <td className="p-3.5 text-center text-muted-foreground">$5,868</td>
+                      <td className="p-3.5 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-purple-500/5">$2,899 (Save 50%+)</td>
+                    </tr>
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3.5 text-foreground font-semibold">Founder Access</td>
+                      <td className="p-3.5 text-center text-rose-500">❌</td>
+                      <td className="p-3.5 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-purple-500/5">✅ Direct WhatsApp & Phone</td>
+                    </tr>
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3.5 text-foreground font-semibold">Roadmap Influence</td>
+                      <td className="p-3.5 text-center text-rose-500">❌</td>
+                      <td className="p-3.5 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-purple-500/5">✅ Direct Co-Design & Voting</td>
+                    </tr>
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3.5 text-foreground font-semibold">Price Locked Forever</td>
+                      <td className="p-3.5 text-center text-rose-500">❌</td>
+                      <td className="p-3.5 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-purple-500/5">✅ Guaranteed Locked Forever</td>
+                    </tr>
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3.5 text-foreground font-semibold">Quarterly Strategy Calls</td>
+                      <td className="p-3.5 text-center text-rose-500">❌</td>
+                      <td className="p-3.5 text-center font-bold text-purple-700 dark:text-purple-300 bg-purple-500/5">✅ Included (1-on-1 Sessions)</td>
+                    </tr>
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3.5 text-foreground font-semibold">Priority Feature Requests</td>
+                      <td className="p-3.5 text-center text-rose-500">❌</td>
+                      <td className="p-3.5 text-center font-bold text-purple-700 dark:text-purple-300 bg-purple-500/5">✅ Expedited Engineering</td>
+                    </tr>
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3.5 text-foreground font-semibold">White-Glove Onboarding</td>
+                      <td className="p-3.5 text-center text-muted-foreground">Self-serve</td>
+                      <td className="p-3.5 text-center font-bold text-purple-700 dark:text-purple-300 bg-purple-500/5">✅ Full Migration & Setup</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
           <div className="grid gap-8 lg:grid-cols-12 items-start">
