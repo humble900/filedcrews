@@ -82,13 +82,18 @@ const CompanySetup = ({ onCreate, onSignOut }: CompanySetupProps) => {
                   required
                   maxLength={5}
                 />
-                {prefix.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    Staff usernames will look like: <span className="font-mono font-medium text-foreground">{prefix}{prefix.length === 5 ? "johndoe" : "..."}</span>
+                {prefix.length > 0 && prefix.length < 5 && (
+                  <p className="text-xs text-rose-600 font-semibold">
+                    Prefix must be exactly 5 uppercase letters ({prefix.length}/5 entered)
+                  </p>
+                )}
+                {prefix.length === 5 && (
+                  <p className="text-xs text-emerald-600 font-semibold">
+                    Staff usernames will look like: <span className="font-mono font-bold text-foreground">@{prefix}johndoe</span>
                   </p>
                 )}
               </div>
-              <Button type="submit" className="w-full" disabled={loading || prefix.length !== 5}>
+              <Button type="submit" className="w-full font-bold" disabled={loading || prefix.length !== 5}>
                 {loading ? "Creating…" : "Create Company"}
               </Button>
             </form>

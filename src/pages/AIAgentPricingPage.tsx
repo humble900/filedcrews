@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CreditCard, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,32 +15,46 @@ export default function AIAgentPricingPage() {
   const [companyName, setCompanyName] = useState<string>("your company");
   const [subscriptionTier, setSubscriptionTier] = useState<string>("free_trial");
 
+  const [isRedirectingToStripe, setIsRedirectingToStripe] = useState(false);
+  const [companyId, setCompanyId] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchCompanyData = async () => {
-      if (!user) return;
+      if (!user?.id) return;
       const { data, error } = await supabase
-        .from('companies')
-        .select('name, subscription_tier')
-        .eq('auth_user_id', user.id)
+        .from("companies")
+        .select("id, name, subscription_tier")
+        .eq("auth_user_id", user.id)
         .single();
       
       if (!error && data) {
         setCompanyName(data.name || "your company");
         setSubscriptionTier(data.subscription_tier || "free_trial");
+        setCompanyId(data.id);
       }
     };
     
     fetchCompanyData();
   }, [user]);
 
-  const handleGrowthUpgrade = () => {
-    const text = `Hi there! I would like to upgrade to the Growth Plan ($29/seat/mo) to unlock the AI Agent add-on for ${companyName}. Please assist with activation.`;
-    window.open(`https://wa.me/14094229714?text=${encodeURIComponent(text)}`, "_blank");
-  };
-
-  const handleFoundingPartnerUpgrade = () => {
-    const text = `Hi there! I would like to upgrade to the Founding Partner Yearly Charter to unlock the AI Agent add-on for ${companyName}. Please assist with activation.`;
-    window.open(`https://wa.me/14094229714?text=${encodeURIComponent(text)}`, "_blank");
+  const handleStripeUpgrade = async (planId: string) => {
+    if (!companyId) return;
+    setIsRedirectingToStripe(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("stripe_subscription", {
+        body: {
+          action: "create_checkout_session",
+          planId,
+          companyId,
+          returnUrl: `${window.location.origin}/settings?tab=billing`,
+        }
+      });
+      if (error || !data?.url) throw new Error(data?.error || "Failed to create checkout session");
+      window.location.href = data.url;
+    } catch (err: any) {
+      setIsRedirectingToStripe(false);
+      alert(err.message || "Checkout error");
+    }
   };
 
   return (
@@ -127,10 +141,12 @@ export default function AIAgentPricingPage() {
             </CardContent>
             <CardFooter className="p-0">
               <Button 
-                onClick={handleGrowthUpgrade}
+                onClick={() => handleStripeUpgrade("growth")}
+                disabled={isRedirectingToStripe}
                 className="w-full bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold"
               >
-                Activate via WhatsApp →
+                {isRedirectingToStripe ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CreditCard className="h-4 w-4 mr-1" />}
+                Subscribe via Stripe ($495/mo) →
               </Button>
             </CardFooter>
           </Card>
@@ -195,10 +211,12 @@ export default function AIAgentPricingPage() {
             </CardContent>
             <CardFooter className="p-0">
               <Button 
-                onClick={handleFoundingPartnerUpgrade}
+                onClick={() => handleStripeUpgrade("founding_partner")}
+                disabled={isRedirectingToStripe}
                 className="w-full bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white text-xs font-bold h-11 rounded-xl shadow-lg shadow-purple-600/20"
               >
-                Join VIP Charter ($2,899/yr) →
+                {isRedirectingToStripe ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CreditCard className="h-4 w-4 mr-1" />}
+                Join VIP Charter via Stripe ($2,899/yr) →
               </Button>
             </CardFooter>
           </Card>
@@ -231,12 +249,11 @@ export default function AIAgentPricingPage() {
             <CardFooter className="p-0">
               <Button 
                 onClick={() => {
-                  const text = encodeURIComponent("Hi there! We are interested in an Enterprise Custom Plan on FiledCrews. Please connect us with an Account Manager.");
-                  window.open(`https://wa.me/14094229714?text=${text}`, "_blank");
+                  window.location.href = `mailto:enterprise@filedcrews.com?subject=${encodeURIComponent('Enterprise AI Agent Plan Inquiry')}`;
                 }}
                 className="w-full bg-cyan-700 hover:bg-cyan-800 text-white text-xs font-bold"
               >
-                Contact Sales →
+                Contact Enterprise →
               </Button>
             </CardFooter>
           </Card>

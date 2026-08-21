@@ -38,6 +38,7 @@ import {
   Eye,
   EyeOff,
   X,
+  AlertCircle,
   TrendingUp,
   ThermometerSnowflake,
   Wrench,
@@ -49,6 +50,9 @@ import {
   Home,
   CheckCircle2,
   Hammer,
+  CreditCard,
+  Clock,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -261,7 +265,7 @@ function DashboardOverlayBackdrop({ children, companyName, companyPrefix }: { ch
 }
 
 function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
-  const { user, company, loading, createCompany, signOut } = useAuth();
+  const { user, company, loading, createCompany, signInWithGoogle, signOut } = useAuth();
   const navigate = useNavigate();
 
   // Fetch signup_mode platform setting
@@ -294,48 +298,10 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
     enabled: !!user?.id
   });
 
-  const [submittingApp, setSubmittingApp] = useState(false);
-  const [appNotes, setAppNotes] = useState("");
-
-  const handleApply = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!companyName.trim()) {
-      toast.error("Please enter your company name");
-      return;
-    }
-    setSubmittingApp(true);
-    try {
-      const generatedPrefix = computePrefix(companyName);
-      const { error } = await (supabase as any)
-        .from("companies")
-        .insert({
-          name: companyName.trim(),
-          prefix: generatedPrefix,
-          auth_user_id: user?.id,
-          currency: "USD",
-          industry: companyVertical,
-          country: companyCountry,
-          address: companyAddress.trim() || null,
-          website: companyWebsite.trim() || null,
-          staff_count: companyStaffCount.trim() || null,
-          annual_revenue: companyAnnualRevenue.trim() || null,
-          subscription_status: 'pending_approval',
-          referred_by: localStorage.getItem("filedcrews_affiliate_code") || null
-        });
-      
-      if (error) throw error;
-      toast.success("Application submitted successfully!");
-      window.location.reload();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to submit application");
-    } finally {
-      setSubmittingApp(false);
-    }
-  };
 
   const computePrefix = (name: string) => {
     const clean = name.toUpperCase().replace(/[^A-Z]/g, "");
-    return clean.slice(0, 3).padEnd(3, "X");
+    return clean.slice(0, 5).padEnd(5, "X");
   };
 
   const applyVerticalPresets = (val: string) => {
@@ -437,6 +403,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
   // Buffer state definitions
   const [companyName, setCompanyName] = useState("");
   const [companyPrefix, setCompanyPrefix] = useState("");
+  const [isPrefixManuallyEdited, setIsPrefixManuallyEdited] = useState(false);
   const [companyVertical, setCompanyVertical] = useState<string>("General");
   const [companyCountry, setCompanyCountry] = useState<string>("US");
 
@@ -491,6 +458,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [showCrewPassword, setShowCrewPassword] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'free_trial' | 'growth' | 'founding_partner' | 'enterprise'>('free_trial');
+  const [isRedirectingToStripe, setIsRedirectingToStripe] = useState(false);
   const [includeSampleData, setIncludeSampleData] = useState<boolean>(true);
 
   // Signup fields (for Mode 1 Step 6)
@@ -699,7 +667,28 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
       }
     } else if (!company) {
       setWizardMode("onboarding-auth");
-      // Skip straight to step 1
+      // Load sandbox buffer state so Google OAuth redirects retain previously entered company info
+      try {
+        const stored = localStorage.getItem(SANDBOX_STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed.companyName) setCompanyName(parsed.companyName);
+          if (parsed.companyPrefix) setCompanyPrefix(parsed.companyPrefix);
+          if (parsed.companyVertical) setCompanyVertical(parsed.companyVertical);
+          if (parsed.companyCountry) setCompanyCountry(parsed.companyCountry);
+          if (parsed.companyAddress) setCompanyAddress(parsed.companyAddress);
+          if (parsed.companyWebsite) setCompanyWebsite(parsed.companyWebsite);
+          if (parsed.companyStaffCount) setCompanyStaffCount(parsed.companyStaffCount);
+          if (parsed.companyAnnualRevenue) setCompanyAnnualRevenue(parsed.companyAnnualRevenue);
+          if (parsed.adminFirstName) setAdminFirstName(parsed.adminFirstName);
+          if (parsed.adminLastName) setAdminLastName(parsed.adminLastName);
+          if (parsed.adminPhone) setAdminPhone(parsed.adminPhone);
+          if (parsed.adminPhoneDialCode) setAdminPhoneDialCode(parsed.adminPhoneDialCode);
+          if (parsed.introStep) setIntroStep(parsed.introStep);
+        }
+      } catch (e) {
+        console.error("Error parsing sandbox state on oauth return", e);
+      }
       setStep(1);
     } else {
       setWizardMode("new-project");
@@ -709,9 +698,61 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
     }
   }, [user, company, loading]);
 
-  // Persist changes to local storage in sandbox mode
+  // Prefill Google OAuth user metadata when authenticated
+  useEffect(() => {
+    if (user && !company) {
+      if (!adminEmail && user.email) {
+        setAdminEmail(user.email);
+      }
+      const meta = user.user_metadata || {};
+      if (!adminFirstName) {
+        if (meta.first_name) setAdminFirstName(meta.first_name);
+        else if (meta.given_name) setAdminFirstName(meta.given_name);
+        else if (meta.full_name) {
+          const parts = meta.full_name.trim().split(" ");
+          setAdminFirstName(parts[0] || "");
+          if (!adminLastName && parts.length > 1) {
+            setAdminLastName(parts.slice(1).join(" "));
+          }
+        }
+      }
+      if (!adminLastName) {
+        if (meta.last_name) setAdminLastName(meta.last_name);
+        else if (meta.family_name) setAdminLastName(meta.family_name);
+      }
+    }
+  }, [user, company]);
+
+  // Handle Stripe Payment Redirect Return in Wizard
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentStatus = params.get("payment");
+    const sessionId = params.get("session_id");
+
+    if (paymentStatus === "success" && sessionId) {
+      (async () => {
+        try {
+          const { data, error } = await supabase.functions.invoke("stripe_subscription", {
+            body: { action: "verify_session", sessionId }
+          });
+          if (!error && data?.verified) {
+            toast.success("Subscription Activated!", {
+              description: `Your ${data.planTier || "platform"} plan is now active. Welcome to FiledCrews!`
+            });
+            setStep(1);
+            setIntroStep(7);
+            saveSandboxProgress({ step: 1, introStep: 7, selectedPlan: data.planTier });
+          }
+        } catch (e) {
+          console.error("Session verification error:", e);
+        }
+      })();
+    }
+  }, []);
+
+  // Persist changes to local storage during onboarding
   const saveSandboxProgress = (updatedFields: any) => {
-    if (wizardMode !== "public-sandbox") return;
+    if (company) return;
     try {
       const stored = localStorage.getItem(SANDBOX_STORAGE_KEY);
       const current = stored ? JSON.parse(stored) : {};
@@ -773,8 +814,8 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
           toast.error("Company Name is required");
           return false;
         }
-        if (companyPrefix.length !== 3 || !/^[A-Z]{3}$/.test(companyPrefix)) {
-          toast.error("Prefix must be exactly 3 letters (A-Z)");
+        if (companyPrefix.length !== 5 || !/^[A-Z]{5}$/.test(companyPrefix)) {
+          toast.error("Prefix must be exactly 5 uppercase letters (A-Z)");
           return false;
         }
         return true;
@@ -1273,211 +1314,65 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
     return <div className="min-h-screen bg-[#0a0f1d]" />;
   }
 
-  if (company?.subscription_status === 'pending_approval' && !isSuperadmin) {
-    return (
-      <div className="min-h-screen bg-[#0a0f1d] flex flex-col items-center justify-center p-4 font-sans select-none relative overflow-hidden">
-        {/* Glow Spheres */}
-        <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[400px] h-[400px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
-
-        <div className="w-full max-w-lg bg-slate-900/60 border border-slate-800 backdrop-blur-xl p-8 rounded-2xl shadow-2xl z-10 text-center space-y-6">
-          <div className="mx-auto w-16 h-16 rounded-full bg-indigo-500/10 flex items-center justify-center text-amber-500 animate-pulse border border-amber-500/20">
-            <Lock className="h-8 w-8" />
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Application Under Review</h2>
-            <p className="text-amber-500 text-xs font-semibold tracking-wider uppercase">Founders Partner Charter Program</p>
-          </div>
-          <p className="text-slate-500 text-sm leading-relaxed">
-            Thank you for applying to the Founders Partner Charter! Our product team is currently verifying your business profile (<span className="text-slate-900 font-semibold">{company.name}</span>) to configure your dedicated dashboard and SMS routing channels.
-          </p>
-          <div className="p-4 bg-slate-950/50 border border-slate-850 rounded-xl space-y-1 text-left">
-            <p className="text-[11px] text-slate-500 uppercase font-bold tracking-wider">Submitted Profile Details</p>
-            <div className="text-xs text-slate-700 space-y-2 mt-2">
-              <p><strong className="text-slate-500">Industry:</strong> {company.industry}</p>
-              <p><strong className="text-slate-500">Business Address:</strong> {company.address || "—"}</p>
-              <p><strong className="text-slate-500">Estimated Crew Size:</strong> {company.staff_count || "—"}</p>
-              <p><strong className="text-slate-500">Annual Revenue Scope:</strong> {company.annual_revenue || "—"}</p>
-            </div>
-          </div>
-          <p className="text-xs text-slate-500">
-            We review and approve profiles within 2 hours. A confirmation email will be sent once your workspace is live.
-          </p>
-          <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate("/"); }} className="text-xs text-slate-500 hover:text-slate-900 hover:bg-slate-800/50 w-full">
-            Log Out or Switch Account
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (user && !company && signupMode === "founders_partner" && !isSuperadmin) {
-    return (
-      <div className="min-h-screen bg-[#0a0f1d] flex flex-col items-center justify-center p-4 font-sans select-none relative overflow-hidden">
-        {/* Glow Spheres */}
-        <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-blue-600/10 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[400px] h-[400px] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none" />
-
-        <div className="w-full max-w-xl bg-slate-900/60 border border-slate-800 backdrop-blur-xl p-8 rounded-2xl shadow-2xl z-10 space-y-6">
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Founders Partner Application</h2>
-            <p className="text-slate-500 text-sm">
-              Apply to join our exclusive Charter Program. Please provide your business profile details below to initiate manual vetting.
-            </p>
-          </div>
-
-          <form onSubmit={handleApply} className="space-y-4">
-            <div className="space-y-1">
-              <Label className="text-slate-700 text-xs font-semibold">Business Name</Label>
-              <Input
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                placeholder="e.g. Acme Plumbing Services"
-                required
-                className="bg-slate-950/80 border-slate-800 text-slate-900 placeholder-slate-600 focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <Label className="text-slate-700 text-xs font-semibold">Industry Vertical</Label>
-                <Select value={companyVertical} onValueChange={setCompanyVertical}>
-                  <SelectTrigger className="bg-slate-950/80 border-slate-800 text-slate-900">
-                    <SelectValue placeholder="Select vertical" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-800 text-slate-900">
-                    <SelectItem value="HVAC">HVAC</SelectItem>
-                    <SelectItem value="Electrical">Electrical</SelectItem>
-                    <SelectItem value="Plumbing">Plumbing</SelectItem>
-                    <SelectItem value="Landscaping">Landscaping</SelectItem>
-                    <SelectItem value="Cleaning">Cleaning</SelectItem>
-                    <SelectItem value="Pest Control">Pest Control</SelectItem>
-                    <SelectItem value="General Construction">General Construction</SelectItem>
-                    <SelectItem value="General">General Trade / Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1">
-                <Label className="text-slate-700 text-xs font-semibold">Country</Label>
-                <Select value={companyCountry} onValueChange={(val) => { setCompanyCountry(val); saveSandboxProgress({ companyCountry: val }); }}>
-                  <SelectTrigger className="bg-slate-950/80 border-slate-800 text-slate-900">
-                    <SelectValue placeholder="Select country" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-800 text-slate-900">
-                    {countriesList.map((c) => (
-                      <SelectItem key={c.code} value={c.code}>
-                        {c.flag} {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1">
-                <Label className="text-slate-700 text-xs font-semibold">Estimated Crew Size</Label>
-                <Select value={companyStaffCount} onValueChange={setCompanyStaffCount}>
-                  <SelectTrigger className="bg-slate-950/80 border-slate-800 text-slate-900">
-                    <SelectValue placeholder="Select size" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-800 text-slate-900">
-                    <SelectItem value="1-5">1 to 5 technicians</SelectItem>
-                    <SelectItem value="6-20">6 to 20 technicians</SelectItem>
-                    <SelectItem value="21-50">21 to 50 technicians</SelectItem>
-                    <SelectItem value="50+">More than 50</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-slate-700 text-xs font-semibold">Business Address</Label>
-              <Input
-                value={companyAddress}
-                onChange={(e) => setCompanyAddress(e.target.value)}
-                placeholder="e.g. 100 Main St, Suite A, Austin, TX"
-                className="bg-slate-950/80 border-slate-800 text-slate-900 placeholder-slate-600 focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <Label className="text-slate-700 text-xs font-semibold">Company Website</Label>
-                <Input
-                  value={companyWebsite}
-                  onChange={(e) => setCompanyWebsite(e.target.value)}
-                  placeholder="e.g. www.acme.com"
-                  className="bg-slate-950/80 border-slate-800 text-slate-900 placeholder-slate-600 focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label className="text-slate-700 text-xs font-semibold">Annual Revenue Scope</Label>
-                <Select value={companyAnnualRevenue} onValueChange={setCompanyAnnualRevenue}>
-                  <SelectTrigger className="bg-slate-950/80 border-slate-800 text-slate-900">
-                    <SelectValue placeholder="Select revenue range" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-800 text-slate-900">
-                    <SelectItem value="Under $250k">Under $250k</SelectItem>
-                    <SelectItem value="$250k-$1M">$250k to $1M</SelectItem>
-                    <SelectItem value="$1M-$5M">$1M to $5M</SelectItem>
-                    <SelectItem value="Above $5M">Above $5M</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <Button
-              type="submit"
-              disabled={submittingApp}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 mt-4 rounded-xl shadow-lg gap-2"
-            >
-              {submittingApp ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              Submit Charter Application
-            </Button>
-          </form>
-
-          <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate("/"); }} className="text-xs text-slate-500 hover:text-slate-900 hover:bg-slate-800/50 w-full mt-2">
-            Log Out or Switch Account
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (wizardMode === "public-sandbox" && introStep === 6) {
+  if (!company && introStep === 6) {
     const handlePlanSelection = async (tier: "free_trial" | "growth" | "founding_partner" | "enterprise") => {
       const activeUserRes = await supabase.auth.getUser();
       const activeUserId = activeUserRes.data.user?.id || user?.id;
-      // Map internal tier IDs to DB-canonical values
-      const dbTier = tier === "founding_partner" ? "Founding Partner" : tier;
-      if (activeUserId) {
-        const { data: comp } = await supabase.from("companies").select("id").eq("auth_user_id", activeUserId).maybeSingle();
-        if (comp) {
-          await (supabase as any).from("companies").update({
-            subscription_tier: dbTier,
-            subscription_status: tier === "free_trial" ? "trialing" : "pending_activation",
-            max_admin_seats: tier === "growth" ? 3 : (tier === "founding_partner" ? 20 : (tier === "enterprise" ? 50 : 1)),
-            max_field_crew_seats: tier === "growth" ? 7 : (tier === "founding_partner" ? 20 : (tier === "enterprise" ? 100 : 2))
-          }).eq("id", comp.id);
+      if (!activeUserId) {
+        toast.error("Session Expired", { description: "Please log in to continue." });
+        return;
+      }
+
+      const { data: comp } = await supabase.from("companies").select("id, name").eq("auth_user_id", activeUserId).maybeSingle();
+      if (!comp) {
+        toast.error("Setup Error", { description: "Company workspace profile not found." });
+        return;
+      }
+
+      if (tier === "free_trial") {
+        await (supabase as any).from("companies").update({
+          subscription_tier: "free_trial",
+          subscription_status: "trialing",
+          max_admin_seats: 1,
+          max_field_crew_seats: 2
+        }).eq("id", comp.id);
+
+        toast.success("Free Trial Activated", { description: "Enjoy 14 days of full platform access!" });
+        setStep(1);
+        setIntroStep(7);
+        saveSandboxProgress({ step: 1, introStep: 7, selectedPlan: tier });
+        return;
+      }
+
+      if (tier === "growth" || tier === "founding_partner") {
+        setIsRedirectingToStripe(true);
+        toast.info("Connecting to Stripe...", { description: "Redirecting to secure Stripe Checkout." });
+
+        try {
+          const { data: checkoutData, error: checkoutErr } = await supabase.functions.invoke("stripe_subscription", {
+            body: {
+              action: "create_checkout_session",
+              planId: tier,
+              companyId: comp.id,
+              returnUrl: `${window.location.origin}/wizard?payment=success`
+            }
+          });
+
+          if (checkoutErr || !checkoutData?.url) {
+            throw new Error(checkoutErr?.message || checkoutData?.error || "Failed to create Stripe checkout session");
+          }
+
+          window.location.href = checkoutData.url;
+        } catch (err: any) {
+          setIsRedirectingToStripe(false);
+          toast.error("Checkout Error", { description: err.message || "Failed to connect to Stripe." });
         }
+        return;
       }
 
-      if (tier === "growth") {
-        const text = encodeURIComponent(`Hi there! I just registered ${companyName || 'our company'} on FiledCrews and would like to activate our Growth Plan ($495/mo, 10 seats). Please assist with account activation.`);
-        window.open(`https://wa.me/14094229714?text=${text}`, "_blank");
-      } else if (tier === "founding_partner") {
-        const text = encodeURIComponent(`Hi there! We are interested in enrolling ${companyName || 'our company'} in the Founding Partner Council for FiledCrews ($2,899/yr, 20 seats). Please send us details on how to get started.`);
-        window.open(`https://wa.me/14094229714?text=${text}`, "_blank");
-      } else if (tier === "enterprise") {
-        const text = encodeURIComponent(`Hi there! We are interested in an Enterprise Custom Plan for ${companyName || 'our company'} on FiledCrews. Please connect us with an Enterprise Account Manager.`);
-        window.open(`https://wa.me/14094229714?text=${text}`, "_blank");
+      if (tier === "enterprise") {
+        window.location.href = `mailto:enterprise@filedcrews.com?subject=${encodeURIComponent(`Enterprise Custom Plan - ${comp.name || companyName}`)}&body=${encodeURIComponent(`Hi FiledCrews Enterprise Team,\n\nWe are interested in an Enterprise custom deployment for ${comp.name || companyName}.\n\nEstimated Crew Size: ${companyStaffCount || '50+'}\nPrimary Vertical: ${companyVertical}\nCountry: ${companyCountry}\n\nPlease connect us with an Enterprise specialist.`)}`;
       }
-
-      // Advance to Welcome Page (step 1)
-      setStep(1);
-      setIntroStep(7);
-      saveSandboxProgress({ step: 1, introStep: 7, selectedPlan: tier });
     };
 
     return (
@@ -1510,6 +1405,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                 </Button>
                 <Button
                   onClick={() => handlePlanSelection("free_trial")}
+                  disabled={isRedirectingToStripe}
                   className="bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs px-4 h-9 rounded-xl shadow-sm transition-all flex items-center gap-1.5"
                 >
                   Skip to setup (Free Trial) <ArrowRight className="h-3.5 w-3.5" />
@@ -1528,7 +1424,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                   Choose Your Workspace Plan
                 </h1>
                 <p className="text-slate-500 text-xs sm:text-sm leading-relaxed">
-                  Select a subscription tier for <span className="font-bold text-slate-800">{companyName || "Organization"}</span> or skip to proceed on the 14-day Free Trial.
+                  Select a subscription tier for <span className="font-bold text-slate-800">{companyName || "Organization"}</span> with automated global billing through Stripe, or proceed on the 14-day Free Trial.
                 </p>
               </div>
 
@@ -1574,6 +1470,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
                   <Button
                     onClick={() => handlePlanSelection("free_trial")}
+                    disabled={isRedirectingToStripe}
                     className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs h-11 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 mt-4"
                   >
                     Start Free Trial <ArrowRight className="h-3.5 w-3.5" />
@@ -1620,9 +1517,11 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
                   <Button
                     onClick={() => handlePlanSelection("growth")}
+                    disabled={isRedirectingToStripe}
                     className="w-full bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs h-11 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 mt-4"
                   >
-                    Activate via WhatsApp ➔
+                    {isRedirectingToStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+                    Subscribe via Stripe ($495/mo) ➔
                   </Button>
                 </div>
 
@@ -1658,7 +1557,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-amber-600 shrink-0" />
-                        <span>Direct WhatsApp access to the founders</span>
+                        <span>Direct priority access to the founders</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-amber-600 shrink-0" />
@@ -1685,9 +1584,11 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
                   <Button
                     onClick={() => handlePlanSelection("founding_partner")}
+                    disabled={isRedirectingToStripe}
                     className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs h-11 rounded-xl shadow-lg shadow-amber-600/20 transition-all flex items-center justify-center gap-1.5 mt-4"
                   >
-                    Apply to Join Council ($2,899/yr) ➔
+                    {isRedirectingToStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+                    Join VIP Charter via Stripe ($2,899/yr) ➔
                   </Button>
                 </div>
 
@@ -1733,7 +1634,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                     onClick={() => handlePlanSelection("enterprise")}
                     className="w-full bg-cyan-700 hover:bg-cyan-800 text-white font-extrabold text-xs h-11 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 mt-4"
                   >
-                    Contact Sales ➔
+                    Contact Enterprise ➔
                   </Button>
                 </div>
               </div>
@@ -1744,7 +1645,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
     );
   }
 
-  if (wizardMode === "public-sandbox" && introStep <= 5) {
+  if (!company && introStep <= 5) {
     return (
       <>
         <SEO
@@ -2047,38 +1948,98 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
             )}>
             <div className="space-y-6">
               
-              {/* Card 1: Company Name */}
+              {/* Card 1: Company Name & Handle Prefix */}
               {introStep === 1 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <h2 className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">What is your company's name?</h2>
                     <p className="text-slate-500 text-xs leading-relaxed">
-                      We'll set up your personalized enterprise workspace under this name.
+                      We'll set up your personalized enterprise workspace and crew handle prefixes under this name.
                     </p>
                   </div>
-                  <div className="space-y-2.5">
-                    <Label htmlFor="intro-company-name" className="text-xs font-semibold text-slate-700 uppercase">Company Name</Label>
-                    <Input
-                      id="intro-company-name"
-                      placeholder="e.g. Paramount Constructors"
-                      value={companyName}
-                      onChange={(e) => {
-                        setCompanyName(e.target.value);
-                        saveSandboxProgress({ companyName: e.target.value });
-                        // Auto-generate prefix
-                        const prefix = computePrefix(e.target.value);
-                        setCompanyPrefix(prefix);
-                        saveSandboxProgress({ companyPrefix: prefix });
-                      }}
-                      className="bg-slate-50 border-slate-300 text-slate-900 text-base h-12 focus:ring-sidebar focus:border-sidebar px-4 rounded-lg"
-                    />
-                  </div>
-                  {companyName && (
-                    <div className="p-3 bg-slate-100 border border-slate-200 rounded-lg flex items-center justify-between text-xs">
-                      <span className="text-slate-600 font-medium">Generated crew prefix code:</span>
-                      <span className="font-mono text-white font-bold bg-sidebar px-2 py-0.5 rounded border border-sidebar-border">@{companyPrefix}</span>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="intro-company-name" className="text-xs font-bold text-slate-700 uppercase">
+                        Company Name
+                      </Label>
+                      <Input
+                        id="intro-company-name"
+                        placeholder="e.g. Paramount Constructors"
+                        value={companyName}
+                        onChange={(e) => {
+                          setCompanyName(e.target.value);
+                          saveSandboxProgress({ companyName: e.target.value });
+                          if (!isPrefixManuallyEdited) {
+                            const prefix = computePrefix(e.target.value);
+                            setCompanyPrefix(prefix);
+                            saveSandboxProgress({ companyPrefix: prefix });
+                          }
+                        }}
+                        className="bg-slate-50 border-slate-300 text-slate-900 text-base h-12 focus:ring-sidebar focus:border-sidebar px-4 rounded-xl font-medium"
+                      />
                     </div>
-                  )}
+
+                    <div className="space-y-2 pt-1">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="intro-company-prefix" className="text-xs font-bold text-slate-700 uppercase">
+                          Company Handle / Staff Prefix (5 Letters)
+                        </Label>
+                        <span className={cn(
+                          "text-xs font-mono font-bold px-2 py-0.5 rounded",
+                          companyPrefix.length === 5 ? "text-emerald-700 bg-emerald-50 border border-emerald-200" : "text-amber-700 bg-amber-50 border border-amber-200"
+                        )}>
+                          {companyPrefix.length}/5
+                        </span>
+                      </div>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-mono font-bold text-slate-400 select-none text-sm">
+                          @
+                        </span>
+                        <Input
+                          id="intro-company-prefix"
+                          placeholder="PARAM"
+                          value={companyPrefix}
+                          maxLength={5}
+                          onChange={(e) => {
+                            setIsPrefixManuallyEdited(true);
+                            const clean = e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 5);
+                            setCompanyPrefix(clean);
+                            saveSandboxProgress({ companyPrefix: clean });
+                          }}
+                          className={cn(
+                            "bg-slate-50 border text-slate-900 font-mono font-bold text-base h-12 pl-8 pr-4 rounded-xl uppercase tracking-wider",
+                            companyPrefix.length > 0 && companyPrefix.length < 5
+                              ? "border-rose-400 focus:border-rose-500 focus:ring-rose-500/20"
+                              : companyPrefix.length === 5
+                              ? "border-emerald-500 focus:border-emerald-600 focus:ring-emerald-500/20"
+                              : "border-slate-300 focus:border-sidebar focus:ring-sidebar"
+                          )}
+                        />
+                      </div>
+
+                      {/* Inline error / helper state */}
+                      {companyPrefix.length > 0 && companyPrefix.length < 5 && (
+                        <div className="flex items-center gap-1.5 text-xs text-rose-600 font-semibold mt-1.5 animate-in fade-in-50 duration-200">
+                          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                          <span>Prefix must be exactly 5 uppercase letters ({companyPrefix.length}/5 entered)</span>
+                        </div>
+                      )}
+
+                      {companyPrefix.length === 5 && (
+                        <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-semibold mt-1.5 animate-in fade-in-50 duration-200">
+                          <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                          <span>Valid handle: <strong className="font-mono">@{companyPrefix}</strong> (Staff usernames will begin with @{companyPrefix})</span>
+                        </div>
+                      )}
+
+                      {companyName.trim().length > 0 && companyPrefix.length === 0 && (
+                        <div className="flex items-center gap-1.5 text-xs text-rose-600 font-semibold mt-1.5 animate-in fade-in-50 duration-200">
+                          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                          <span>5-letter company handle prefix is required</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -2386,65 +2347,77 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                 </div>
               )}
 
-            {/* Card 5: Admin Credentials Signup */}
+            {/* Card 5: Admin Credentials Signup & Google OAuth */}
               {introStep === 5 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <h2 className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">Create your administrator account</h2>
+                    <h2 className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">
+                      {user ? "Confirm your administrator details" : "Create your administrator account"}
+                    </h2>
                     <p className="text-slate-500 text-xs leading-relaxed">
-                      You will use these credentials to log in to your desktop control board.
+                      {user
+                        ? "We'll link your workspace and administrative controls to your verified account."
+                        : "Choose your preferred sign-in method or register with your email."}
                     </p>
                   </div>
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="admin-first-name" className="text-[10px] font-semibold text-slate-500 uppercase">First Name</Label>
-                        <Input
-                          id="admin-first-name"
-                          placeholder="John"
-                          value={adminFirstName}
-                          onChange={(e) => {
-                            setAdminFirstName(e.target.value);
-                            saveSandboxProgress({ adminFirstName: e.target.value });
-                          }}
-                          className="bg-slate-50 border-slate-300 text-slate-900 h-10"
-                        />
+
+                  {user ? (
+                    /* Authenticated via Google or Email session */
+                    <div className="space-y-4">
+                      <div className="p-4 bg-emerald-50/90 border border-emerald-200 rounded-2xl flex items-center justify-between shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-xl bg-white border border-emerald-200 flex items-center justify-center shadow-xs shrink-0">
+                            <svg className="h-5 w-5" viewBox="0 0 24 24">
+                              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-emerald-950">Signed in via Google</p>
+                            <p className="text-[11px] text-emerald-700 font-semibold">{user.email}</p>
+                          </div>
+                        </div>
+                        <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-xs">
+                          Verified
+                        </Badge>
                       </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="admin-last-name" className="text-[10px] font-semibold text-slate-500 uppercase">Last Name</Label>
-                        <Input
-                          id="admin-last-name"
-                          placeholder="Doe"
-                          value={adminLastName}
-                          onChange={(e) => {
-                            setAdminLastName(e.target.value);
-                            saveSandboxProgress({ adminLastName: e.target.value });
-                          }}
-                          className="bg-slate-50 border-slate-300 text-slate-900 h-10"
-                        />
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="admin-first-name" className="text-[10px] font-bold text-slate-700 uppercase">First Name</Label>
+                          <Input
+                            id="admin-first-name"
+                            placeholder="John"
+                            value={adminFirstName}
+                            onChange={(e) => {
+                              setAdminFirstName(e.target.value);
+                              saveSandboxProgress({ adminFirstName: e.target.value });
+                            }}
+                            className="bg-slate-50 border-slate-300 text-slate-900 h-11 rounded-xl font-medium"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="admin-last-name" className="text-[10px] font-bold text-slate-700 uppercase">Last Name</Label>
+                          <Input
+                            id="admin-last-name"
+                            placeholder="Doe"
+                            value={adminLastName}
+                            onChange={(e) => {
+                              setAdminLastName(e.target.value);
+                              saveSandboxProgress({ adminLastName: e.target.value });
+                            }}
+                            className="bg-slate-50 border-slate-300 text-slate-900 h-11 rounded-xl font-medium"
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="admin-email" className="text-[10px] font-semibold text-slate-500 uppercase">Email Address</Label>
-                      <Input
-                        id="admin-email"
-                        type="email"
-                        placeholder="admin@company.com"
-                        value={adminEmail}
-                        onChange={(e) => {
-                          setAdminEmail(e.target.value);
-                          saveSandboxProgress({ adminEmail: e.target.value });
-                          setSignupEmail(e.target.value);
-                        }}
-                        className="bg-slate-50 border-slate-300 text-slate-900 h-10"
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
                       <div className="space-y-1.5">
-                        <Label htmlFor="admin-phone" className="text-[10px] font-semibold text-slate-500 uppercase">Phone Number</Label>
+                        <Label htmlFor="admin-phone" className="text-[10px] font-bold text-slate-700 uppercase">Phone Number</Label>
                         <div className="flex gap-2">
-                          <div className="flex items-center bg-slate-50 border border-slate-300 rounded-md pl-1.5 pr-0.5 w-[82px] shrink-0 focus-within:ring-2 focus-within:ring-blue-500 h-10">
-                            <span className="mr-0.5 select-none text-base">{getFlagFromDialCode(adminPhoneDialCode)}</span>
+                          <div className="flex items-center bg-slate-50 border border-slate-300 rounded-xl pl-2 pr-1 w-[90px] shrink-0 focus-within:ring-2 focus-within:ring-blue-500 h-11">
+                            <span className="mr-1 select-none text-base">{getFlagFromDialCode(adminPhoneDialCode)}</span>
                             <Input
                               type="text"
                               placeholder="+1"
@@ -2459,7 +2432,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                 setAdminPhoneDialCode(val);
                                 saveSandboxProgress({ adminPhoneDialCode: val });
                               }}
-                              className="border-0 bg-transparent p-0 text-slate-900 placeholder-slate-500 focus-visible:ring-0 focus-visible:ring-offset-0 w-[30px] text-xs h-7"
+                              className="border-0 bg-transparent p-0 text-slate-900 placeholder-slate-500 focus-visible:ring-0 focus-visible:ring-offset-0 w-[32px] text-xs h-7 font-bold"
                             />
                             <Popover open={adminPhoneOpen} onOpenChange={setAdminPhoneOpen}>
                               <PopoverTrigger asChild>
@@ -2482,7 +2455,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                                             setAdminPhoneOpen(false);
                                             saveSandboxProgress({ adminPhoneDialCode: c.dial_code });
                                           }}
-                                          className="hover:bg-[#1f355c] cursor-pointer py-2 px-3 text-xs flex justify-between items-center"
+                                          className="hover:bg-slate-100 cursor-pointer py-2 px-3 text-xs flex justify-between items-center"
                                         >
                                           <span className="flex items-center gap-2">
                                             <span>{c.flag}</span>
@@ -2505,41 +2478,201 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                               setAdminPhone(e.target.value);
                               saveSandboxProgress({ adminPhone: e.target.value });
                             }}
-                            className="bg-slate-50 border-slate-300 text-slate-900 h-10 flex-1"
+                            className="bg-slate-50 border-slate-300 text-slate-900 h-11 flex-1 rounded-xl font-medium"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Unauthenticated Registration Form */
+                    <div className="space-y-4">
+                      {/* Continue with Google OAuth Button */}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={async () => {
+                          saveSandboxProgress({
+                            companyName,
+                            companyPrefix,
+                            companyAddress,
+                            companyWebsite,
+                            companyStaffCount,
+                            companyAnnualRevenue,
+                            companyVertical,
+                            companyCountry,
+                            adminFirstName,
+                            adminLastName,
+                            adminPhone,
+                            adminPhoneDialCode,
+                            introStep: 5,
+                          });
+                          await signInWithGoogle();
+                        }}
+                        className="w-full bg-white hover:bg-slate-50 text-slate-800 font-bold border border-slate-300 shadow-xs h-12 flex items-center justify-center gap-3 rounded-xl transition-all"
+                      >
+                        <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24">
+                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                        </svg>
+                        Continue with Google
+                      </Button>
+
+                      <div className="relative my-2">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="w-full border-t border-slate-200" />
+                        </div>
+                        <div className="relative flex justify-center text-[10px] uppercase font-bold text-slate-400">
+                          <span className="bg-white px-3">Or continue with email</span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="admin-first-name" className="text-[10px] font-bold text-slate-700 uppercase">First Name</Label>
+                          <Input
+                            id="admin-first-name"
+                            placeholder="John"
+                            value={adminFirstName}
+                            onChange={(e) => {
+                              setAdminFirstName(e.target.value);
+                              saveSandboxProgress({ adminFirstName: e.target.value });
+                            }}
+                            className="bg-slate-50 border-slate-300 text-slate-900 h-10 rounded-xl font-medium"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="admin-last-name" className="text-[10px] font-bold text-slate-700 uppercase">Last Name</Label>
+                          <Input
+                            id="admin-last-name"
+                            placeholder="Doe"
+                            value={adminLastName}
+                            onChange={(e) => {
+                              setAdminLastName(e.target.value);
+                              saveSandboxProgress({ adminLastName: e.target.value });
+                            }}
+                            className="bg-slate-50 border-slate-300 text-slate-900 h-10 rounded-xl font-medium"
                           />
                         </div>
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="admin-pass" className="text-[10px] font-semibold text-slate-500 uppercase font-mono">Password</Label>
-                        <div className="relative">
-                          <Input
-                            id="admin-pass"
-                            type={showAdminPassword ? "text" : "password"}
-                            placeholder="At least 6 characters"
-                            value={adminPassword}
-                            onChange={(e) => {
-                              setAdminPassword(e.target.value);
-                              saveSandboxProgress({ adminPassword: e.target.value });
-                              setSignupPassword(e.target.value);
-                            }}
-                            className="bg-slate-50 border-slate-300 text-slate-900 h-10 pr-10"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowAdminPassword(!showAdminPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800 transition-colors focus:outline-none"
-                            tabIndex={-1}
-                          >
-                            {showAdminPassword ? (
-                              <EyeOff className="h-4 w-4 shrink-0" />
-                            ) : (
-                              <Eye className="h-4 w-4 shrink-0" />
-                            )}
-                          </button>
+                        <Label htmlFor="admin-email" className="text-[10px] font-bold text-slate-700 uppercase">Email Address</Label>
+                        <Input
+                          id="admin-email"
+                          type="email"
+                          placeholder="admin@company.com"
+                          value={adminEmail}
+                          onChange={(e) => {
+                            setAdminEmail(e.target.value);
+                            saveSandboxProgress({ adminEmail: e.target.value });
+                            setSignupEmail(e.target.value);
+                          }}
+                          className="bg-slate-50 border-slate-300 text-slate-900 h-10 rounded-xl font-medium"
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="admin-phone" className="text-[10px] font-bold text-slate-700 uppercase">Phone Number</Label>
+                          <div className="flex gap-2">
+                            <div className="flex items-center bg-slate-50 border border-slate-300 rounded-xl pl-2 pr-1 w-[82px] shrink-0 focus-within:ring-2 focus-within:ring-blue-500 h-10">
+                              <span className="mr-0.5 select-none text-base">{getFlagFromDialCode(adminPhoneDialCode)}</span>
+                              <Input
+                                type="text"
+                                placeholder="+1"
+                                value={adminPhoneDialCode}
+                                onChange={(e) => {
+                                  let val = e.target.value;
+                                  if (val.length > 0 && !val.startsWith("+")) {
+                                    val = "+" + val.replace(/[^0-9]/g, "");
+                                  } else {
+                                    val = "+" + val.slice(1).replace(/[^0-9]/g, "");
+                                  }
+                                  setAdminPhoneDialCode(val);
+                                  saveSandboxProgress({ adminPhoneDialCode: val });
+                                }}
+                                className="border-0 bg-transparent p-0 text-slate-900 placeholder-slate-500 focus-visible:ring-0 focus-visible:ring-offset-0 w-[30px] text-xs h-7 font-bold"
+                              />
+                              <Popover open={adminPhoneOpen} onOpenChange={setAdminPhoneOpen}>
+                                <PopoverTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-5 w-5 text-slate-500 hover:text-slate-900 p-0 shrink-0">
+                                    <ChevronDown className="h-3 w-3" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[280px] p-0 bg-white border-slate-300 text-slate-900">
+                                  <Command className="bg-transparent text-slate-900">
+                                    <CommandInput placeholder="Search country or code..." className="border-0 focus:ring-0 text-slate-900 bg-slate-50" />
+                                    <CommandEmpty className="py-2 text-center text-xs text-slate-500">No country found.</CommandEmpty>
+                                    <CommandGroup>
+                                      <CommandList className="max-h-[220px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                                        {countriesList.map((c) => (
+                                          <CommandItem
+                                            key={c.code}
+                                            value={c.name + " " + c.dial_code}
+                                            onSelect={() => {
+                                              setAdminPhoneDialCode(c.dial_code);
+                                              setAdminPhoneOpen(false);
+                                              saveSandboxProgress({ adminPhoneDialCode: c.dial_code });
+                                            }}
+                                            className="hover:bg-slate-100 cursor-pointer py-2 px-3 text-xs flex justify-between items-center"
+                                          >
+                                            <span className="flex items-center gap-2">
+                                              <span>{c.flag}</span>
+                                              <span className="text-slate-700 font-sans truncate max-w-[120px]">{c.name}</span>
+                                            </span>
+                                            <span className="font-mono text-slate-500 font-semibold">{c.dial_code}</span>
+                                          </CommandItem>
+                                        ))}
+                                      </CommandList>
+                                    </CommandGroup>
+                                  </Command>
+                                </PopoverContent>
+                              </Popover>
+                            </div>
+                            <Input
+                              id="admin-phone"
+                              placeholder="(555) 000-0000"
+                              value={adminPhone}
+                              onChange={(e) => {
+                                setAdminPhone(e.target.value);
+                                saveSandboxProgress({ adminPhone: e.target.value });
+                              }}
+                              className="bg-slate-50 border-slate-300 text-slate-900 h-10 flex-1 rounded-xl font-medium"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="admin-pass" className="text-[10px] font-bold text-slate-700 uppercase font-mono">Password</Label>
+                          <div className="relative">
+                            <Input
+                              id="admin-pass"
+                              type={showAdminPassword ? "text" : "password"}
+                              placeholder="At least 6 characters"
+                              value={adminPassword}
+                              onChange={(e) => {
+                                setAdminPassword(e.target.value);
+                                saveSandboxProgress({ adminPassword: e.target.value });
+                                setSignupPassword(e.target.value);
+                              }}
+                              className="bg-slate-50 border-slate-300 text-slate-900 h-10 pr-10 rounded-xl"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowAdminPassword(!showAdminPassword)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800 transition-colors focus:outline-none"
+                              tabIndex={-1}
+                            >
+                              {showAdminPassword ? (
+                                <EyeOff className="h-4 w-4 shrink-0" />
+                              ) : (
+                                <Eye className="h-4 w-4 shrink-0" />
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
 
@@ -2557,7 +2690,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                     }
                   }}
                   disabled={introStep === 1 || saving}
-                  className="text-xs font-bold text-slate-500 hover:text-slate-900"
+                  className="text-xs font-bold text-slate-500 hover:text-slate-900 rounded-xl"
                 >
                   <ArrowLeft className="h-3.5 w-3.5 mr-1.5" /> Back
                 </Button>
@@ -2565,9 +2698,15 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                 {introStep < 5 ? (
                   <Button
                     onClick={() => {
-                      if (introStep === 1 && !companyName.trim()) {
-                        toast.error("Company Name is required");
-                        return;
+                      if (introStep === 1) {
+                        if (!companyName.trim()) {
+                          toast.error("Company Name is required");
+                          return;
+                        }
+                        if (companyPrefix.length !== 5 || !/^[A-Z]{5}$/.test(companyPrefix)) {
+                          toast.error("Prefix must be exactly 5 uppercase letters (A-Z)");
+                          return;
+                        }
                       }
                       if (introStep === 2 && !companyAddress.trim()) {
                         toast.error("HQ Address is required");
@@ -2596,30 +2735,23 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                       setIntroStep(nextStep);
                       saveSandboxProgress({ introStep: nextStep });
                     }}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold px-6 h-10 rounded-lg shadow-md flex items-center gap-1 transition-all"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold px-6 h-11 rounded-xl shadow-md flex items-center gap-1 transition-all"
                   >
                     Continue <ArrowRight className="h-3.5 w-3.5 ml-1" />
                   </Button>
                 ) : introStep === 5 ? (
                   <Button
                     onClick={async (e) => {
-                      if (!adminFirstName.trim() || !adminLastName.trim()) {
-                        toast.error("Admin name fields are required");
-                        return;
-                      }
-                      if (!adminEmail.trim()) {
-                        toast.error("Admin Email is required");
-                        return;
-                      }
-                      if (adminPassword.length < 6) {
-                        toast.error("Password must be at least 6 characters");
-                        return;
-                      }
-
                       setSaving(true);
                       try {
-                        // 0. Verify the prefix is unique before creating the account!
                         const prefixToUse = companyPrefix.toUpperCase();
+                        if (prefixToUse.length !== 5 || !/^[A-Z]{5}$/.test(prefixToUse)) {
+                          toast.error("Prefix must be exactly 5 uppercase letters (A-Z)");
+                          setSaving(false);
+                          return;
+                        }
+
+                        // 0. Verify the prefix is unique
                         const { data: existingPrefixComp } = await supabase
                           .from("companies")
                           .select("id")
@@ -2627,47 +2759,69 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                           .maybeSingle();
 
                         if (existingPrefixComp) {
-                          toast.error(`The prefix "${prefixToUse}" is already in use by another company. Please go back and change your company name slightly.`);
+                          toast.error(`The prefix "${prefixToUse}" is already in use by another company. Please choose another prefix.`);
                           setSaving(false);
                           return;
                         }
 
-                        // 1. Sign up the user account
-                        const { data: authData, error: authErr } = await supabase.auth.signUp({
-                          email: adminEmail.trim(),
-                          password: adminPassword,
-                          options: {
-                            data: {
-                              first_name: adminFirstName.trim(),
-                              last_name: adminLastName.trim(),
+                        let authenticatedUserId = user?.id;
+
+                        // 1. If not authenticated, sign up the user account with email & password
+                        if (!authenticatedUserId) {
+                          if (!adminFirstName.trim() || !adminLastName.trim()) {
+                            toast.error("Admin name fields are required");
+                            setSaving(false);
+                            return;
+                          }
+                          if (!adminEmail.trim()) {
+                            toast.error("Admin Email is required");
+                            setSaving(false);
+                            return;
+                          }
+                          if (adminPassword.length < 6) {
+                            toast.error("Password must be at least 6 characters");
+                            setSaving(false);
+                            return;
+                          }
+
+                          const { data: authData, error: authErr } = await supabase.auth.signUp({
+                            email: adminEmail.trim(),
+                            password: adminPassword,
+                            options: {
+                              data: {
+                                first_name: adminFirstName.trim(),
+                                last_name: adminLastName.trim(),
+                              }
                             }
-                          }
-                        });
+                          });
 
-                        if (authErr) {
-                          if (authErr.message?.includes("already registered")) {
-                            throw new Error("This email is already registered. Please log in.");
+                          if (authErr) {
+                            if (authErr.message?.includes("already registered")) {
+                              throw new Error("This email is already registered. Please log in.");
+                            }
+                            throw authErr;
                           }
-                          throw authErr;
+
+                          const createdUser = authData?.user;
+                          if (!createdUser) {
+                            throw new Error("Failed to register account credentials.");
+                          }
+                          authenticatedUserId = createdUser.id;
                         }
 
-                        const createdUser = authData?.user;
-                        if (!createdUser) {
-                          throw new Error("Failed to register account credentials.");
-                        }
-
-                        // 2. Create the company entry in the DB immediately!
+                        // 2. Create the company entry in the DB immediately
                         const { data: comp, error: compErr } = await supabase
                           .from("companies")
                           .insert({
                             name: companyName.trim(),
-                            prefix: companyPrefix.toUpperCase(),
-                            auth_user_id: createdUser.id,
+                            prefix: prefixToUse,
+                            auth_user_id: authenticatedUserId,
                             currency: currencyCode,
                             industry: companyVertical,
                             address: companyAddress.trim() || null,
                             website: companyWebsite.trim() || null,
                             staff_count: companyStaffCount.trim() || null,
+                            annual_revenue: companyAnnualRevenue.trim() || null,
                             subscription_tier: 'free_trial',
                             subscription_status: 'trialing',
                             max_admin_seats: 1,
@@ -2679,23 +2833,26 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                         if (compErr) throw compErr;
 
                         // 3. Create staff profile for the admin automatically
+                        const adminNameStr = `${adminFirstName.trim() || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Admin'} ${adminLastName.trim()}`.trim();
+                        const adminEmailStr = adminEmail.trim() || user?.email || "";
+
                         const { error: staffErr } = await supabase
                           .from("staff_profiles")
                           .insert({
                             company_id: comp.id,
-                            auth_user_id: createdUser.id,
-                            full_name: `${adminFirstName.trim()} ${adminLastName.trim()}`,
-                            first_name: adminFirstName.trim(),
-                            last_name: adminLastName.trim(),
-                            email: adminEmail.trim(),
+                            auth_user_id: authenticatedUserId,
+                            full_name: adminNameStr,
+                            first_name: adminFirstName.trim() || user?.user_metadata?.first_name || "Admin",
+                            last_name: adminLastName.trim() || user?.user_metadata?.last_name || "",
+                            email: adminEmailStr,
                             phone: adminPhone.trim() ? adminPhoneDialCode + adminPhone.trim() : null,
-                            username: adminEmail.trim(),
+                            username: adminEmailStr || `${prefixToUse.toLowerCase()}_admin`,
                             global_role: "Admin"
                           });
 
-                        if (staffErr) throw staffErr;
+                        if (staffErr) console.warn("Staff profile creation notice:", staffErr);
 
-                        toast.success("Account created! Select your plan to complete setup.");
+                        toast.success("Workspace created! Select your plan to complete setup.");
                         
                         // Move to Card 6: Subscription Plan Selection & Free Trial
                         const nextStep = 6;
@@ -2708,9 +2865,9 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                       }
                     }}
                     disabled={saving}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-extrabold px-6 h-10 rounded-lg shadow-md transition-all"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-extrabold px-6 h-11 rounded-xl shadow-md transition-all"
                   >
-                    {saving ? "Registering..." : "Create Account & Choose Plan"}
+                    {saving ? "Creating Workspace..." : user ? "Create Workspace & Choose Plan" : "Create Account & Choose Plan"}
                   </Button>
                 ) : (
                   <Button
@@ -2741,8 +2898,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                           if (includeSampleData) {
                             if (!customerName) setCustomerName("Apex Commercial Assets");
                             if (!projectName) setProjectName("HQ HVAC & Maintenance Upgrade");
-                            if (!staffFirstName) setStaffFirstName("Alex");
-                            if (!staffLastName) setStaffLastName("Miller");
+                            if (!staffName) setStaffName("Alex Miller");
                             if (!staffRole) setStaffRole("Lead Field Technician");
                             await executeBulkInsert(activeUserId, comp.id);
                           }

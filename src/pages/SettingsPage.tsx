@@ -17,8 +17,9 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  CreditCard, Crown, CheckCircle, AlertTriangle, Loader2, Users, Building,
+  CreditCard, Crown, CheckCircle, CheckCircle2, AlertTriangle, Loader2, Users, Building,
   Lock, Puzzle, Code, Clock, Plug, BrainCircuit, User, Key, Zap, ShieldCheck, MessageSquare, Trash2, Megaphone, Download, Bot,
+  ArrowLeft, Sparkles, ExternalLink,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -232,7 +233,7 @@ export default function SettingsPage() {
     queryKey: ["migration_tasks", company?.id],
     queryFn: async () => {
       if (!company?.id) return [];
-      const { data, error } = await supabase.from("migration_tasks").select("*").eq("company_id", company.id).order("created_at", { ascending: false });
+      const { data, error } = await (supabase as any).from("migration_tasks").select("*").eq("company_id", company.id).order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];
     },
@@ -312,8 +313,43 @@ export default function SettingsPage() {
   const maxFieldCrew = isFreeTrial ? 2 : (company?.max_field_crew_seats ?? (isFoundingPartner ? 20 : (company?.subscription_tier === "growth" ? 7 : 2)));
   const adminPercent = Math.min((activeAdmins / maxAdmins) * 100, 100);
   const fieldPercent = Math.min((activeFieldCrew / maxFieldCrew) * 100, 100);
-  const whatsappMessage = encodeURIComponent("Hi there! We are interested in joining the Founding Partner Council for FiledCrews.");
-  const whatsappUrl = `https://wa.me/14094229714?text=${whatsappMessage}`;
+  const [isRedirectingToStripe, setIsRedirectingToStripe] = useState(false);
+
+  const handleStripeCheckout = async (planId: string) => {
+    if (!company?.id) return;
+    setIsRedirectingToStripe(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("stripe_subscription", {
+        body: {
+          action: "create_checkout_session",
+          planId,
+          companyId: company.id,
+          returnUrl: `${window.location.origin}/settings?tab=billing`,
+        }
+      });
+      if (error || !data?.url) throw new Error(data?.error || "Checkout session failed");
+      window.location.href = data.url;
+    } catch (err: any) {
+      setIsRedirectingToStripe(false);
+      toast({ title: "Checkout Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleOpenPortal = async () => {
+    if (!company?.id) return;
+    setIsRedirectingToStripe(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("stripe_subscription", {
+        body: { action: "create_portal_session", companyId: company.id }
+      });
+      if (error || !data?.url) throw new Error(data?.error || "Portal session failed");
+      window.open(data.url, "_blank");
+    } catch (err: any) {
+      toast({ title: "Portal Error", description: err.message, variant: "destructive" });
+    } finally {
+      setIsRedirectingToStripe(false);
+    }
+  };
 
   // ─── Handlers ───
   const handleChangePassword = async () => {
@@ -690,7 +726,7 @@ export default function SettingsPage() {
         "Everything in Growth, plus:",
         "Permanent Founding Partner pricing",
         "Up to 20 active staff included",
-        "Direct WhatsApp access to the founders",
+        "Direct priority access to the founders",
         "White-glove onboarding & data migration",
         "Monthly product feedback council access",
         "Early access to new features before release",
@@ -725,9 +761,18 @@ export default function SettingsPage() {
 
   const activeSelectedPlan = plans.find(p => p.id === selectedPlanId) || plans[0];
 
-  const handleConfirmPlanChange = () => {
-    toast.success(`Plan request submitted for ${activeSelectedPlan.name}! Our account specialist will contact you for manual activation.`);
-    setBillingViewMode("select");
+  const handleConfirmPlanChange = async () => {
+    if (selectedPlanId === "free_trial") {
+      toast({ title: "Free Trial Active", description: "Your workspace remains on the Free Trial." });
+      setBillingViewMode("select");
+      return;
+    }
+    if (selectedPlanId === "enterprise") {
+      window.location.href = `mailto:enterprise@filedcrews.com?subject=${encodeURIComponent(`Enterprise Plan - ${company?.name}`)}`;
+      return;
+    }
+    // For growth and founding_partner, initiate Stripe checkout
+    await handleStripeCheckout(selectedPlanId);
   };
 
   const renderBilling = () => (
@@ -769,13 +814,13 @@ export default function SettingsPage() {
                       <p className="font-bold text-base text-foreground">Founding Partner Charter VIP</p>
                       <Badge className="bg-amber-500 text-slate-900 border-none text-[10px]">Active Member</Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">Annual Plan ($2,899/yr) · Direct WhatsApp Roadmap Access</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Annual Plan ($2,899/yr) · Active Subscription</p>
                   </div>
                 </div>
-                <Button size="sm" variant="outline" asChild className="border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 text-xs shrink-0">
-                  <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5">
-                    <MessageSquare className="h-3.5 w-3.5" /> VIP WhatsApp
-                  </a>
+                <Button size="sm" variant="outline" onClick={handleOpenPortal} disabled={isRedirectingToStripe} className="border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 text-xs shrink-0">
+                  <div className="flex items-center gap-1.5">
+                    <CreditCard className="h-3.5 w-3.5" /> Manage Billing & Invoices
+                  </div>
                 </Button>
               </CardContent>
             </Card>
@@ -823,7 +868,7 @@ export default function SettingsPage() {
               <div className="text-xs sm:text-sm">
                 <p className="font-bold text-foreground">Why 80% of scaling operations choose the Founding Partner VIP Charter</p>
                 <p className="text-muted-foreground text-xs mt-0.5">
-                  At $2,899/yr for 20 seats ($12.08/seat/mo), Founding Partner saves <strong className="text-foreground font-semibold">$3,041/yr</strong> compared to Growth ($5,940/yr for 10 seats) and includes direct WhatsApp access to founders.
+                  At $2,899/yr for 20 seats ($12.08/seat/mo), Founding Partner saves <strong className="text-foreground font-semibold">$3,041/yr</strong> compared to Growth ($5,940/yr for 10 seats) and includes direct priority access to founders.
                 </p>
               </div>
             </div>
@@ -903,6 +948,80 @@ export default function SettingsPage() {
                         </div>
                       ))}
                     </div>
+                  </div>
+
+                  {/* Direct Action Button on Card */}
+                  <div className="pt-6 border-t border-border/40 mt-6">
+                    {p.id === "free_trial" && (
+                      <Button
+                        variant={isSelected ? "default" : "outline"}
+                        size="sm"
+                        disabled={company?.subscription_tier === "free_trial" && !isTrialExpired}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPlanId(p.id);
+                          handleConfirmPlanChange();
+                        }}
+                        className="w-full text-xs font-bold rounded-xl h-10 transition-all"
+                      >
+                        {company?.subscription_tier === "free_trial" && !isTrialExpired ? "Current Plan (14-Day Trial)" : "Start Free Trial"}
+                      </Button>
+                    )}
+
+                    {p.id === "growth" && (
+                      <Button
+                        size="sm"
+                        disabled={isRedirectingToStripe}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPlanId(p.id);
+                          handleStripeCheckout("growth");
+                        }}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl h-10 shadow-sm transition-all flex items-center justify-center gap-1.5"
+                      >
+                        {isRedirectingToStripe && selectedPlanId === "growth" ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <CreditCard className="h-4 w-4" />
+                        )}
+                        Subscribe via Stripe ($495/mo)
+                      </Button>
+                    )}
+
+                    {p.id === "founding_partner" && (
+                      <Button
+                        size="sm"
+                        disabled={isRedirectingToStripe}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPlanId(p.id);
+                          handleStripeCheckout("founding_partner");
+                        }}
+                        className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-extrabold rounded-xl h-10 shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-1.5"
+                      >
+                        {isRedirectingToStripe && selectedPlanId === "founding_partner" ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-4 w-4" />
+                        )}
+                        Join VIP Charter ($2,899/yr)
+                      </Button>
+                    )}
+
+                    {p.id === "enterprise" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPlanId(p.id);
+                          handleConfirmPlanChange();
+                        }}
+                        className="w-full text-xs font-bold rounded-xl h-10 border-border/60 hover:bg-muted transition-all"
+                      >
+                        Contact Enterprise ➔
+                      </Button>
+                    )}
                   </div>
                 </div>
               );
@@ -1007,7 +1126,7 @@ export default function SettingsPage() {
                 {[
                   "Permanent Founding Partner pricing for as long as you remain a customer",
                   "Up to 20 active staff included",
-                  "Direct WhatsApp access to the founders",
+                  "Direct priority access to the founders",
                   "White-glove onboarding and complimentary data migration",
                   "Priority support with faster response times",
                   "Early access to new features before public release",
@@ -1065,13 +1184,14 @@ export default function SettingsPage() {
             {/* Apply CTA Button */}
             <div className="max-w-3xl">
               <Button
-                asChild
+                onClick={() => handleStripeCheckout("founding_partner")}
+                disabled={isRedirectingToStripe}
                 className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm h-12 px-8 rounded-xl transition-all shadow-sm"
               >
-                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2">
-                  <MessageSquare className="h-4 w-4" />
-                  Apply to Become a Founding Partner
-                </a>
+                <div className="flex items-center justify-center gap-2">
+                  {isRedirectingToStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+                  Subscribe to Founding Partner ($2,899/yr)
+                </div>
               </Button>
             </div>
           </div>
@@ -1093,7 +1213,7 @@ export default function SettingsPage() {
                 {[
                   { feat: "Included Team Licenses", growth: "10 Seats ($49.50/seat)", vip: "20 Seats ($12.08/seat)" },
                   { feat: "Annualized Investment", growth: "$5,940/yr ($495/mo)", vip: "$2,899/yr (Save $3,041/yr)" },
-                  { feat: "Founder Channel Access", growth: "Standard queue", vip: "Direct WhatsApp & Phone" },
+                  { feat: "Founder Channel Access", growth: "Standard queue", vip: "Direct Priority & Phone" },
                   { feat: "Roadmap Co-Design", growth: "Feature queue", vip: "Direct Priority Voting" },
                   { feat: "Quarterly Strategy Reviews", growth: "—", vip: "1-on-1 Sessions Included" },
                   { feat: "White-Glove Onboarding", growth: "Self-serve", vip: "Free Data Migration & Setup" },
@@ -1129,9 +1249,9 @@ export default function SettingsPage() {
               <div className="space-y-3 p-4 sm:p-6 rounded-2xl border border-border/60 bg-card">
                 <h3 className="text-sm font-bold text-foreground">Activation Timeline</h3>
                 <div className="p-3.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-800/60 text-xs sm:text-sm">
-                  <p className="font-bold text-blue-900 dark:text-blue-300">Immediate Provisioning</p>
+                  <p className="font-bold text-blue-900 dark:text-blue-300">Instant Automated Activation</p>
                   <p className="text-blue-700 dark:text-blue-400 mt-0.5 text-[11px] sm:text-xs">
-                    Your account limits and seat quotas will be provisioned immediately upon confirmation by operations.
+                    Your account limits and seat quotas will be provisioned immediately upon successful payment through Stripe.
                   </p>
                 </div>
               </div>
@@ -1139,17 +1259,17 @@ export default function SettingsPage() {
               {/* Billing Details */}
               <div className="space-y-3 p-4 sm:p-6 rounded-2xl border border-border/60 bg-card">
                 <div className="flex items-center gap-2">
-                  <Building className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                  <h3 className="text-sm font-bold text-foreground">Billing Details</h3>
+                  <CreditCard className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <h3 className="text-sm font-bold text-foreground">Payment via Stripe</h3>
                 </div>
 
                 <div className="p-4 rounded-xl border border-border/60 bg-muted/30 space-y-2 text-xs sm:text-sm">
                   <div className="flex items-center gap-2 text-foreground font-semibold">
                     <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                    <span>Invoice & Bank Transfer Activation</span>
+                    <span>Secure Stripe Checkout</span>
                   </div>
                   <p className="text-muted-foreground text-[11px] sm:text-xs leading-relaxed">
-                    Plan activations are handled via direct company invoice. Submitting this request sends an automated notification to your designated specialist for instant setup.
+                    You will be redirected to Stripe's secure checkout to enter your payment details. Your subscription will be activated instantly upon successful payment.
                   </p>
                 </div>
 
@@ -1234,13 +1354,14 @@ export default function SettingsPage() {
                 {/* Submit Action Button */}
                 <Button
                   onClick={handleConfirmPlanChange}
+                  disabled={isRedirectingToStripe}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-11 sm:h-12 text-xs sm:text-sm rounded-xl shadow-sm transition-all"
                 >
-                  Submit Plan Activation Request
+                  {isRedirectingToStripe ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Connecting to Stripe...</> : selectedPlanId === "free_trial" ? "Continue on Free Trial" : `Proceed to Stripe Checkout (${activeSelectedPlan.price}${activeSelectedPlan.period})`}
                 </Button>
 
                 <p className="text-[10px] sm:text-[11px] text-center text-muted-foreground leading-relaxed px-2">
-                  By clicking submit, you request manual plan activation. Our team will verify your account details and issue invoice documentation.
+                  {selectedPlanId === "free_trial" ? "Your free trial will continue for 14 days with full access." : "You will be redirected to Stripe's secure checkout. Your subscription activates immediately upon successful payment."}
                 </p>
               </div>
             </div>
@@ -1488,6 +1609,58 @@ export default function SettingsPage() {
     integrations: renderIntegrations,
     developer: renderDeveloper 
   };
+
+  if (activeTab === "billing") {
+    return (
+      <>
+        <SEO title="Billing & Plans - Settings" description="Manage subscription plans, seats, and billing." path="/settings" noIndex />
+        <DashboardLayout activeTab="settings" companyName={company?.name || ""} companyPrefix={company?.prefix || ""} companyId={company?.id || ""}>
+          <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto font-sans space-y-6">
+            {/* Top Navigation Bar with Back Arrow to Settings */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border/60">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setActiveTab("profile")}
+                  className="gap-2 rounded-xl text-xs font-semibold hover:bg-muted border-border/60 shrink-0 shadow-xs"
+                >
+                  <ArrowLeft className="h-4 w-4" /> Back to Settings
+                </Button>
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
+                    <CreditCard className="h-6 w-6 text-primary" /> Billing & Subscription Plans
+                  </h1>
+                  <p className="text-muted-foreground text-xs sm:text-sm mt-0.5">
+                    Manage your company's tier, seat allocations, invoices, and automated Stripe billing.
+                  </p>
+                </div>
+              </div>
+
+              {/* Action buttons on the top right */}
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleOpenPortal}
+                  disabled={isRedirectingToStripe}
+                  className="text-xs font-semibold gap-1.5 rounded-xl border-border/60 shadow-xs"
+                >
+                  {isRedirectingToStripe ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CreditCard className="h-3.5 w-3.5" />}
+                  Stripe Customer Portal
+                </Button>
+              </div>
+            </div>
+
+            {/* Full Width Billing & Plans Content */}
+            <div className="w-full">
+              {renderBilling()}
+            </div>
+          </div>
+        </DashboardLayout>
+      </>
+    );
+  }
 
   return (
     <>

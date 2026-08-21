@@ -210,7 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const createCompany = useCallback(async (name: string, prefix: string) => {
     if (!state.user) return { error: new Error('Not authenticated') };
-    const formattedPrefix = prefix.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3).padEnd(3, 'X');
+    const formattedPrefix = prefix.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5).padEnd(5, 'X');
     const { data, error } = await supabase
       .from('companies')
       .insert({

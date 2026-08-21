@@ -66,6 +66,7 @@ import {
   AlertTriangle,
   MessageSquare,
   Search,
+  TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -464,10 +465,7 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
     (s: any) => s.is_active && s.global_role === "Field Crew"
   ).length;
 
-  const whatsappMessage = encodeURIComponent(
-    `Hi there! We have reached our seat limit for ${limitWarningRole} on FiledCrews. Please send us details on how we can top up or upgrade.`
-  );
-  const whatsappUrl = `https://wa.me/14094229714?text=${whatsappMessage}`;
+  const upgradeUrl = "/settings?tab=billing";
 
   // Filter staff by search
   const filteredStaff = activeStaff.filter((s) =>
@@ -1286,8 +1284,8 @@ const StaffManagement = ({ companyId, prefix }: { companyId: string; prefix: str
           <AlertDialogFooter className="flex-col sm:flex-row gap-2 pt-2">
             <AlertDialogCancel className="w-full sm:w-auto">Close</AlertDialogCancel>
             <Button className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold" asChild>
-              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="gap-1.5 flex items-center">
-                <MessageSquare className="h-4 w-4" /> Contact via WhatsApp
+              <a href={upgradeUrl} className="gap-1.5 flex items-center">
+                <TrendingUp className="h-4 w-4" /> Upgrade Plan / Add Seats
               </a>
             </Button>
           </AlertDialogFooter>
