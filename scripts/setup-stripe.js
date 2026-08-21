@@ -1,7 +1,4 @@
-// scripts/setup-stripe.js
-// Node.js script to create FiledCrews products & prices in your Stripe account with project isolation metadata
-
-const https = require("https");
+import https from "node:https";
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || process.argv[2];
 
