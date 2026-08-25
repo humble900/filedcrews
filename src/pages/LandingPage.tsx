@@ -45,6 +45,10 @@ import {
   Activity,
   Crown,
   CheckCircle2,
+  Lock,
+  Rocket,
+  Award,
+  Headphones,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -1787,8 +1791,10 @@ export default function LandingPage() {
                     <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-teal-600 shrink-0" /><span>Automated Timesheets & Invoices</span></li>
                   </ul>
                 </div>
-                <Link to="/wizard">
-                  <Button className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs h-11 rounded-xl">Start Free Trial ➔</Button>
+                <Link to="/wizard?plan=free_trial">
+                  <Button className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs h-11 rounded-xl flex items-center justify-center gap-1.5 shadow-sm">
+                    Get Started Free <ArrowRight className="h-4 w-4" />
+                  </Button>
                 </Link>
               </div>
 
@@ -1809,7 +1815,9 @@ export default function LandingPage() {
                   </ul>
                 </div>
                 <Link to="/wizard?plan=growth">
-                  <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs h-11 rounded-xl">Get Growth Plan ➔</Button>
+                  <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs h-11 rounded-xl flex items-center justify-center gap-1.5 shadow-sm">
+                    Get Started with Growth <ArrowRight className="h-4 w-4" />
+                  </Button>
                 </Link>
               </div>
 
@@ -1825,21 +1833,23 @@ export default function LandingPage() {
                     <div className="text-3xl font-black text-slate-900 mt-2">$2,899 <span className="text-xs text-slate-500 font-normal">/ yr</span></div>
                     <p className="text-xs text-purple-950/80 font-medium mt-2 leading-relaxed">Exclusive annual VIP membership with 20 seats, locked pricing, & founder access.</p>
                   </div>
-                  <ul className="text-xs text-slate-700 space-y-2 pt-4 border-t border-purple-200/60 font-medium">
-                    <li className="flex items-center gap-2 text-purple-950 font-bold"><CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" /><span>🔒 Locked-in pricing forever</span></li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" /><span><strong>20 Total Seats</strong> (Custom Split)</span></li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" /><span>👥 Direct access to founders</span></li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" /><span>🗳️ Vote on product roadmap</span></li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" /><span>📞 Quarterly strategy calls</span></li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" /><span>🚀 Priority feature requests</span></li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" /><span>🤝 White-glove onboarding</span></li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" /><span>⚡ Early feature access</span></li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" /><span>🌟 Featured Founding Partner</span></li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" /><span>💬 Private WhatsApp VIP group</span></li>
+                  <ul className="text-xs text-slate-700 space-y-2.5 pt-4 border-t border-purple-200/60 font-medium">
+                    <li className="flex items-center gap-2 text-purple-950 font-bold"><Lock className="h-4 w-4 text-purple-600 shrink-0" /><span>Locked-in pricing forever</span></li>
+                    <li className="flex items-center gap-2"><Users className="h-4 w-4 text-purple-600 shrink-0" /><span><strong>20 Total Seats Included</strong></span></li>
+                    <li className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-purple-600 shrink-0" /><span>Direct access to founders</span></li>
+                    <li className="flex items-center gap-2"><Crown className="h-4 w-4 text-purple-600 shrink-0" /><span>Vote on product roadmap</span></li>
+                    <li className="flex items-center gap-2"><Headphones className="h-4 w-4 text-purple-600 shrink-0" /><span>Quarterly strategy calls</span></li>
+                    <li className="flex items-center gap-2"><Zap className="h-4 w-4 text-purple-600 shrink-0" /><span>Priority feature requests</span></li>
+                    <li className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-purple-600 shrink-0" /><span>White-glove onboarding</span></li>
+                    <li className="flex items-center gap-2"><Rocket className="h-4 w-4 text-purple-600 shrink-0" /><span>Early feature access</span></li>
+                    <li className="flex items-center gap-2"><Award className="h-4 w-4 text-purple-600 shrink-0" /><span>Featured Founding Partner badge</span></li>
+                    <li className="flex items-center gap-2"><MessageSquare className="h-4 w-4 text-purple-600 shrink-0" /><span>Private executive VIP channel</span></li>
                   </ul>
                 </div>
                 <Link to="/wizard?plan=founding_partner">
-                  <Button className="w-full bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white font-extrabold text-xs h-11 rounded-xl shadow-lg shadow-purple-600/20">Join VIP Charter ($2,899/yr) ➔</Button>
+                  <Button className="w-full bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white font-extrabold text-xs h-11 rounded-xl shadow-lg shadow-purple-600/20 flex items-center justify-center gap-1.5">
+                    Get Started (VIP Charter) <ArrowRight className="h-4 w-4" />
+                  </Button>
                 </Link>
               </div>
 
@@ -1859,9 +1869,21 @@ export default function LandingPage() {
                   </ul>
                 </div>
                 <Link to="/wizard?plan=enterprise">
-                  <Button className="w-full bg-cyan-700 hover:bg-cyan-800 text-white font-extrabold text-xs h-11 rounded-xl">Contact Sales ➔</Button>
+                  <Button className="w-full bg-cyan-700 hover:bg-cyan-800 text-white font-extrabold text-xs h-11 rounded-xl flex items-center justify-center gap-1.5 shadow-sm">
+                    Contact Sales <ArrowRight className="h-4 w-4" />
+                  </Button>
                 </Link>
               </div>
+            </div>
+
+            {/* Existing User Login Prompt */}
+            <div className="text-center pt-2">
+              <p className="text-xs text-slate-500 font-medium">
+                Already have a workspace account?{" "}
+                <Link to="/auth" className="font-bold text-slate-900 hover:text-teal-600 underline underline-offset-4">
+                  Sign in to your dashboard
+                </Link>
+              </p>
             </div>
           </div>
         </section>

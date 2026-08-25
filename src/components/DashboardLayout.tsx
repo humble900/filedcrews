@@ -53,12 +53,12 @@ import { usePermissions, type Feature } from "@/hooks/usePermissions";
 import { useTerminology } from "@/hooks/useTerminology";
 
 interface DashboardLayoutProps {
-  children: ReactNode;
-  activeTab: string;
+  children?: ReactNode;
+  activeTab?: string;
   onTabChange?: (tab: string) => void;
-  companyName: string;
-  companyPrefix: string;
-  companyId: string;
+  companyName?: string;
+  companyPrefix?: string;
+  companyId?: string;
   geofenceEditing?: boolean;
 }
 
@@ -393,10 +393,15 @@ export default function DashboardLayout({
     return saved === "true";
   });
   const { hasPermission } = usePermissions();
-  const { signOut, isTrialExpired } = useAuth();
+  const { signOut, isTrialExpired, company } = useAuth();
   const { t } = useTerminology();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const effectiveCompanyName = companyName || company?.name || "FiledCrews";
+  const effectiveCompanyPrefix = companyPrefix || company?.prefix || "FC";
+  const effectiveCompanyId = companyId || company?.id || "";
+  const effectiveActiveTab = activeTab || location.pathname.replace(/^\//, "") || "overview";
 
   const getNavLabel = (item: { id: string; label: string }) => {
     if (item.id === "projects") return t("Projects");
@@ -547,7 +552,7 @@ export default function DashboardLayout({
         <div className="flex items-center gap-2">
           <img src="/favicon.png" alt="FiledCrews" className="h-7 w-7 rounded-lg" />
           <div>
-            <span className="font-bold text-xs leading-tight block">{companyName}</span>
+            <span className="font-bold text-xs leading-tight block">{effectiveCompanyName}</span>
             <span className="text-[9px] text-muted-foreground font-semibold">FiledCrews</span>
           </div>
         </div>
@@ -560,7 +565,7 @@ export default function DashboardLayout({
           >
             <Search className="h-4 w-4" />
           </Button>
-          {companyId && <NotificationCenter companyId={companyId} />}
+          {effectiveCompanyId && <NotificationCenter companyId={effectiveCompanyId} />}
         </div>
       </header>
 
@@ -573,10 +578,10 @@ export default function DashboardLayout({
           )}
         >
           <SidebarContent
-            activeTab={activeTab}
+            activeTab={effectiveActiveTab}
             onTabChange={handleNavigation}
-            companyName={companyName}
-            companyId={companyId}
+            companyName={effectiveCompanyName}
+            companyId={effectiveCompanyId}
             geofenceEditing={geofenceEditing}
             isCollapsed={isCollapsed}
             onToggleCollapse={toggleCollapse}

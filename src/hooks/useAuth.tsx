@@ -8,9 +8,12 @@ interface Company {
   prefix: string;
   subscription_tier?: string;
   subscription_status?: string;
+  subscription_started_at?: string;
+  subscription_ends_at?: string;
   max_field_crew_seats?: number;
   max_admin_seats?: number;
   currency?: string;
+  created_at: string;
   [key: string]: any;
 }
 
@@ -243,14 +246,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const calculateTrialStatus = () => {
     if (!state.company) return { isTrialExpired: false, daysRemaining: 14 };
+    const now = new Date();
+    const isActiveSubscription = state.company.subscription_status === 'active';
+
+    if (isActiveSubscription) {
+      // Use real subscription_ends_at if set by superadmin
+      if (state.company.subscription_ends_at) {
+        const endsAt = new Date(state.company.subscription_ends_at);
+        const timeDiff = endsAt.getTime() - now.getTime();
+        const daysRemaining = Math.max(0, Math.ceil(timeDiff / (1000 * 60 * 60 * 24)));
+        return { isTrialExpired: timeDiff <= 0, daysRemaining };
+      }
+      // Fallback: subscription_started_at + 365 days
+      if (state.company.subscription_started_at) {
+        const startedAt = new Date(state.company.subscription_started_at);
+        const endsAt = new Date(startedAt.getTime() + 365 * 24 * 60 * 60 * 1000);
+        const timeDiff = endsAt.getTime() - now.getTime();
+        const daysRemaining = Math.max(0, Math.ceil(timeDiff / (1000 * 60 * 60 * 24)));
+        return { isTrialExpired: timeDiff <= 0, daysRemaining };
+      }
+      // Legacy active accounts without dates — don't lock them out
+      return { isTrialExpired: false, daysRemaining: 365 };
+    }
+
+    // Free trial: 14 days from created_at
     const trialDurationDays = 14;
     const createdAtDate = new Date(state.company.created_at);
     const trialEndDate = new Date(createdAtDate.getTime() + trialDurationDays * 24 * 60 * 60 * 1000);
-    const now = new Date();
     const timeDiff = trialEndDate.getTime() - now.getTime();
-    // Founding Partner Charter accounts are annual — bypass trial only when subscription_status is 'active'
-    const isActiveSubscription = state.company.subscription_status === 'active';
-    if (isActiveSubscription) return { isTrialExpired: false, daysRemaining: 365 };
     const isTrialExpired = timeDiff <= 0;
     const daysRemaining = Math.max(0, Math.ceil(timeDiff / (1000 * 60 * 60 * 24)));
     return { isTrialExpired, daysRemaining };

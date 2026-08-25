@@ -723,11 +723,17 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
     }
   }, [user, company]);
 
-  // Handle Stripe Payment Redirect Return in Wizard
+  // Handle Stripe Payment Redirect Return and Plan URL parameters in Wizard
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const paymentStatus = params.get("payment");
     const sessionId = params.get("session_id");
+    const planParam = params.get("plan");
+
+    if (planParam && ["free_trial", "growth", "founding_partner", "enterprise"].includes(planParam)) {
+      setSelectedPlan(planParam as any);
+      saveSandboxProgress({ selectedPlan: planParam });
+    }
 
     if (paymentStatus === "success" && sessionId) {
       (async () => {
@@ -1521,7 +1527,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                     className="w-full bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs h-11 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 mt-4"
                   >
                     {isRedirectingToStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
-                    Subscribe via Stripe ($495/mo) ➔
+                    Subscribe via Stripe ($495/mo) <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
                 </div>
 
@@ -1588,7 +1594,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                     className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs h-11 rounded-xl shadow-lg shadow-amber-600/20 transition-all flex items-center justify-center gap-1.5 mt-4"
                   >
                     {isRedirectingToStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
-                    Join VIP Charter via Stripe ($2,899/yr) ➔
+                    Join VIP Charter via Stripe ($2,899/yr) <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
                 </div>
 
@@ -1634,7 +1640,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                     onClick={() => handlePlanSelection("enterprise")}
                     className="w-full bg-cyan-700 hover:bg-cyan-800 text-white font-extrabold text-xs h-11 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 mt-4"
                   >
-                    Contact Enterprise ➔
+                    Contact Enterprise <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
@@ -1654,7 +1660,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
           path="/wizard"
           noIndex
         />
-        <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row font-sans select-none relative overflow-hidden">
+        <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row font-sans select-none relative overflow-x-hidden">
           {/* Left Pane (Desktop only - Remote 3 Replica) */}
           <div className="hidden lg:flex lg:w-[400px] xl:w-[460px] flex-col justify-between p-10 bg-sidebar text-sidebar-foreground border-r border-sidebar-border relative overflow-hidden shrink-0 select-none">
             
@@ -1920,18 +1926,18 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
         </div>
 
           {/* Right Pane (Forms) */}
-          <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-8 lg:p-16 relative">
+          <div className="flex-1 flex flex-col items-center justify-center px-4 py-8 sm:p-8 lg:p-16 relative w-full">
             <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-blue-600/5 rounded-full blur-[100px] pointer-events-none" />
             <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[400px] h-[400px] bg-indigo-600/5 rounded-full blur-[120px] pointer-events-none" />
 
             {/* Mobile Nav */}
-            <div className="w-full max-w-xl flex items-center justify-between mb-8 lg:hidden z-10">
+            <div className="w-full max-w-xl flex items-center justify-between mb-6 lg:hidden z-10">
               <div className="flex items-center gap-3">
-                <img src="/favicon.png" alt="FiledCrews Logo" className="h-7 w-7 rounded-lg" />
+                <img src="/favicon.png" alt="FiledCrews Logo" className="h-7 w-7 rounded-lg shadow-xs" />
                 <span className="text-sm font-extrabold text-slate-900 tracking-tight">FiledCrews</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="h-1.5 w-20 bg-white rounded-full border border-slate-300/30 overflow-hidden">
+                <div className="h-1.5 w-20 bg-slate-200 rounded-full border border-slate-300/30 overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-300"
                     style={{ width: `${(introStep / 6) * 100}%` }}
@@ -1943,23 +1949,23 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
             {/* Main Card Container */}
             <div className={cn(
-              "w-full bg-transparent lg:bg-white shadow-xl lg:border lg:border-slate-200 lg:shadow-2xl relative overflow-hidden backdrop-blur-md text-slate-900 z-10 lg:p-8 rounded-2xl transition-all duration-300",
+              "w-full bg-white shadow-xl border border-slate-200/90 relative backdrop-blur-md text-slate-900 z-10 p-5 sm:p-8 rounded-2xl transition-all duration-300",
               introStep === 4 || introStep === 6 ? "max-w-[680px]" : "max-w-[480px]"
             )}>
             <div className="space-y-6">
               
-              {/* Card 1: Company Name & Handle Prefix */}
+              {/* Card 1: Company Name & Workspace Tag */}
               {introStep === 1 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <h2 className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">What is your company's name?</h2>
                     <p className="text-slate-500 text-xs leading-relaxed">
-                      We'll set up your personalized enterprise workspace and crew handle prefixes under this name.
+                      We'll set up your personalized enterprise workspace and crew dispatch tags under this name.
                     </p>
                   </div>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="intro-company-name" className="text-xs font-bold text-slate-700 uppercase">
+                      <Label htmlFor="intro-company-name" className="text-xs font-bold text-slate-700 tracking-wide uppercase">
                         Company Name
                       </Label>
                       <Input
@@ -1975,24 +1981,34 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                             saveSandboxProgress({ companyPrefix: prefix });
                           }
                         }}
-                        className="bg-slate-50 border-slate-300 text-slate-900 text-base h-12 focus:ring-sidebar focus:border-sidebar px-4 rounded-xl font-medium"
+                        className="bg-slate-50/80 border-slate-300 text-slate-900 text-base h-12 focus:ring-2 focus:ring-primary/20 px-4 rounded-xl font-medium"
                       />
                     </div>
 
-                    <div className="space-y-2 pt-1">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="intro-company-prefix" className="text-xs font-bold text-slate-700 uppercase">
-                          Company Handle / Staff Prefix (5 Letters)
-                        </Label>
+                    <div className="space-y-2.5 pt-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <Label htmlFor="intro-company-prefix" className="text-xs font-bold text-slate-800 tracking-wide uppercase truncate">
+                            Workspace Tag
+                          </Label>
+                          <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200/60 px-1.5 py-0.5 rounded-md shrink-0">
+                            5 Letters
+                          </span>
+                        </div>
                         <span className={cn(
-                          "text-xs font-mono font-bold px-2 py-0.5 rounded",
+                          "text-xs font-mono font-bold px-2 py-0.5 rounded shrink-0 transition-colors",
                           companyPrefix.length === 5 ? "text-emerald-700 bg-emerald-50 border border-emerald-200" : "text-amber-700 bg-amber-50 border border-amber-200"
                         )}>
                           {companyPrefix.length}/5
                         </span>
                       </div>
+
+                      <p className="text-[11px] text-slate-500 leading-snug">
+                        Your unique 5-letter code for crew mobile logins, geofences, and job dispatch tags.
+                      </p>
+
                       <div className="relative">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-mono font-bold text-slate-400 select-none text-sm">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-mono font-bold text-slate-400 select-none text-base">
                           @
                         </span>
                         <Input
@@ -2007,37 +2023,49 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                             saveSandboxProgress({ companyPrefix: clean });
                           }}
                           className={cn(
-                            "bg-slate-50 border text-slate-900 font-mono font-bold text-base h-12 pl-8 pr-4 rounded-xl uppercase tracking-wider",
+                            "bg-slate-50/80 border text-slate-900 font-mono font-bold text-base h-12 pl-8 pr-4 rounded-xl uppercase tracking-widest transition-all",
                             companyPrefix.length > 0 && companyPrefix.length < 5
-                              ? "border-rose-400 focus:border-rose-500 focus:ring-rose-500/20"
+                              ? "border-amber-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
                               : companyPrefix.length === 5
-                              ? "border-emerald-500 focus:border-emerald-600 focus:ring-emerald-500/20"
-                              : "border-slate-300 focus:border-sidebar focus:ring-sidebar"
+                              ? "border-emerald-500 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
+                              : "border-slate-300 focus:border-primary focus:ring-2 focus:ring-primary/20"
                           )}
                         />
                       </div>
 
-                      {/* Inline error / helper state */}
-                      {companyPrefix.length > 0 && companyPrefix.length < 5 && (
-                        <div className="flex items-center gap-1.5 text-xs text-rose-600 font-semibold mt-1.5 animate-in fade-in-50 duration-200">
-                          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                          <span>Prefix must be exactly 5 uppercase letters ({companyPrefix.length}/5 entered)</span>
+                      {/* Conversational Live Preview & Guided Feedback Card */}
+                      <div className="p-3.5 bg-slate-50/90 border border-slate-200/80 rounded-xl space-y-2 text-xs transition-all">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-slate-500 font-medium flex items-center gap-1.5">
+                            <Users className="h-3.5 w-3.5 text-slate-400" />
+                            Sample Crew Login:
+                          </span>
+                          <span className="font-mono font-bold text-slate-800 bg-white border border-slate-200/60 px-2 py-0.5 rounded-md">
+                            @{companyPrefix || "TAG"}_ALEX
+                          </span>
                         </div>
-                      )}
 
-                      {companyPrefix.length === 5 && (
-                        <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-semibold mt-1.5 animate-in fade-in-50 duration-200">
-                          <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                          <span>Valid handle: <strong className="font-mono">@{companyPrefix}</strong> (Staff usernames will begin with @{companyPrefix})</span>
-                        </div>
-                      )}
+                        {/* Conversational state helper */}
+                        {companyPrefix.length > 0 && companyPrefix.length < 5 && (
+                          <div className="flex items-center gap-1.5 text-xs text-amber-700 font-semibold pt-1 border-t border-slate-200/60 animate-in fade-in-50 duration-200">
+                            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                            <span>Add {5 - companyPrefix.length} more letter{5 - companyPrefix.length === 1 ? "" : "s"} to complete tag ({companyPrefix.length}/5)</span>
+                          </div>
+                        )}
 
-                      {companyName.trim().length > 0 && companyPrefix.length === 0 && (
-                        <div className="flex items-center gap-1.5 text-xs text-rose-600 font-semibold mt-1.5 animate-in fade-in-50 duration-200">
-                          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                          <span>5-letter company handle prefix is required</span>
-                        </div>
-                      )}
+                        {companyPrefix.length === 5 && (
+                          <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-semibold pt-1 border-t border-slate-200/60 animate-in fade-in-50 duration-200">
+                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                            <span>Workspace tag locked: <strong className="font-mono text-emerald-800">@{companyPrefix}</strong> (Auto-applied to crew apps)</span>
+                          </div>
+                        )}
+
+                        {companyPrefix.length === 0 && (
+                          <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-200/60">
+                            💡 Auto-suggested from company name — choose 5 letters your team will easily remember.
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2092,8 +2120,8 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                         className="bg-slate-50 border-slate-300 text-slate-900 h-11 px-3 rounded-lg"
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div className="space-y-1.5">
                         <Label htmlFor="intro-staff-count" className="text-xs font-semibold text-slate-700 uppercase">Team Size</Label>
                         <select
                           id="intro-staff-count"
@@ -2102,7 +2130,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                             setCompanyStaffCount(e.target.value);
                             saveSandboxProgress({ companyStaffCount: e.target.value });
                           }}
-                          className="w-full bg-slate-50 border border-slate-300 text-slate-900 h-11 rounded-lg px-2 text-xs focus:ring-blue-500 outline-none"
+                          className="w-full bg-slate-50 border border-slate-300 text-slate-900 h-11 rounded-xl px-3 text-xs focus:ring-2 focus:ring-primary/20 outline-none"
                         >
                           <option value="">Select size</option>
                           <option value="1-5">1-5 members</option>
@@ -2111,8 +2139,8 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                           <option value="51+">51+ members</option>
                         </select>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="intro-annual-revenue" className="text-xs font-semibold text-slate-700 uppercase font-mono">Annual Revenue</Label>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="intro-annual-revenue" className="text-xs font-semibold text-slate-700 uppercase">Annual Revenue</Label>
                         <select
                           id="intro-annual-revenue"
                           value={companyAnnualRevenue}
@@ -2120,7 +2148,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                             setCompanyAnnualRevenue(e.target.value);
                             saveSandboxProgress({ companyAnnualRevenue: e.target.value });
                           }}
-                          className="w-full bg-slate-50 border border-slate-300 text-slate-900 h-11 rounded-lg px-2 text-xs focus:ring-blue-500 outline-none"
+                          className="w-full bg-slate-50 border border-slate-300 text-slate-900 h-11 rounded-xl px-3 text-xs focus:ring-2 focus:ring-primary/20 outline-none"
                         >
                           <option value="">Select range</option>
                           <option value="Under $100K">Under $100K</option>
@@ -2384,7 +2412,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                         </Badge>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
                           <Label htmlFor="admin-first-name" className="text-[10px] font-bold text-slate-700 uppercase">First Name</Label>
                           <Input
@@ -2528,7 +2556,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
                           <Label htmlFor="admin-first-name" className="text-[10px] font-bold text-slate-700 uppercase">First Name</Label>
                           <Input
@@ -2917,7 +2945,8 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                     disabled={saving}
                     className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold px-6 h-10 rounded-lg shadow-md transition-all flex items-center gap-1.5"
                   >
-                    {saving ? "Launching Workspace..." : "Confirm Plan & Enter Dashboard ➔"}
+                    {saving ? "Launching Workspace..." : "Confirm Plan & Enter Dashboard"}
+                    <ArrowRight className="h-4 w-4" />
                   </Button>
                 )}
               </div>
@@ -2930,9 +2959,9 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                       setStep(2);
                       saveSandboxProgress({ step: 2 });
                     }}
-                    className="text-[11px] font-semibold text-slate-500 hover:text-primary transition-colors"
+                    className="text-[11px] font-semibold text-slate-500 hover:text-primary transition-colors inline-flex items-center gap-1"
                   >
-                    Or click here if you'd like to manually setup your first client & project step-by-step ➔
+                    Or click here if you'd like to manually setup your first client & project step-by-step <ArrowRight className="h-3 w-3" />
                   </button>
                 </div>
               )}

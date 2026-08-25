@@ -421,6 +421,8 @@ export type Database = {
           name: string
           prefix: string
           staff_count: string | null
+          subscription_ends_at: string | null
+          subscription_started_at: string | null
           subscription_status: string
           subscription_tier: string
           website: string | null
@@ -439,6 +441,8 @@ export type Database = {
           name: string
           prefix: string
           staff_count?: string | null
+          subscription_ends_at?: string | null
+          subscription_started_at?: string | null
           subscription_status?: string
           subscription_tier?: string
           website?: string | null
@@ -457,6 +461,8 @@ export type Database = {
           name?: string
           prefix?: string
           staff_count?: string | null
+          subscription_ends_at?: string | null
+          subscription_started_at?: string | null
           subscription_status?: string
           subscription_tier?: string
           website?: string | null

@@ -19,7 +19,7 @@ import {
 import {
   CreditCard, Crown, CheckCircle, CheckCircle2, AlertTriangle, Loader2, Users, Building,
   Lock, Puzzle, Code, Clock, Plug, BrainCircuit, User, Key, Zap, ShieldCheck, MessageSquare, Trash2, Megaphone, Download, Bot,
-  ArrowLeft, Sparkles, ExternalLink,
+  ArrowLeft, Sparkles, ExternalLink, ArrowRight,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -1017,9 +1017,9 @@ export default function SettingsPage() {
                           setSelectedPlanId(p.id);
                           handleConfirmPlanChange();
                         }}
-                        className="w-full text-xs font-bold rounded-xl h-10 border-border/60 hover:bg-muted transition-all"
+                        className="w-full text-xs font-bold rounded-xl h-10 border-border/60 hover:bg-muted transition-all flex items-center justify-center gap-1.5"
                       >
-                        Contact Enterprise ➔
+                        Contact Enterprise <ArrowRight className="h-3.5 w-3.5" />
                       </Button>
                     )}
                   </div>

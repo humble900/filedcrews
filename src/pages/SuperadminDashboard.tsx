@@ -89,6 +89,8 @@ import {
   Coins,
   ChevronRight,
   Flame,
+  Mail,
+  Phone,
 } from "lucide-react";
 import { format } from "date-fns";
 import { Link, Navigate } from "react-router-dom";
@@ -103,6 +105,8 @@ interface Company {
   auth_user_id: string;
   subscription_tier: string;
   subscription_status: string;
+  subscription_started_at?: string | null;
+  subscription_ends_at?: string | null;
   max_field_crew_seats: number;
   max_admin_seats: number;
   address?: string | null;
@@ -129,6 +133,9 @@ interface StaffUser {
   global_role: string;
   job_title: string | null;
   is_active: boolean;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
   created_at: string;
   company: {
     name: string;
@@ -153,8 +160,11 @@ export default function SuperadminDashboard() {
   // Edit Subscription Modal States
   const [editingCompanyId, setEditingCompanyId] = useState<string | null>(null);
   const [editTier, setEditTier] = useState("Free");
+  const [editStatus, setEditStatus] = useState("active");
   const [editMaxAdmins, setEditMaxAdmins] = useState(3);
   const [editMaxFieldCrew, setEditMaxFieldCrew] = useState(10);
+  const [editSubStartDate, setEditSubStartDate] = useState("");
+  const [editSubEndDate, setEditSubEndDate] = useState("");
 
   // Add platform admin state
   const [newAdminUserId, setNewAdminUserId] = useState("");
@@ -165,6 +175,9 @@ export default function SuperadminDashboard() {
   const [editUsername, setEditUsername] = useState("");
   const [editJobTitle, setEditJobTitle] = useState("");
   const [editGlobalRole, setEditGlobalRole] = useState("Field Crew");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editAddress, setEditAddress] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
   const handleOpenEditUser = (u: any) => {
@@ -173,6 +186,9 @@ export default function SuperadminDashboard() {
     setEditUsername(u.username || "");
     setEditJobTitle(u.job_title || "");
     setEditGlobalRole(u.global_role || "Field Crew");
+    setEditEmail(u.email || "");
+    setEditPhone(u.phone || "");
+    setEditAddress(u.address || "");
     setNewPassword("");
   };
 
@@ -386,11 +402,15 @@ export default function SuperadminDashboard() {
 
   const approveCompanyMutation = useMutation({
     mutationFn: async (companyId: string) => {
+      const now = new Date().toISOString();
+      const oneYearLater = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
       const { error } = await supabase
         .from("companies")
         .update({
           subscription_status: "active",
           subscription_tier: "Founding Partner",
+          subscription_started_at: now,
+          subscription_ends_at: oneYearLater,
           max_admin_seats: 20,
           max_field_crew_seats: 20
         })
@@ -420,6 +440,8 @@ export default function SuperadminDashboard() {
           auth_user_id,
           subscription_tier,
           subscription_status,
+          subscription_started_at,
+          subscription_ends_at,
           max_admin_seats,
           max_field_crew_seats,
           address,
@@ -456,6 +478,9 @@ export default function SuperadminDashboard() {
           global_role,
           job_title,
           is_active,
+          email,
+          phone,
+          address,
           created_at,
           company:companies(name)
         `)
@@ -527,6 +552,9 @@ export default function SuperadminDashboard() {
       username,
       jobTitle,
       globalRole,
+      email,
+      phone,
+      address,
       newPassword,
     }: {
       userId: string;
@@ -535,6 +563,9 @@ export default function SuperadminDashboard() {
       username: string;
       jobTitle: string;
       globalRole: string;
+      email?: string;
+      phone?: string;
+      address?: string;
       newPassword?: string;
     }) => {
       // 1. Update staff profile details
@@ -545,6 +576,9 @@ export default function SuperadminDashboard() {
           username: username.toUpperCase(),
           job_title: jobTitle,
           global_role: globalRole,
+          email: email?.trim() || null,
+          phone: phone?.trim() || null,
+          address: address?.trim() || null,
         })
         .eq("id", userId);
       if (profileErr) throw profileErr;
@@ -654,21 +688,31 @@ export default function SuperadminDashboard() {
     mutationFn: async ({
       companyId,
       tier,
+      status,
       maxAdmins,
       maxFieldCrew,
+      subStartDate,
+      subEndDate,
     }: {
       companyId: string;
       tier: string;
+      status: string;
       maxAdmins: number;
       maxFieldCrew: number;
+      subStartDate: string;
+      subEndDate: string;
     }) => {
+      const updatePayload: any = {
+        subscription_tier: tier,
+        subscription_status: status,
+        max_admin_seats: maxAdmins,
+        max_field_crew_seats: maxFieldCrew,
+      };
+      if (subStartDate) updatePayload.subscription_started_at = new Date(subStartDate).toISOString();
+      if (subEndDate) updatePayload.subscription_ends_at = new Date(subEndDate).toISOString();
       const { error } = await supabase
         .from("companies")
-        .update({
-          subscription_tier: tier,
-          max_admin_seats: maxAdmins,
-          max_field_crew_seats: maxFieldCrew,
-        })
+        .update(updatePayload)
         .eq("id", companyId);
       if (error) throw error;
     },
@@ -1020,7 +1064,7 @@ export default function SuperadminDashboard() {
                           <TableHead>Tier</TableHead>
                           <TableHead>Office Seats</TableHead>
                           <TableHead>Crew Seats</TableHead>
-                          <TableHead>Owner Auth ID</TableHead>
+                          <TableHead>Owner Email</TableHead>
                           <TableHead className="w-[120px] text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -1087,8 +1131,11 @@ export default function SuperadminDashboard() {
                               <TableCell className="font-mono text-xs font-semibold">
                                 {c.max_field_crew_seats} seats
                               </TableCell>
-                              <TableCell className="font-mono text-xs text-muted-foreground truncate max-w-[120px]">
-                                {c.auth_user_id}
+                              <TableCell className="text-xs text-muted-foreground truncate max-w-[180px]">
+                                {(() => {
+                                  const ownerProfile = c.staff_profiles?.find((s: any) => s.auth_user_id === c.auth_user_id);
+                                  return ownerProfile?.email || <span className="italic">No email</span>;
+                                })()}
                               </TableCell>
                               <TableCell onClick={(e) => e.stopPropagation()}>
                                 <div className="flex items-center justify-end gap-1">
@@ -1120,8 +1167,11 @@ export default function SuperadminDashboard() {
                                     onClick={() => {
                                       setEditingCompanyId(c.id);
                                       setEditTier(c.subscription_tier);
+                                      setEditStatus(c.subscription_status);
                                       setEditMaxAdmins(c.max_admin_seats);
                                       setEditMaxFieldCrew(c.max_field_crew_seats);
+                                      setEditSubStartDate(c.subscription_started_at ? new Date(c.subscription_started_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+                                      setEditSubEndDate(c.subscription_ends_at ? new Date(c.subscription_ends_at).toISOString().split('T')[0] : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
                                     }}
                                     title="Edit Subscription"
                                   >
@@ -1371,8 +1421,15 @@ export default function SuperadminDashboard() {
                               <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
                                 {format(new Date(u.created_at), "yyyy-MM-dd HH:mm")}
                               </TableCell>
-                              <TableCell className="font-bold text-foreground">
-                                {u.full_name}
+                              <TableCell>
+                                <div className="font-bold text-foreground">{u.full_name}</div>
+                                {(u.email || u.phone || u.address) && (
+                                  <div className="flex flex-col gap-0.5 mt-0.5 text-[10px] text-muted-foreground">
+                                    {u.email && <span className="flex items-center gap-1"><Mail className="h-2.5 w-2.5" /> {u.email}</span>}
+                                    {u.phone && <span className="flex items-center gap-1"><Phone className="h-2.5 w-2.5" /> {u.phone}</span>}
+                                    {u.address && <span className="flex items-center gap-1"><MapPin className="h-2.5 w-2.5" /> {u.address}</span>}
+                                  </div>
+                                )}
                               </TableCell>
                               <TableCell className="font-mono text-xs">
                                 @{u.username}
@@ -1974,27 +2031,70 @@ export default function SuperadminDashboard() {
         open={!!editingCompanyId}
         onOpenChange={(open) => !open && setEditingCompanyId(null)}
       >
-        <DialogContent className="sm:max-w-md bg-background">
+        <DialogContent className="sm:max-w-lg bg-background">
           <DialogHeader>
             <DialogTitle>Update Tenancy Subscription & Seats</DialogTitle>
             <DialogDescription>
-              Assign the active tier and maximum seat licenses allowed.
+              Assign the active tier, subscription period, and maximum seat licenses allowed.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-foreground">Subscription Tier</label>
-              <Select value={editTier} onValueChange={setEditTier}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Free">Free Trial (Standard Limits)</SelectItem>
-                  <SelectItem value="growth">Growth ($495/mo · 10 Seats)</SelectItem>
-                  <SelectItem value="Founding Partner">Founding Partner Council ($2,899/yr · 20 Seats)</SelectItem>
-                  <SelectItem value="enterprise">Enterprise (Custom SLA · Unlimited)</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-foreground">Subscription Tier</label>
+                <Select value={editTier} onValueChange={setEditTier}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Free">Free Trial (Standard Limits)</SelectItem>
+                    <SelectItem value="free_trial">Free Trial (Legacy)</SelectItem>
+                    <SelectItem value="growth">Growth ($495/mo · 10 Seats)</SelectItem>
+                    <SelectItem value="Founding Partner">Founding Partner Council ($2,899/yr · 20 Seats)</SelectItem>
+                    <SelectItem value="enterprise">Enterprise (Custom SLA · Unlimited)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-foreground">Subscription Status</label>
+                <Select value={editStatus} onValueChange={setEditStatus}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="trialing">Trialing</SelectItem>
+                    <SelectItem value="pending_approval">Pending Approval (Waitlisted)</SelectItem>
+                    <SelectItem value="suspended">Suspended</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                  <CalendarDays className="h-3.5 w-3.5 text-primary" /> Subscription Start
+                </label>
+                <Input
+                  type="date"
+                  value={editSubStartDate}
+                  onChange={(e) => setEditSubStartDate(e.target.value)}
+                />
+                <p className="text-[10px] text-muted-foreground">When the paid subscription begins</p>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                  <CalendarDays className="h-3.5 w-3.5 text-rose-500" /> Subscription End
+                </label>
+                <Input
+                  type="date"
+                  value={editSubEndDate}
+                  onChange={(e) => setEditSubEndDate(e.target.value)}
+                />
+                <p className="text-[10px] text-muted-foreground">Account locks after this date</p>
+              </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
@@ -2029,8 +2129,11 @@ export default function SuperadminDashboard() {
                 updateSubscriptionMutation.mutate({
                   companyId: editingCompanyId!,
                   tier: editTier,
+                  status: editStatus,
                   maxAdmins: editMaxAdmins,
                   maxFieldCrew: editMaxFieldCrew,
+                  subStartDate: editSubStartDate,
+                  subEndDate: editSubEndDate,
                 })
               }
               disabled={updateSubscriptionMutation.isPending}
@@ -2103,6 +2206,34 @@ export default function SuperadminDashboard() {
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground flex items-center gap-1"><Mail className="h-3 w-3" /> Email</label>
+                <Input
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  placeholder="e.g. staff@company.com"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground flex items-center gap-1"><Phone className="h-3 w-3" /> Phone</label>
+                <Input
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  placeholder="e.g. +1 555-0199"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Address</label>
+              <Input
+                value={editAddress}
+                onChange={(e) => setEditAddress(e.target.value)}
+                placeholder="e.g. 123 Main St, Austin, TX"
+              />
+            </div>
+
             <div className="space-y-1.5 border-t pt-3">
               <label className="text-xs font-semibold text-rose-400">Override Password (Optional)</label>
               <Input
@@ -2127,6 +2258,9 @@ export default function SuperadminDashboard() {
                   username: editUsername,
                   jobTitle: editJobTitle,
                   globalRole: editGlobalRole,
+                  email: editEmail,
+                  phone: editPhone,
+                  address: editAddress,
                   newPassword: newPassword,
                 })
               }
@@ -2255,6 +2389,28 @@ export default function SuperadminDashboard() {
                       </div>
                     </div>
 
+                    {/* Owner / Admin Contact */}
+                    <div className="space-y-3">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        <UserCheck className="h-3.5 w-3.5 text-primary" /> Owner / Admin Contact
+                      </h3>
+                      {(() => {
+                        const ownerProfile = selectedCompany360.staff_profiles?.find((s: any) => s.auth_user_id === selectedCompany360.auth_user_id);
+                        return (
+                          <div className="grid grid-cols-2 gap-3 text-xs">
+                            <div className="p-3 rounded-xl bg-muted/30 border border-border/40 space-y-1">
+                              <span className="text-muted-foreground font-semibold flex items-center gap-1"><Mail className="h-3 w-3" /> Owner Email</span>
+                              <p className="font-bold text-foreground">{ownerProfile?.email || "Not provided"}</p>
+                            </div>
+                            <div className="p-3 rounded-xl bg-muted/30 border border-border/40 space-y-1">
+                              <span className="text-muted-foreground font-semibold flex items-center gap-1"><Phone className="h-3 w-3" /> Owner Phone</span>
+                              <p className="font-bold text-foreground">{ownerProfile?.phone || "Not provided"}</p>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
                     {/* Operational Details */}
                     <div className="space-y-3">
                       <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
@@ -2273,9 +2429,19 @@ export default function SuperadminDashboard() {
                           <span className="text-muted-foreground">Billing Currency</span>
                           <span className="font-semibold">{selectedCompany360.currency || "USD ($)"}</span>
                         </div>
-                        <div className="flex justify-between py-1">
+                        <div className="flex justify-between py-1 border-b border-border/40">
                           <span className="text-muted-foreground">Subscribed Tier</span>
                           <span className="font-bold text-primary">{selectedCompany360.subscription_tier}</span>
+                        </div>
+                        <div className="flex justify-between py-1 border-b border-border/40">
+                          <span className="text-muted-foreground">Subscription Start</span>
+                          <span className="font-semibold">{selectedCompany360.subscription_started_at ? format(new Date(selectedCompany360.subscription_started_at), "PPP") : "Not set"}</span>
+                        </div>
+                        <div className="flex justify-between py-1">
+                          <span className="text-muted-foreground">Subscription End</span>
+                          <span className={`font-semibold ${selectedCompany360.subscription_ends_at && new Date(selectedCompany360.subscription_ends_at) < new Date() ? "text-rose-500" : ""}`}>
+                            {selectedCompany360.subscription_ends_at ? format(new Date(selectedCompany360.subscription_ends_at), "PPP") : "Not set"}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -2296,19 +2462,34 @@ export default function SuperadminDashboard() {
                     ) : (
                       <div className="space-y-2">
                         {selectedCompany360.staff_profiles.map((staff: any) => (
-                          <div key={staff.id} className="p-3 rounded-xl bg-card border border-border/50 flex items-center justify-between text-xs">
-                            <div>
-                              <p className="font-bold text-foreground">{staff.full_name || staff.username}</p>
-                              <p className="text-[11px] text-muted-foreground font-mono">@{staff.username} · {staff.job_title || staff.global_role}</p>
+                          <div key={staff.id} className="p-3 rounded-xl bg-card border border-border/50 text-xs space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-bold text-foreground">{staff.full_name || staff.username}</p>
+                                <p className="text-[11px] text-muted-foreground font-mono">@{staff.username} · {staff.job_title || staff.global_role}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className={staff.global_role === "Admin" ? "bg-purple-500/10 text-purple-600" : "bg-blue-500/10 text-blue-600"}>
+                                  {staff.global_role}
+                                </Badge>
+                                <Badge className={staff.is_active ? "bg-emerald-500/10 text-emerald-600 border-none" : "bg-rose-500/10 text-rose-600 border-none"}>
+                                  {staff.is_active ? "Active" : "Inactive"}
+                                </Badge>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className={staff.global_role === "Admin" ? "bg-purple-500/10 text-purple-600" : "bg-blue-500/10 text-blue-600"}>
-                                {staff.global_role}
-                              </Badge>
-                              <Badge className={staff.is_active ? "bg-emerald-500/10 text-emerald-600 border-none" : "bg-rose-500/10 text-rose-600 border-none"}>
-                                {staff.is_active ? "Active" : "Inactive"}
-                              </Badge>
-                            </div>
+                            {(staff.email || staff.phone || staff.address) && (
+                              <div className="flex flex-wrap items-center gap-3 pt-1 border-t border-border/30 text-[10px] text-muted-foreground">
+                                {staff.email && (
+                                  <span className="flex items-center gap-1"><Mail className="h-2.5 w-2.5" /> {staff.email}</span>
+                                )}
+                                {staff.phone && (
+                                  <span className="flex items-center gap-1"><Phone className="h-2.5 w-2.5" /> {staff.phone}</span>
+                                )}
+                                {staff.address && (
+                                  <span className="flex items-center gap-1"><MapPin className="h-2.5 w-2.5" /> {staff.address}</span>
+                                )}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -2375,8 +2556,11 @@ export default function SuperadminDashboard() {
                   onClick={() => {
                     setEditingCompanyId(selectedCompany360.id);
                     setEditTier(selectedCompany360.subscription_tier);
+                    setEditStatus(selectedCompany360.subscription_status);
                     setEditMaxAdmins(selectedCompany360.max_admin_seats);
                     setEditMaxFieldCrew(selectedCompany360.max_field_crew_seats);
+                    setEditSubStartDate(selectedCompany360.subscription_started_at ? new Date(selectedCompany360.subscription_started_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+                    setEditSubEndDate(selectedCompany360.subscription_ends_at ? new Date(selectedCompany360.subscription_ends_at).toISOString().split('T')[0] : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
                     setSelectedCompany360(null);
                   }}
                   className="gap-1.5 text-xs font-semibold"

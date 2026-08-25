@@ -17,44 +17,69 @@ import NotFound from "./pages/NotFound";
 import LandingPage from "./pages/LandingPage";
 import HomePage from "./pages/HomePage";
 
+// ─── Resilient Lazy Loader (handles new deployments & stale chunks) ───
+function lazyWithRetry<T extends React.ComponentType<any>>(
+  componentImport: () => Promise<{ default: T }>
+) {
+  return lazy(async () => {
+    const pageHasBeenForceRefreshed = JSON.parse(
+      window.sessionStorage.getItem("filedcrews_chunk_reload") || "false"
+    );
+
+    try {
+      const component = await componentImport();
+      window.sessionStorage.setItem("filedcrews_chunk_reload", "false");
+      return component;
+    } catch (error) {
+      if (!pageHasBeenForceRefreshed) {
+        console.warn("[LazyLoader] Stale bundle chunk detected. Forcing page refresh...", error);
+        window.sessionStorage.setItem("filedcrews_chunk_reload", "true");
+        window.location.reload();
+        return { default: (() => null) as unknown as T };
+      }
+      throw error;
+    }
+  });
+}
+
 // ─── Lazy loaded (large secondary pages, loaded on demand) ─────────
-const FaceVerification = lazy(() => import("./pages/FaceVerification"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword"));
-const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
-const TermsOfService = lazy(() => import("./pages/TermsOfService"));
-const Support = lazy(() => import("./pages/Support"));
-const About = lazy(() => import("./pages/About"));
-const AccountDeletion = lazy(() => import("./pages/AccountDeletion"));
-const SuperadminDashboard = lazy(() => import("./pages/SuperadminDashboard"));
-const SuperadminLogin = lazy(() => import("./pages/SuperadminLogin"));
-const CRMPage = lazy(() => import("./pages/CRMPage"));
-const ProjectsPage = lazy(() => import("./pages/ProjectsPage"));
-const WorkOrdersPage = lazy(() => import("./pages/WorkOrdersPage"));
-const InvoicesPage = lazy(() => import("./pages/InvoicesPage"));
-const EstimatesPage = lazy(() => import("./pages/EstimatesPage"));
-const SafetyPage = lazy(() => import("./pages/SafetyPage"));
-const ChangeOrdersPage = lazy(() => import("./pages/ChangeOrdersPage"));
-const ReportsPage = lazy(() => import("./pages/ReportsPage"));
-const ProjectSetupWizard = lazy(() => import("./pages/ProjectSetupWizard"));
-const ProjectDetailWorkspace = lazy(() => import("./pages/ProjectDetailWorkspace"));
-const SettingsPage = lazy(() => import("./pages/SettingsPage"));
-const PublicApprovalPage = lazy(() => import("./pages/PublicApprovalPage"));
-const PublicPayPage = lazy(() => import("./pages/PublicPayPage"));
-const TimesheetsPage = lazy(() => import("./pages/TimesheetsPage"));
-const MembershipsPage = lazy(() => import("./pages/MembershipsPage"));
-const CompliancePage = lazy(() => import("./pages/CompliancePage"));
-const OnlineBookingPage = lazy(() => import("./pages/OnlineBookingPage"));
-const InventoryPage = lazy(() => import("./pages/InventoryPage"));
-const AffiliatePortal = lazy(() => import("./pages/AffiliatePortal"));
-const UseCasePage = lazy(() => import("./pages/UseCasePage"));
-const MarketplacePage = lazy(() => import("./pages/MarketplacePage"));
-const AIAgentProductPage = lazy(() => import("./pages/AIAgentProductPage"));
-const AIAgentPricingPage = lazy(() => import("./pages/AIAgentPricingPage"));
-const AITermsPage = lazy(() => import("./pages/AITermsPage"));
-const AIAgentPage = lazy(() => import("./pages/AIAgentPage"));
-const ActionInboxPage = lazy(() => import("./pages/ActionInboxPage"));
-const KnowledgeBasePage = lazy(() => import("./pages/KnowledgeBasePage"));
-const MobileWelcomePage = lazy(() => import("./pages/MobileWelcomePage"));
+const FaceVerification = lazyWithRetry(() => import("./pages/FaceVerification"));
+const ResetPassword = lazyWithRetry(() => import("./pages/ResetPassword"));
+const PrivacyPolicy = lazyWithRetry(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazyWithRetry(() => import("./pages/TermsOfService"));
+const Support = lazyWithRetry(() => import("./pages/Support"));
+const About = lazyWithRetry(() => import("./pages/About"));
+const AccountDeletion = lazyWithRetry(() => import("./pages/AccountDeletion"));
+const SuperadminDashboard = lazyWithRetry(() => import("./pages/SuperadminDashboard"));
+const SuperadminLogin = lazyWithRetry(() => import("./pages/SuperadminLogin"));
+const CRMPage = lazyWithRetry(() => import("./pages/CRMPage"));
+const ProjectsPage = lazyWithRetry(() => import("./pages/ProjectsPage"));
+const WorkOrdersPage = lazyWithRetry(() => import("./pages/WorkOrdersPage"));
+const InvoicesPage = lazyWithRetry(() => import("./pages/InvoicesPage"));
+const EstimatesPage = lazyWithRetry(() => import("./pages/EstimatesPage"));
+const SafetyPage = lazyWithRetry(() => import("./pages/SafetyPage"));
+const ChangeOrdersPage = lazyWithRetry(() => import("./pages/ChangeOrdersPage"));
+const ReportsPage = lazyWithRetry(() => import("./pages/ReportsPage"));
+const ProjectSetupWizard = lazyWithRetry(() => import("./pages/ProjectSetupWizard"));
+const ProjectDetailWorkspace = lazyWithRetry(() => import("./pages/ProjectDetailWorkspace"));
+const SettingsPage = lazyWithRetry(() => import("./pages/SettingsPage"));
+const PublicApprovalPage = lazyWithRetry(() => import("./pages/PublicApprovalPage"));
+const PublicPayPage = lazyWithRetry(() => import("./pages/PublicPayPage"));
+const TimesheetsPage = lazyWithRetry(() => import("./pages/TimesheetsPage"));
+const MembershipsPage = lazyWithRetry(() => import("./pages/MembershipsPage"));
+const CompliancePage = lazyWithRetry(() => import("./pages/CompliancePage"));
+const OnlineBookingPage = lazyWithRetry(() => import("./pages/OnlineBookingPage"));
+const InventoryPage = lazyWithRetry(() => import("./pages/InventoryPage"));
+const AffiliatePortal = lazyWithRetry(() => import("./pages/AffiliatePortal"));
+const UseCasePage = lazyWithRetry(() => import("./pages/UseCasePage"));
+const MarketplacePage = lazyWithRetry(() => import("./pages/MarketplacePage"));
+const AIAgentProductPage = lazyWithRetry(() => import("./pages/AIAgentProductPage"));
+const AIAgentPricingPage = lazyWithRetry(() => import("./pages/AIAgentPricingPage"));
+const AITermsPage = lazyWithRetry(() => import("./pages/AITermsPage"));
+const AIAgentPage = lazyWithRetry(() => import("./pages/AIAgentPage"));
+const ActionInboxPage = lazyWithRetry(() => import("./pages/ActionInboxPage"));
+const KnowledgeBasePage = lazyWithRetry(() => import("./pages/KnowledgeBasePage"));
+const MobileWelcomePage = lazyWithRetry(() => import("./pages/MobileWelcomePage"));
 
 
 
@@ -94,7 +119,7 @@ const App = () => (
               <Route path="/auth" element={<Index />} />
               <Route path="/wizard" element={<ProjectSetupWizard />} />
               <Route path="/inbox" element={
-                <ProtectedRoute>
+                <ProtectedRoute feature="overview">
                   <ActionInboxPage />
                 </ProtectedRoute>
               } />
@@ -204,9 +229,16 @@ const App = () => (
                   <AITermsPage />
                 </ProtectedRoute>
               } />
-              <Route path="/marketplace" element={<ProtectedRoute><MarketplacePage /></ProtectedRoute>} />
-              <Route path="/ai-agents" element={<ProtectedRoute><AIAgentPage /></ProtectedRoute>} />
-              <Route path="/knowledge-base" element={<ProtectedRoute><KnowledgeBasePage /></ProtectedRoute>} />
+              <Route path="/ai-agents" element={
+                <ProtectedRoute feature="marketplace">
+                  <AIAgentPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/knowledge-base" element={
+                <ProtectedRoute feature="settings">
+                  <KnowledgeBasePage />
+                </ProtectedRoute>
+              } />
               
               {/* Product/Marketing Pages */}
               <Route path="/use-cases/:industry" element={<UseCasePage />} />
