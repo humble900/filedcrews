@@ -41,6 +41,10 @@ import {
   Italic,
   List,
   HelpCircle,
+  Flame,
+  Zap,
+  CheckCircle2,
+  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -1074,25 +1078,79 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
 
 
 
-  const getPriorityBorder = (priority: string) => {
+  const openTaskDetails = (task: any) => {
+    setSelectedTask(task);
+    setTaskNotes(task.staff_notes || "");
+    setBeforePhotos(task.before_photo_urls || (task.before_photo_url ? [task.before_photo_url] : []));
+    setAfterPhotos(task.after_photo_urls || (task.after_photo_url ? [task.after_photo_url] : []));
+  };
+
+  const getPriorityBadge = (priority: string) => {
     switch (priority) {
-      case "High": return "border-l-priority-high";
-      case "Medium": return "border-l-priority-medium";
-      default: return "border-l-priority-low";
+      case "Critical":
+      case "Urgent":
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+            <Flame className="h-3 w-3 text-rose-500" />
+            Critical
+          </span>
+        );
+      case "High":
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+            <Zap className="h-3 w-3 text-amber-500" />
+            High
+          </span>
+        );
+      case "Medium":
+      case "Normal":
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+            <Clock className="h-3 w-3 text-blue-500" />
+            Medium
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
+            Low
+          </span>
+        );
     }
   };
 
   const getStatusBadge = (status: string, approval: string) => {
     if (status === "Completed") {
       if (approval === "Approved")
-        return <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30 text-[10px] font-bold">Approved</Badge>;
+        return (
+          <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px] font-bold gap-1 px-2 py-0.5">
+            <CheckCircle2 className="h-3 w-3" /> Approved
+          </Badge>
+        );
       if (approval === "Rejected")
-        return <Badge className="bg-rose-500/15 text-rose-600 border-rose-500/30 text-[10px] font-bold">Rework</Badge>;
-      return <Badge className="bg-blue-500/15 text-blue-600 border-blue-500/30 text-[10px] font-bold">Under Review</Badge>;
+        return (
+          <Badge className="bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30 text-[10px] font-bold gap-1 px-2 py-0.5">
+            <AlertTriangle className="h-3 w-3" /> Rework
+          </Badge>
+        );
+      return (
+        <Badge className="bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30 text-[10px] font-bold gap-1 px-2 py-0.5">
+          <Clock className="h-3 w-3" /> Under Review
+        </Badge>
+      );
     }
     if (status === "In Progress")
-      return <Badge className="bg-indigo-500/15 text-indigo-600 border-indigo-500/30 text-[10px] font-bold">Active</Badge>;
-    return <Badge className="bg-muted text-muted-foreground text-[10px] font-bold">Assigned</Badge>;
+      return (
+        <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px] font-bold gap-1.5 px-2.5 py-0.5">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          In Progress
+        </Badge>
+      );
+    return (
+      <Badge className="bg-muted text-muted-foreground border border-border/50 text-[10px] font-bold px-2 py-0.5">
+        Assigned
+      </Badge>
+    );
   };
 
   // ── Render ──────────────────────────────────────────────────
@@ -1302,34 +1360,34 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
           <div className="px-4 py-4 space-y-5 animate-fade-in">
             {/* Today's Schedule Card */}
             {todayShift && (
-              <div className="p-4 rounded-2xl border bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-card border-indigo-500/20 card-elevated space-y-3">
+              <div className="p-4 rounded-2xl border border-indigo-500/25 bg-gradient-to-br from-indigo-500/[0.08] via-purple-500/[0.03] to-card shadow-xs space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4.5 w-4.5 text-indigo-500" />
-                    <span className="font-bold text-xs text-indigo-500 uppercase tracking-wider">Today's Schedule</span>
+                    <Calendar className="h-4 w-4 text-indigo-500" />
+                    <span className="font-extrabold text-[11px] text-indigo-500 uppercase tracking-wider">Today's Schedule</span>
                   </div>
-                  <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                  <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                     isOnSite
-                      ? "bg-emerald-500/15 text-emerald-600 border border-emerald-500/20"
-                      : "bg-amber-500/15 text-amber-600 border border-amber-500/20"
+                      ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25"
+                      : "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25"
                   }`}>
                     <span className={`h-1.5 w-1.5 rounded-full ${isOnSite ? "bg-emerald-500 animate-pulse" : "bg-amber-500 animate-pulse"}`} />
                     {isOnSite ? "On Site" : "Away"}
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <h3 className="font-bold text-sm text-foreground">
+                <div className="space-y-1.5">
+                  <h3 className="font-extrabold text-sm text-foreground">
                     {todayShift.job?.title || "Shift Duties"} · {todayShift.geofence?.name || "Gated Site"}
                   </h3>
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5 text-muted-foreground/60" />
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1 font-mono text-[11px]">
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground/70" />
                       {todayShift.check_in_time?.slice(0, 5)} – {todayShift.check_out_time?.slice(0, 5)}
                     </span>
                   </div>
                   {todayShift.job?.project?.address && (
-                    <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                      <MapPin className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
+                    <p className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
                       {todayShift.job.project.address}
                     </p>
                   )}
@@ -1337,7 +1395,7 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
                 {todayShift.job?.project?.address && (
                   <Button
                     size="sm"
-                    className="w-full h-9 text-xs font-bold gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white"
+                    className="w-full h-9 text-xs font-bold gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs transition-all"
                     onClick={() => {
                       window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(todayShift.job.project.address)}`, "_blank");
                     }}
@@ -1349,15 +1407,15 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
             )}
 
             {/* Quick Stats Bar */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2.5">
               {[
-                { label: "Active", value: activeTasks.length, color: "text-indigo-600 bg-indigo-500/10" },
-                { label: "Assigned", value: pendingTasks.length, color: "text-amber-600 bg-amber-500/10" },
-                { label: "Done", value: completedTasks.length, color: "text-emerald-600 bg-emerald-500/10" },
+                { label: "Active", value: activeTasks.length, color: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20" },
+                { label: "Assigned", value: pendingTasks.length, color: "text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20" },
+                { label: "Done", value: completedTasks.length, color: "text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/20" },
               ].map((s) => (
-                <div key={s.label} className={`rounded-xl p-3 text-center ${s.color}`}>
-                  <p className="text-xl font-bold">{s.value}</p>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider">{s.label}</p>
+                <div key={s.label} className={`rounded-2xl p-3 text-center border shadow-xs ${s.color}`}>
+                  <p className="text-2xl font-black">{s.value}</p>
+                  <p className="text-[10px] font-extrabold uppercase tracking-wider opacity-80">{s.label}</p>
                 </div>
               ))}
             </div>
@@ -2777,12 +2835,15 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
       </Dialog>
 
       {/* ═══ AI COPILOT ═══ */}
-      {activeTab === "tasks" && (
+      {activeTab === "tasks" && !selectedTask && !sheetOpen && (
         <div className="fixed bottom-24 right-4 z-40">
           <AICopilotButton 
             jobId={todayShift?.job?.id || ""} 
+            companyId={staffProfile.company_id || company?.id || ""}
             onCopilotComplete={(data) => {
-
+              if (data?.summary) {
+                toast.success("AI Copilot notes ready!");
+              }
             }} 
           />
         </div>
@@ -2840,41 +2901,60 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
     dimmed?: boolean;
   }) {
     return (
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between px-0.5">
+          <h3 className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
             {title} ({count})
           </h3>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-3">
           {tasks.map((task) => (
             <div
               key={task.id}
-              className={`p-3.5 rounded-xl border bg-card card-elevated cursor-pointer active:scale-[0.98] transition-transform ${
-                getPriorityBorder(task.priority)
-              } ${dimmed ? "opacity-60" : ""}`}
+              className={`p-4 rounded-2xl border border-border/70 dark:border-border/40 bg-card hover:border-primary/40 active:scale-[0.985] active:bg-muted/30 cursor-pointer transition-all duration-150 shadow-xs space-y-3 ${
+                dimmed ? "opacity-65" : ""
+              }`}
               onClick={() => openTaskDetails(task)}
             >
-              <div className="flex items-center justify-between gap-3">
-                <div className="space-y-1 min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <h4 className={`font-bold text-sm truncate ${dimmed ? "line-through text-muted-foreground" : ""}`}>
-                      {task.name}
-                    </h4>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground truncate">
-                    {task.job?.title || "General"} {task.job?.project?.name ? `· ${task.job.project.name}` : ""}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1">
-                    {getStatusBadge(task.status, task.approval_status)}
-                    {task.est_hours && (
-                      <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                        <Clock className="h-2.5 w-2.5" /> ~{task.est_hours}h
-                      </span>
-                    )}
-                  </div>
+              {/* Top Meta Header: Status + Priority + Time */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {getStatusBadge(task.status, task.approval_status)}
+                  {getPriorityBadge(task.priority)}
                 </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
+                {task.est_hours && (
+                  <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1 bg-muted/60 px-2 py-0.5 rounded-md shrink-0">
+                    <Clock className="h-3 w-3 text-muted-foreground/70" />
+                    {task.est_hours}h
+                  </span>
+                )}
+              </div>
+
+              {/* Title & Description */}
+              <div className="space-y-1">
+                <h4 className={`font-extrabold text-[15px] text-foreground tracking-tight leading-snug ${dimmed ? "line-through text-muted-foreground" : ""}`}>
+                  {task.name}
+                </h4>
+                {task.description && (
+                  <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                    {task.description}
+                  </p>
+                )}
+              </div>
+
+              {/* Worksite & Parent Job Context */}
+              <div className="pt-2 border-t border-border/40 flex items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-1.5 min-w-0 text-muted-foreground">
+                  <Briefcase className="h-3.5 w-3.5 text-primary/70 shrink-0" />
+                  <span className="truncate text-[11px] font-medium">
+                    {task.job?.title || "Field Work Order"}
+                    {task.job?.project?.name ? ` · ${task.job.project.name}` : ""}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 text-[11px] font-bold text-primary shrink-0">
+                  <span>Details</span>
+                  <ChevronRight className="h-3.5 w-3.5 text-primary/70" />
+                </div>
               </div>
             </div>
           ))}
