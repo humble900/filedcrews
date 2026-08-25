@@ -814,8 +814,8 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
     setTaskNotes(task.staff_notes || "");
     setBeforePhoto(task.before_photo_url || null);
     setAfterPhoto(task.after_photo_url || null);
-    setBeforePhotos(task.before_photo_urls || []);
-    setAfterPhotos(task.after_photo_urls || []);
+    setBeforePhotos(task.before_photo_urls || (task.before_photo_url ? [task.before_photo_url] : []));
+    setAfterPhotos(task.after_photo_urls || (task.after_photo_url ? [task.after_photo_url] : []));
   };
 
   // ── PIN Lock Handlers ──
@@ -1077,13 +1077,6 @@ export default function StaffPortal({ staffProfile, company, onSignOut }: StaffP
     (latestCheckIn.event_type.includes("inside") || latestCheckIn.event_type === "entered");
 
 
-
-  const openTaskDetails = (task: any) => {
-    setSelectedTask(task);
-    setTaskNotes(task.staff_notes || "");
-    setBeforePhotos(task.before_photo_urls || (task.before_photo_url ? [task.before_photo_url] : []));
-    setAfterPhotos(task.after_photo_urls || (task.after_photo_url ? [task.after_photo_url] : []));
-  };
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
