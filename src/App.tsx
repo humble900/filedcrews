@@ -16,6 +16,8 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import LandingPage from "./pages/LandingPage";
 import HomePage from "./pages/HomePage";
+import FeaturesPage from "./pages/FeaturesPage";
+import IndustriesPage from "./pages/IndustriesPage";
 
 // ─── Resilient Lazy Loader (handles new deployments & stale chunks) ───
 function lazyWithRetry<T extends React.ComponentType<any>>(
@@ -79,8 +81,7 @@ const AITermsPage = lazyWithRetry(() => import("./pages/AITermsPage"));
 const AIAgentPage = lazyWithRetry(() => import("./pages/AIAgentPage"));
 const ActionInboxPage = lazyWithRetry(() => import("./pages/ActionInboxPage"));
 const KnowledgeBasePage = lazyWithRetry(() => import("./pages/KnowledgeBasePage"));
-const FeaturesPage = lazyWithRetry(() => import("./pages/FeaturesPage"));
-const IndustriesPage = lazyWithRetry(() => import("./pages/IndustriesPage"));
+const MobileWelcomePage = lazyWithRetry(() => import("./pages/MobileWelcomePage"));
 
 
 

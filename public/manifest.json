@@ -3,9 +3,10 @@
   "name": "FiledCrews Coordinator & Mobile Dispatch",
   "icons": [
     {
-      "src": "favicon.png",
-      "sizes": "any",
-      "type": "image/png"
+      "src": "/favicon.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
   "start_url": ".",

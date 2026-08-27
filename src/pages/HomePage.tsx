@@ -85,17 +85,13 @@ const HomePage = () => {
     [geofenceEditing]
   );
 
-  // Not logged in → render LandingPage instantly without delay
-  if (!user && !loading) {
-    return <LandingPage />;
-  }
-
-  if (loading || (user && loadingAdmin)) {
-    return <PageSkeleton />;
-  }
-
+  // Not logged in → render LandingPage instantly on frame 0 with zero loading delay
   if (!user) {
     return <LandingPage />;
+  }
+
+  if (loading || loadingAdmin) {
+    return <PageSkeleton />;
   }
 
   // Logged in as staff member

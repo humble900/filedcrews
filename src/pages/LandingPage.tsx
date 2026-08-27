@@ -1789,9 +1789,6 @@ export default function LandingPage() {
         <section id="pricing" className="py-12 md:py-20 bg-stone-50/80 border-b border-stone-200/60">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 space-y-12">
             <div className="text-center max-w-3xl mx-auto space-y-3">
-              <span className="text-xs font-extrabold text-teal-700 uppercase tracking-widest bg-teal-50 border border-teal-200/80 px-3.5 py-1 rounded-full">
-                Transparent Pricing & VIP Charter
-              </span>
               <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
                 Simple plans for teams of any size
               </h2>
