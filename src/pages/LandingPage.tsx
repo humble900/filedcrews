@@ -82,13 +82,15 @@ function InteractiveMoon({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [proximity, setProximity] = useState(0);
+  const rectRef = useRef<{ cx: number; cy: number } | null>(null);
 
   useEffect(() => {
     if (!ref.current || (mouseX === 0 && mouseY === 0)) return;
-    const rect = ref.current.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const dist = Math.sqrt((mouseX - cx) ** 2 + (mouseY - cy) ** 2);
+    if (!rectRef.current) {
+      const rect = ref.current.getBoundingClientRect();
+      rectRef.current = { cx: rect.left + rect.width / 2, cy: rect.top + rect.height / 2 };
+    }
+    const dist = Math.hypot(mouseX - rectRef.current.cx, mouseY - rectRef.current.cy);
     setProximity(Math.max(0, 1 - dist / 400));
   }, [mouseX, mouseY]);
 
@@ -254,7 +256,8 @@ export function InteractiveParticlesCanvas({ color = "13, 148, 136" }: Interacti
       radius: number;
     }> = [];
 
-    const particleCount = Math.min(50, Math.floor((width * height) / 18000));
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+    const particleCount = isMobile ? 8 : Math.min(32, Math.floor((width * height) / 25000));
 
     for (let i = 0; i < particleCount; i++) {
       particles.push({
@@ -1816,10 +1819,10 @@ export default function LandingPage() {
                   <div>
                     <span className="text-[10px] font-extrabold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full uppercase">10 Seats</span>
                     <h3 className="text-xl font-black text-slate-900 mt-1">Growth</h3>
-                    <div className="text-3xl font-black text-slate-900 mt-2">$495 <span className="text-xs text-slate-500 font-normal">/ mo</span></div>
-                    <p className="text-xs text-slate-500 mt-2 leading-relaxed">Supercharge your business with 10 total seats, AI dispatching, & safety hub.</p>
+                    <div className="text-3xl font-black text-slate-900 mt-2">$495 <span className="text-xs text-slate-600 font-medium">/ mo</span></div>
+                    <p className="text-xs text-slate-600 font-medium mt-2 leading-relaxed">Supercharge your business with 10 total seats, AI dispatching, & safety hub.</p>
                   </div>
-                  <ul className="text-xs text-slate-600 space-y-2.5 pt-4 border-t border-stone-100">
+                  <ul className="text-xs text-slate-700 space-y-2.5 pt-4 border-t border-stone-100 font-medium">
                     <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" /><span><strong>3 Office Staff Seats</strong></span></li>
                     <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" /><span><strong>7 Field Crew Members</strong></span></li>
                     <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" /><span>AI Dispatcher & Mila Copilot</span></li>
@@ -1827,7 +1830,7 @@ export default function LandingPage() {
                   </ul>
                 </div>
                 <Link to="/wizard?plan=growth">
-                  <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs h-11 rounded-xl flex items-center justify-center gap-1.5 shadow-sm">
+                  <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs h-11 rounded-xl flex items-center justify-center gap-1.5 shadow-sm" aria-label="Get started with Growth Plan">
                     Get Started with Growth <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
@@ -1842,8 +1845,8 @@ export default function LandingPage() {
                       <Crown className="h-5 w-5 text-purple-600" />
                       <h3 className="text-xl font-black text-slate-900">Founding Partner</h3>
                     </div>
-                    <div className="text-3xl font-black text-slate-900 mt-2">$2,899 <span className="text-xs text-slate-500 font-normal">/ yr</span></div>
-                    <p className="text-xs text-purple-950/80 font-medium mt-2 leading-relaxed">Exclusive annual VIP membership with 20 seats, locked pricing, & founder access.</p>
+                    <div className="text-3xl font-black text-slate-900 mt-2">$2,899 <span className="text-xs text-slate-600 font-medium">/ yr</span></div>
+                    <p className="text-xs text-purple-950 font-semibold mt-2 leading-relaxed">Exclusive annual VIP membership with 20 seats, locked pricing, & founder access.</p>
                   </div>
                   <ul className="text-xs text-slate-700 space-y-2.5 pt-4 border-t border-purple-200/60 font-medium">
                     <li className="flex items-center gap-2 text-purple-950 font-bold"><Lock className="h-4 w-4 text-purple-600 shrink-0" /><span>Locked-in pricing forever</span></li>
@@ -1859,7 +1862,7 @@ export default function LandingPage() {
                   </ul>
                 </div>
                 <Link to="/wizard?plan=founding_partner">
-                  <Button className="w-full bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white font-extrabold text-xs h-11 rounded-xl shadow-lg shadow-purple-600/20 flex items-center justify-center gap-1.5">
+                  <Button className="w-full bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white font-extrabold text-xs h-11 rounded-xl shadow-lg shadow-purple-600/20 flex items-center justify-center gap-1.5" aria-label="Get started with Founding Partner VIP Charter">
                     Get Started (VIP Charter) <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
@@ -1871,9 +1874,9 @@ export default function LandingPage() {
                   <div>
                     <h3 className="text-xl font-black text-slate-900">Enterprise</h3>
                     <div className="text-3xl font-black text-slate-900 mt-2">Custom</div>
-                    <p className="text-xs text-slate-500 mt-2 leading-relaxed">Tailored deployment for large multi-site enterprises with custom seat scaling.</p>
+                    <p className="text-xs text-slate-600 font-medium mt-2 leading-relaxed">Tailored deployment for large multi-site enterprises with custom seat scaling.</p>
                   </div>
-                  <ul className="text-xs text-slate-600 space-y-2.5 pt-4 border-t border-stone-100">
+                  <ul className="text-xs text-slate-700 space-y-2.5 pt-4 border-t border-stone-100 font-medium">
                     <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-teal-600 shrink-0" /><span><strong>Custom Unlimited Seats</strong></span></li>
                     <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-teal-600 shrink-0" /><span>Dedicated Infrastructure & SLA</span></li>
                     <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-teal-600 shrink-0" /><span>Custom API & ERP Integrations</span></li>
@@ -1881,7 +1884,7 @@ export default function LandingPage() {
                   </ul>
                 </div>
                 <Link to="/wizard?plan=enterprise">
-                  <Button className="w-full bg-cyan-700 hover:bg-cyan-800 text-white font-extrabold text-xs h-11 rounded-xl flex items-center justify-center gap-1.5 shadow-sm">
+                  <Button className="w-full bg-cyan-700 hover:bg-cyan-800 text-white font-extrabold text-xs h-11 rounded-xl flex items-center justify-center gap-1.5 shadow-sm" aria-label="Contact Sales for Enterprise plan">
                     Contact Sales <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
@@ -1890,9 +1893,9 @@ export default function LandingPage() {
 
             {/* Existing User Login Prompt */}
             <div className="text-center pt-2">
-              <p className="text-xs text-slate-500 font-medium">
+              <p className="text-xs text-slate-600 font-medium">
                 Already have a workspace account?{" "}
-                <Link to="/auth" className="font-bold text-slate-900 hover:text-teal-600 underline underline-offset-4">
+                <Link to="/auth" className="font-bold text-slate-900 hover:text-teal-700 underline underline-offset-4">
                   Sign in to your dashboard
                 </Link>
               </p>
