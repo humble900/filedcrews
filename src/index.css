@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* Google Fonts Inter loaded non-blocking from index.html (media=print onload pattern) */
 
 @tailwind base;
 @tailwind components;

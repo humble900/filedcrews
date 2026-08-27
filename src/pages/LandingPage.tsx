@@ -844,8 +844,11 @@ export default function LandingPage() {
               >
                 <div className="relative h-80 w-full overflow-hidden">
                   <img
-                    src="/hvac-technician.jpg"
+                    src="/hvac-technician.webp"
                     alt="HVAC Field Technician"
+                    width="1200"
+                    height="750"
+                    decoding="async"
                     className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
                   />
                 </div>

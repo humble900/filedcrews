@@ -1,0 +1,19 @@
+# 1-year immutable caching for fingerprinted assets
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/images/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/downloads/*
+  Cache-Control: public, max-age=604800
+
+# HTML documents and Service Workers must revalidate
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/sw.js
+  Cache-Control: public, max-age=0, no-cache, no-store, must-revalidate
