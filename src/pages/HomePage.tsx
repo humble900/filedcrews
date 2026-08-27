@@ -85,14 +85,7 @@ const HomePage = () => {
     [geofenceEditing]
   );
 
-  // Check if there is any Supabase session in localStorage
-  const hasStoredSession = typeof window !== 'undefined' && Object.keys(localStorage).some(key => key.includes("sb-") && key.includes("-auth-token"));
-
-  // Not logged in (or no stored session) → render LandingPage instantly without any loading screen delay
-  if (!user && !hasStoredSession) {
-    return <LandingPage />;
-  }
-
+  // Not logged in → render LandingPage instantly without delay
   if (!user && !loading) {
     return <LandingPage />;
   }

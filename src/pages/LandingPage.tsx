@@ -433,10 +433,6 @@ export default function LandingPage() {
         path="/"
         ogImageAlt="FiledCrews FSM dashboard showing live map tracking, geofence zones, and mobile dispatching."
       />
-      <Helmet>
-        <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
-      </Helmet>
-      <style dangerouslySetInnerHTML={{ __html: marqueeCSS }} />
 
       <div className="min-h-screen bg-white text-slate-900" onMouseMove={handleMouseMove}>
 
