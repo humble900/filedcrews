@@ -20,10 +20,18 @@ import {
   FileText,
   Package,
   Clock,
-  Briefcase
+  Briefcase,
+  Lock,
+  Zap,
+  CreditCard,
+  KeyRound,
+  ArrowUpRight,
+  ShieldAlert
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 interface AICopilotButtonProps {
   jobId?: string;
@@ -31,11 +39,19 @@ interface AICopilotButtonProps {
   onCopilotComplete?: (data: any) => void;
 }
 
+type GateState = 
+  | { type: "loading" }
+  | { type: "ready"; creditsRemaining: number; creditsLimit: number }
+  | { type: "upgrade_required" }
+  | { type: "credits_exhausted"; creditsUsed: number; creditsLimit: number; resetsAt: string };
+
 export const AICopilotButton: React.FC<AICopilotButtonProps> = ({ 
   jobId, 
   companyId, 
   onCopilotComplete 
 }) => {
+  const { company } = useAuth();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<"voice" | "write">("voice");
   const [isListening, setIsListening] = useState(false);
@@ -44,8 +60,85 @@ export const AICopilotButton: React.FC<AICopilotButtonProps> = ({
   const [aiResponse, setAiResponse] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(true);
+  const [gateState, setGateState] = useState<GateState>({ type: "loading" });
 
   const recognitionRef = useRef<any>(null);
+
+  // ─── Pre-flight: check tier + credits on open ──────────────────────────────
+  const checkAccess = async () => {
+    setGateState({ type: "loading" });
+    try {
+      let resolvedCompanyId = companyId;
+      if (!resolvedCompanyId) {
+        const { data: staffData } = await supabase
+          .from("staff_profiles")
+          .select("company_id")
+          .limit(1)
+          .maybeSingle();
+        resolvedCompanyId = staffData?.company_id;
+      }
+      if (!resolvedCompanyId) {
+        const { data: comp } = await supabase.from("companies").select("id").limit(1).maybeSingle();
+        resolvedCompanyId = comp?.id;
+      }
+
+      if (!resolvedCompanyId) {
+        setGateState({ type: "upgrade_required" });
+        return;
+      }
+
+      // Check tier from local company context first (fast path)
+      const tier = company?.subscription_tier || "free_trial";
+      const PAID_TIERS = new Set(["growth", "founding_partner", "Founding Partner", "enterprise"]);
+      
+      // Check if company has a BYOK key
+      const { data: byokCheck } = await (supabase as any)
+        .from("api_keys")
+        .select("id")
+        .eq("company_id", resolvedCompanyId)
+        .eq("provider", "openai")
+        .maybeSingle();
+      
+      const hasByok = !!byokCheck?.id;
+      
+      if (!PAID_TIERS.has(tier) && !hasByok) {
+        setGateState({ type: "upgrade_required" });
+        return;
+      }
+
+      // Fetch credit state from DB
+      const { data: companyData } = await (supabase as any)
+        .from("companies")
+        .select("ai_credits_monthly_limit, ai_credits_used, ai_credits_bonus, ai_credits_reset_at")
+        .eq("id", resolvedCompanyId)
+        .single();
+
+      if (companyData) {
+        const total = (companyData.ai_credits_monthly_limit || 0) + (companyData.ai_credits_bonus || 0);
+        const remaining = total - (companyData.ai_credits_used || 0);
+        
+        if (!hasByok && remaining <= 0) {
+          setGateState({
+            type: "credits_exhausted",
+            creditsUsed: companyData.ai_credits_used || 0,
+            creditsLimit: total,
+            resetsAt: companyData.ai_credits_reset_at || "",
+          });
+        } else {
+          setGateState({
+            type: "ready",
+            creditsRemaining: hasByok ? -1 : remaining,
+            creditsLimit: hasByok ? -1 : total,
+          });
+        }
+      } else {
+        setGateState({ type: "ready", creditsRemaining: -1, creditsLimit: -1 });
+      }
+    } catch {
+      // If we can't check, allow through — the edge function will gate
+      setGateState({ type: "ready", creditsRemaining: -1, creditsLimit: -1 });
+    }
+  };
 
   // Initialize Web Speech API
   useEffect(() => {
@@ -139,6 +232,7 @@ export const AICopilotButton: React.FC<AICopilotButtonProps> = ({
   const handleOpen = () => {
     setIsOpen(true);
     setAiResponse(null);
+    checkAccess();
     if (mode === "voice" && speechSupported) {
       setTimeout(() => startListening(), 400);
     }
@@ -205,10 +299,35 @@ export const AICopilotButton: React.FC<AICopilotButtonProps> = ({
 
       if (error) throw error;
 
+      // Handle gated responses from edge function
+      if (data?.gated) {
+        if (data.reason === "upgrade_required") {
+          setGateState({ type: "upgrade_required" });
+        } else if (data.reason === "credits_exhausted") {
+          setGateState({
+            type: "credits_exhausted",
+            creditsUsed: data.creditsUsed,
+            creditsLimit: data.creditsLimit,
+            resetsAt: data.resetsAt || "",
+          });
+        }
+        return;
+      }
+
       if (data?.success || data?.message) {
         const reply = data.message || "Summary processed successfully by Field Copilot.";
         setAiResponse(reply);
         toast.success("AI Copilot request processed!");
+
+        // Update credit state
+        if (data.creditsRemaining !== undefined && data.creditsLimit !== undefined) {
+          setGateState({
+            type: "ready",
+            creditsRemaining: data.creditsRemaining,
+            creditsLimit: data.creditsLimit,
+          });
+        }
+
         if (onCopilotComplete) {
           onCopilotComplete(data.generatedData || { summary: reply });
         }
@@ -230,6 +349,118 @@ export const AICopilotButton: React.FC<AICopilotButtonProps> = ({
       toast.success("Copied to clipboard!");
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  const formatResetDate = (dateStr: string) => {
+    if (!dateStr) return "next month";
+    try {
+      return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    } catch {
+      return "next month";
+    }
+  };
+
+  // ─── Gated UI Panels ────────────────────────────────────────────────────────
+  const renderUpgradeRequired = () => (
+    <div className="flex flex-col items-center justify-center py-8 px-4 text-center space-y-5">
+      <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center">
+        <Lock className="h-8 w-8 text-amber-600" />
+      </div>
+      <div className="space-y-2">
+        <h3 className="text-base font-extrabold text-foreground">Upgrade to Unlock Mila AI</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
+          The AI Copilot is available on paid plans. Upgrade your subscription to get AI-powered work summaries, diagnostics, and field assistance.
+        </p>
+      </div>
+      <div className="flex flex-col gap-2 w-full max-w-xs">
+        <Button
+          className="w-full h-11 font-bold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl gap-2 shadow-lg"
+          onClick={() => { handleClose(); navigate("/ai-pricing"); }}
+        >
+          <Zap className="h-4 w-4" /> Upgrade Plan
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full h-10 font-semibold rounded-xl gap-2 text-xs"
+          onClick={() => { handleClose(); navigate("/settings"); }}
+        >
+          <KeyRound className="h-3.5 w-3.5" /> Or Add Your Own API Key
+        </Button>
+      </div>
+      <p className="text-[10px] text-muted-foreground">
+        Plans start at $29/month with 200 AI credits included.
+      </p>
+    </div>
+  );
+
+  const renderCreditsExhausted = () => {
+    const gs = gateState as Extract<GateState, { type: "credits_exhausted" }>;
+    return (
+      <div className="flex flex-col items-center justify-center py-8 px-4 text-center space-y-5">
+        <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-rose-500/20 to-red-500/20 flex items-center justify-center">
+          <ShieldAlert className="h-8 w-8 text-rose-600" />
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-base font-extrabold text-foreground">AI Credits Exhausted</h3>
+          <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
+            Your company has used all <span className="font-bold text-foreground">{gs.creditsLimit}</span> AI credits this month. Credits reset on <span className="font-bold text-foreground">{formatResetDate(gs.resetsAt)}</span>.
+          </p>
+        </div>
+        <div className="flex flex-col gap-2 w-full max-w-xs">
+          <Button
+            className="w-full h-11 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl gap-2 shadow-lg"
+            onClick={() => { handleClose(); navigate("/ai-pricing"); }}
+          >
+            <CreditCard className="h-4 w-4" /> Buy More Credits
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full h-10 font-semibold rounded-xl gap-2 text-xs"
+            onClick={() => { handleClose(); navigate("/settings"); }}
+          >
+            <KeyRound className="h-3.5 w-3.5" /> Add Your Own API Key (Unlimited)
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full h-9 font-semibold rounded-xl gap-2 text-xs text-muted-foreground"
+            onClick={() => { handleClose(); navigate("/ai-pricing"); }}
+          >
+            <ArrowUpRight className="h-3.5 w-3.5" /> Upgrade for More Monthly Credits
+          </Button>
+        </div>
+        <div className="w-full max-w-xs">
+          <div className="flex justify-between text-[10px] font-bold text-muted-foreground mb-1">
+            <span>Credits Used</span>
+            <span>{gs.creditsUsed} / {gs.creditsLimit}</span>
+          </div>
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
+            <div className="h-full bg-rose-500 rounded-full" style={{ width: "100%" }} />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ─── Credits Badge ───────────────────────────────────────────────────────────
+  const renderCreditsBadge = () => {
+    if (gateState.type !== "ready") return null;
+    const gs = gateState;
+    if (gs.creditsRemaining === -1) {
+      return (
+        <Badge variant="outline" className="text-[9px] font-bold text-emerald-600 border-emerald-200 bg-emerald-50 gap-1">
+          <KeyRound className="h-2.5 w-2.5" /> BYOK — Unlimited
+        </Badge>
+      );
+    }
+    const pct = gs.creditsLimit > 0 ? ((gs.creditsLimit - gs.creditsRemaining) / gs.creditsLimit) * 100 : 0;
+    return (
+      <Badge 
+        variant="outline" 
+        className={`text-[9px] font-bold gap-1 ${pct > 80 ? "text-amber-600 border-amber-200 bg-amber-50" : "text-muted-foreground border-border bg-muted/30"}`}
+      >
+        <Zap className="h-2.5 w-2.5" /> {gs.creditsRemaining} credits left
+      </Badge>
+    );
   };
 
   return (
@@ -267,182 +498,217 @@ export const AICopilotButton: React.FC<AICopilotButtonProps> = ({
                 </div>
               </div>
 
-              {/* Mode Toggle Switcher */}
-              <div className="flex items-center bg-muted/60 p-0.5 rounded-xl border border-border/50">
-                <button
-                  type="button"
-                  onClick={() => handleModeSwitch("voice")}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                    mode === "voice"
-                      ? "bg-indigo-600 text-white shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Mic className="h-3 w-3" /> Voice
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleModeSwitch("write")}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                    mode === "write"
-                      ? "bg-indigo-600 text-white shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Keyboard className="h-3 w-3" /> Write
-                </button>
+              {/* Credits badge + Mode Toggle */}
+              <div className="flex flex-col items-end gap-1.5">
+                {renderCreditsBadge()}
+                {gateState.type === "ready" && (
+                  <div className="flex items-center bg-muted/60 p-0.5 rounded-xl border border-border/50">
+                    <button
+                      type="button"
+                      onClick={() => handleModeSwitch("voice")}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                        mode === "voice"
+                          ? "bg-indigo-600 text-white shadow-xs"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Mic className="h-3 w-3" /> Voice
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleModeSwitch("write")}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                        mode === "write"
+                          ? "bg-indigo-600 text-white shadow-xs"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Keyboard className="h-3 w-3" /> Write
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
-            {/* VOICE MODE INTERFACE */}
-            {mode === "voice" && (
-              <div className="flex flex-col items-center justify-center py-2 space-y-3">
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={toggleListening}
-                    className={`h-20 w-20 rounded-full flex items-center justify-center text-white transition-all duration-300 shadow-lg ${
-                      isListening
-                        ? "bg-rose-500 hover:bg-rose-600 scale-105"
-                        : "bg-indigo-600 hover:bg-indigo-700 active:scale-95"
-                    }`}
-                  >
-                    {isListening ? (
-                      <Mic className="h-9 w-9 animate-pulse" />
-                    ) : (
-                      <MicOff className="h-8 w-8 opacity-80" />
+          {/* ─── GATED STATES ─── */}
+          {gateState.type === "loading" && (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+            </div>
+          )}
+
+          {gateState.type === "upgrade_required" && renderUpgradeRequired()}
+          {gateState.type === "credits_exhausted" && renderCreditsExhausted()}
+
+          {/* ─── READY STATE: Normal Copilot UI ─── */}
+          {gateState.type === "ready" && (
+            <>
+              <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
+                {/* VOICE MODE INTERFACE */}
+                {mode === "voice" && (
+                  <div className="flex flex-col items-center justify-center py-2 space-y-3">
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={toggleListening}
+                        className={`h-20 w-20 rounded-full flex items-center justify-center text-white transition-all duration-300 shadow-lg ${
+                          isListening
+                            ? "bg-rose-500 hover:bg-rose-600 scale-105"
+                            : "bg-indigo-600 hover:bg-indigo-700 active:scale-95"
+                        }`}
+                      >
+                        {isListening ? (
+                          <Mic className="h-9 w-9 animate-pulse" />
+                        ) : (
+                          <MicOff className="h-8 w-8 opacity-80" />
+                        )}
+                      </button>
+
+                      {/* Pulsing Ripple Wave */}
+                      {isListening && (
+                        <span
+                          className="absolute inset-0 rounded-full bg-rose-500 opacity-30 animate-ping pointer-events-none"
+                          style={{ animationDuration: "1.6s" }}
+                        />
+                      )}
+                    </div>
+
+                    <div className="text-center space-y-0.5">
+                      <p className="text-xs font-extrabold text-foreground">
+                        {isListening ? "Listening... Speak naturally" : "Tap microphone to record voice"}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {isListening
+                          ? "Speech is transcribing below in real-time"
+                          : "Speak parts replaced, hours, or diagnostic summary"}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* LIVE TRANSCRIPT / WRITING TEXTAREA */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                      {mode === "voice" ? <Mic className="h-3 w-3 text-indigo-500" /> : <Keyboard className="h-3 w-3 text-indigo-500" />}
+                      {mode === "voice" ? "Live Voice Transcript" : "Field Request / Notes"}
+                    </label>
+                    {transcript && (
+                      <button
+                        type="button"
+                        onClick={() => setTranscript("")}
+                        className="text-[10px] font-bold text-muted-foreground hover:text-rose-500 transition-colors"
+                      >
+                        Clear Text
+                      </button>
                     )}
-                  </button>
+                  </div>
 
-                  {/* Pulsing Ripple Wave */}
-                  {isListening && (
-                    <span
-                      className="absolute inset-0 rounded-full bg-rose-500 opacity-30 animate-ping pointer-events-none"
-                      style={{ animationDuration: "1.6s" }}
-                    />
-                  )}
+                  <Textarea
+                    value={transcript}
+                    onChange={(e) => setTranscript(e.target.value)}
+                    placeholder={
+                      mode === "voice"
+                        ? isListening
+                          ? "Your words will appear here as you speak..."
+                          : "Tap the mic above and explain what you did or need..."
+                        : "e.g. Replaced leaking valve, tested pressure to 75 PSI, customer approved inspection..."
+                    }
+                    className="min-h-[100px] text-sm bg-muted/25 border-border/60 rounded-2xl resize-none focus-visible:ring-indigo-500 leading-relaxed"
+                  />
                 </div>
 
-                <div className="text-center space-y-0.5">
-                  <p className="text-xs font-extrabold text-foreground">
-                    {isListening ? "Listening... Speak naturally" : "Tap microphone to record voice"}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">
-                    {isListening
-                      ? "Speech is transcribing below in real-time"
-                      : "Speak parts replaced, hours, or diagnostic summary"}
-                  </p>
+                {/* Quick Action Suggestion Chips */}
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Quick Action Prompts</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { label: "Draft Work Summary", text: "Generate a professional work summary with completed steps and testing results." },
+                      { label: "Log Parts & Materials", text: "Record the replacement parts used and recommend billing line items." },
+                      { label: "Report Blocked Issue", text: "Log an obstruction and create a note for the dispatcher regarding site delay." },
+                      { label: "Recommend Maintenance", text: "Suggest preventive maintenance schedule and seasonal follow-up." }
+                    ].map((chip) => (
+                      <button
+                        key={chip.label}
+                        type="button"
+                        onClick={() => handleQuickPrompt(chip.text)}
+                        className="text-[10px] font-semibold bg-muted/60 hover:bg-indigo-500/10 hover:text-indigo-600 border border-border/50 rounded-full px-2.5 py-1 transition-colors text-left"
+                      >
+                        + {chip.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
 
-            {/* LIVE TRANSCRIPT / WRITING TEXTAREA */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                  {mode === "voice" ? <Mic className="h-3 w-3 text-indigo-500" /> : <Keyboard className="h-3 w-3 text-indigo-500" />}
-                  {mode === "voice" ? "Live Voice Transcript" : "Field Request / Notes"}
-                </label>
-                {transcript && (
-                  <button
-                    type="button"
-                    onClick={() => setTranscript("")}
-                    className="text-[10px] font-bold text-muted-foreground hover:text-rose-500 transition-colors"
-                  >
-                    Clear Text
-                  </button>
+                {/* AI Response Panel */}
+                {aiResponse && (
+                  <div className="p-4 rounded-2xl bg-indigo-500/[0.07] border border-indigo-500/20 space-y-2 animate-fade-in">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-500 flex items-center gap-1">
+                        <Sparkles className="h-3 w-3" /> AI Copilot Result
+                      </span>
+                      <Button
+                        size="xs"
+                        variant="ghost"
+                        onClick={handleCopyResponse}
+                        className="h-6 text-[10px] gap-1 px-2 text-indigo-600 hover:text-indigo-700"
+                      >
+                        {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+                        {copied ? "Copied" : "Copy"}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">{aiResponse}</p>
+                  </div>
                 )}
               </div>
 
-              <Textarea
-                value={transcript}
-                onChange={(e) => setTranscript(e.target.value)}
-                placeholder={
-                  mode === "voice"
-                    ? isListening
-                      ? "Your words will appear here as you speak..."
-                      : "Tap the mic above and explain what you did or need..."
-                    : "e.g. Replaced leaking valve, tested pressure to 75 PSI, customer approved inspection..."
-                }
-                className="min-h-[100px] text-sm bg-muted/25 border-border/60 rounded-2xl resize-none focus-visible:ring-indigo-500 leading-relaxed"
-              />
-            </div>
-
-            {/* Quick Action Suggestion Chips */}
-            <div className="space-y-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Quick Action Prompts</span>
-              <div className="flex flex-wrap gap-1.5">
-                {[
-                  { label: "Draft Work Summary", text: "Generate a professional work summary with completed steps and testing results." },
-                  { label: "Log Parts & Materials", text: "Record the replacement parts used and recommend billing line items." },
-                  { label: "Report Blocked Issue", text: "Log an obstruction and create a note for the dispatcher regarding site delay." },
-                  { label: "Recommend Maintenance", text: "Suggest preventive maintenance schedule and seasonal follow-up." }
-                ].map((chip) => (
-                  <button
-                    key={chip.label}
-                    type="button"
-                    onClick={() => handleQuickPrompt(chip.text)}
-                    className="text-[10px] font-semibold bg-muted/60 hover:bg-indigo-500/10 hover:text-indigo-600 border border-border/50 rounded-full px-2.5 py-1 transition-colors text-left"
-                  >
-                    + {chip.label}
-                  </button>
-                ))}
+              {/* Dialog Action Footer */}
+              <div className="p-4 bg-muted/30 border-t border-border/40 flex items-center justify-between gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClose}
+                  className="rounded-xl text-xs font-semibold"
+                >
+                  Close
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleProcess}
+                  disabled={isProcessing || !transcript.trim()}
+                  className="rounded-xl font-bold bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5 shadow-sm min-w-[130px]"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" /> Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-3.5 w-3.5" /> Execute Request
+                    </>
+                  )}
+                </Button>
               </div>
+            </>
+          )}
+
+          {/* Footer for gated states */}
+          {(gateState.type === "upgrade_required" || gateState.type === "credits_exhausted") && (
+            <div className="p-4 bg-muted/30 border-t border-border/40 flex justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleClose}
+                className="rounded-xl text-xs font-semibold"
+              >
+                Close
+              </Button>
             </div>
-
-            {/* AI Response Panel */}
-            {aiResponse && (
-              <div className="p-4 rounded-2xl bg-indigo-500/[0.07] border border-indigo-500/20 space-y-2 animate-fade-in">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-500 flex items-center gap-1">
-                    <Sparkles className="h-3 w-3" /> AI Copilot Result
-                  </span>
-                  <Button
-                    size="xs"
-                    variant="ghost"
-                    onClick={handleCopyResponse}
-                    className="h-6 text-[10px] gap-1 px-2 text-indigo-600 hover:text-indigo-700"
-                  >
-                    {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
-                    {copied ? "Copied" : "Copy"}
-                  </Button>
-                </div>
-                <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">{aiResponse}</p>
-              </div>
-            )}
-          </div>
-
-          {/* Dialog Action Footer */}
-          <div className="p-4 bg-muted/30 border-t border-border/40 flex items-center justify-between gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleClose}
-              className="rounded-xl text-xs font-semibold"
-            >
-              Close
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleProcess}
-              disabled={isProcessing || !transcript.trim()}
-              className="rounded-xl font-bold bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5 shadow-sm min-w-[130px]"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Processing...
-                </>
-              ) : (
-                <>
-                  <Send className="h-3.5 w-3.5" /> Execute Request
-                </>
-              )}
-            </Button>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
     </>

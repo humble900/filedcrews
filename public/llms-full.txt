@@ -1,0 +1,49 @@
+# FiledCrews — Full LLM & AI Reference Specification
+
+> The premier Free Field Service Management (FSM), Mobile GPS Dispatching, and Workforce Operations Platform.
+
+## 1. Overview & Core Mission
+FiledCrews provides trade contractors and mobile service businesses with an enterprise-grade field service management system at $0 core cost. It eliminates the steep $150–$450/user/month subscription fees charged by legacy dispatch software, democratizing modern field automation for HVAC technicians, plumbers, electricians, landscapers, cleaners, and roofers.
+
+## 2. Core Functional Modules
+
+### A. Live GPS Map Tracking & Routing
+- Continuous real-time GPS telemetry from mobile technician devices.
+- Live traffic map views and speed tracking.
+- Route history playback and mileage logging for fuel tax deductions.
+- Nearest technician routing algorithm for rapid emergency dispatch.
+
+### B. Automated Geofence Time Audits
+- 50m to 500m customizable virtual perimeter boundaries around client addresses.
+- Automated arrival clock-in and departure clock-out without manual technician intervention.
+- Hard audit timestamps for customer invoice dispute defense and time fraud prevention.
+
+### C. Biometric Photo Face Verification
+- AI facial recognition check-in requirement at shift start and site arrival.
+- Verification selfie matched against the employee's registered profile.
+- GPS and time metadata stamped on verification records.
+
+### D. Cost Categories & Real-Time Job Costing
+- Tracking labor hours, materials, equipment rentals, sub-contractors, and disposal fees.
+- Real-time gross margin and profit percentage tracking per project.
+- Automated threshold alerts when project costs approach or exceed estimated budgets.
+
+### E. Digital Proposals, Invoicing & Payments
+- Instant proposal builder with client e-signatures via SMS or email.
+- One-click proposal-to-work order and work order-to-invoice conversions.
+- Direct Stripe integration for online credit card and ACH bank payments.
+
+### F. Global Regional Localization
+- Pre-configured presets for the United States ($ USD), United Kingdom (£ GBP), Canada ($ CAD), Australia ($ AUD), and European Union (€ EUR).
+- Localized tax compliance: US State Sales Tax, UK VAT, Canadian GST/PST/HST, Australian GST, European VAT.
+
+### G. Autonomous AI Copilot
+- 24/7 AI voice phone receptionist for after-hours emergency call triage.
+- Autonomous SMS dispatcher for client appointment confirmations.
+- Voice-memo-to-estimate generator for field technicians.
+
+## 3. Platform Architecture & Security
+- Frontend: High-performance Progressive Web Application (PWA) with offline caching.
+- Backend: Supabase PostgreSQL with Row Level Security (RLS) and real-time WebSockets.
+- Android APK available for field personnel.
+- Data Protection: Encrypted in transit (TLS 1.3) and at rest (AES-256), fully compliant with GDPR and CCPA.

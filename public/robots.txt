@@ -1,12 +1,33 @@
 # robots.txt for FiledCrews.com
+# Global search engines and AI crawlers
 
 User-agent: *
 Allow: /
 Allow: /about
 Allow: /support
-Allow: /booking
 Allow: /privacy
 Allow: /terms
+Allow: /use-cases
+Allow: /marketplace
+Allow: /ai-agent
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+# Dedicated AI Agent Directives (OpenAI, Anthropic, Perplexity, Apple, Google)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
 
 # Private, Auth, Portal, and Admin routes
 Disallow: /face-verify
@@ -29,5 +50,6 @@ Disallow: /settings
 Disallow: /portal
 Disallow: /setup-wizard
 
-# Sitemap location
+# Sitemap and AI reference locations
 Sitemap: https://filedcrews.com/sitemap.xml
+# LLMs specification: https://filedcrews.com/llms.txt

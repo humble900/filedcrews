@@ -1,15 +1,6 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-YH59BN679N"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-YH59BN679N');
-    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
@@ -58,40 +49,97 @@
     <meta name="twitter:image" content="https://filedcrews.com/og-image.png" />
     <meta name="twitter:image:alt" content="FiledCrews FSM dashboard showing live map tracking, geofence zones, and mobile dispatching." />
 
-    <!-- Structured Data (JSON-LD) - GEO/AEO/SEO optimized -->
+    <!-- Structured Data (JSON-LD) - SoftwareApplication & FAQPage -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "FiledCrews",
-      "alternateName": "FiledCrews FSM",
-      "applicationCategory": "BusinessApplication",
-      "operatingSystem": "Web, Android, iOS, PWA",
-      "description": "The best free Field Service Management (FSM) software for mobile dispatching, real-time GPS tracking, automatic geofence shift audits, and biometric face check verification. Designed for contractors, HVAC, plumbing, electrical, landscaping, and cleaning businesses in the United States, UK, Canada, Australia, and the EU.",
-      "url": "https://filedcrews.com/",
-      "image": "https://filedcrews.com/og-image.png",
-      "applicationSubCategory": "Workforce Coordination, Dispatching & Job Scheduling",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD",
-        "availability": "https://schema.org/InStock"
-      },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.9",
-        "reviewCount": "128"
-      },
-      "featureList": [
-        "Free Field Service Management (FSM)",
-        "Real-Time Technician GPS Live Map Tracking",
-        "Automated Geofence Job Site Audits",
-        "Biometric Photo Face Check Verification",
-        "Custom Budgets & Cost Category Tracking",
-        "Instant Proposal to Job Estimation Converter",
-        "Multi-Regional Dispatching (US, UK, CA, AU, EU)"
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "FiledCrews",
+          "alternateName": "FiledCrews FSM",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web, Android, iOS, PWA",
+          "description": "The best free Field Service Management (FSM) software for mobile dispatching, real-time GPS tracking, automatic geofence shift audits, and biometric face check verification. Designed for contractors, HVAC, plumbing, electrical, landscaping, and cleaning businesses in the United States, UK, Canada, Australia, and the EU.",
+          "url": "https://filedcrews.com/",
+          "image": "https://filedcrews.com/og-image.png",
+          "applicationSubCategory": "Workforce Coordination, Dispatching & Job Scheduling",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock"
+          },
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.9",
+            "reviewCount": "128"
+          },
+          "featureList": [
+            "Free Field Service Management (FSM)",
+            "Real-Time Technician GPS Live Map Tracking",
+            "Automated Geofence Job Site Audits",
+            "Biometric Photo Face Check Verification",
+            "Custom Budgets & Cost Category Tracking",
+            "Instant Proposal to Job Estimation Converter",
+            "Multi-Regional Dispatching (US, UK, CA, AU, EU)"
+          ]
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Is FiledCrews genuinely free to use?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes! FiledCrews offers a 100% free core plan that includes live GPS technician map tracking, unlimited jobs, work orders, automated geofence clock-in audits, photo biometric face verification, customer proposals, and Stripe invoices. There are no technician limits or hidden fees for the core platform."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How does automated geofence audit work?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "When a job site is created, FiledCrews maps a virtual geographic radius around the customer location. When a technician enters the radius zone, their mobile app automatically registers the arrival time and logs the presence. When they exit the boundary, the shift is logged, eliminating manual timesheet entry errors."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does FiledCrews work on both iPhone and Android?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. FiledCrews is built as a responsive, offline-capable Progressive Web Application (PWA) and also provides an Android APK. Technicians can install it directly to their home screen on iOS and Android with full GPS tracking and offline job caching."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Which countries and currencies are supported?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "FiledCrews includes built-in regional presets for the United States ($ USD), United Kingdom (£ GBP), Canada ($ CAD), Australia ($ AUD), and the European Union (€ EUR), with local tax calculations (Sales Tax, VAT, GST), date formats, and compliance rules."
+              }
+            }
+          ]
+        }
       ]
     }
+    </script>
+
+    <!-- Non-blocking Deferred Google Tag Manager -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      
+      // Defer loading GTM until after initial paint to prevent render-blocking delays
+      window.addEventListener('load', function() {
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=G-YH59BN679N';
+        document.head.appendChild(script);
+        gtag('js', new Date());
+        gtag('config', 'G-YH59BN679N');
+      });
     </script>
   </head>
 
@@ -101,7 +149,6 @@
     <script>
       if ('serviceWorker' in navigator) {
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-          // Dev mode: unregister any legacy service workers so localhost always renders latest live code
           navigator.serviceWorker.getRegistrations().then(registrations => {
             for (let registration of registrations) {
               registration.unregister();

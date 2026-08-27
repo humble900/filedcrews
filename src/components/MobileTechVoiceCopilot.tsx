@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Mic, Send, X, Bot, Image as ImageIcon, StopCircle, Settings, Play, Volume2, Save, Loader2 } from "lucide-react";
+import { Mic, Send, X, Bot, Image as ImageIcon, StopCircle, Settings, Play, Volume2, Save, Loader2, Lock, Zap, CreditCard, KeyRound, ArrowUpRight, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useNavigate } from "react-router-dom";
 
 interface MobileTechVoiceCopilotProps {
   onClose?: () => void;
@@ -23,6 +24,11 @@ const PREDEFINED_VOICES = [
 
 export default function MobileTechVoiceCopilot({ onClose, jobId }: MobileTechVoiceCopilotProps) {
   const { company, user } = useAuth();
+  const navigate = useNavigate();
+  
+  // Gating state
+  const [gateStatus, setGateStatus] = useState<'checking' | 'ready' | 'upgrade_required' | 'credits_exhausted'>('checking');
+  const [gateInfo, setGateInfo] = useState<{ creditsUsed?: number; creditsLimit?: number; resetsAt?: string }>({});
   
   // State
   const [viewMode, setViewMode] = useState<'chat' | 'settings'>('chat');
@@ -43,7 +49,7 @@ export default function MobileTechVoiceCopilot({ onClose, jobId }: MobileTechVoi
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
-  // Fetch current voice settings on mount
+  // Fetch current voice settings + check AI access on mount
   useEffect(() => {
     const fetchVoiceSettings = async () => {
       if (!user?.id) return;
@@ -60,7 +66,33 @@ export default function MobileTechVoiceCopilot({ onClose, jobId }: MobileTechVoi
       }
     };
     fetchVoiceSettings();
-  }, [user?.id]);
+
+    // Pre-flight access check
+    const checkAIAccess = async () => {
+      if (!company?.id) { setGateStatus('upgrade_required'); return; }
+      try {
+        const tier = company?.subscription_tier || 'free_trial';
+        const PAID_TIERS = new Set(['growth', 'founding_partner', 'Founding Partner', 'enterprise']);
+        const { data: byokCheck } = await (supabase as any).from('api_keys').select('id').eq('company_id', company.id).eq('provider', 'openai').maybeSingle();
+        const hasByok = !!byokCheck?.id;
+        if (!PAID_TIERS.has(tier) && !hasByok) { setGateStatus('upgrade_required'); return; }
+        const { data: compData } = await (supabase as any).from('companies').select('ai_credits_monthly_limit, ai_credits_used, ai_credits_bonus, ai_credits_reset_at').eq('id', company.id).single();
+        if (compData) {
+          const total = (compData.ai_credits_monthly_limit || 0) + (compData.ai_credits_bonus || 0);
+          const remaining = total - (compData.ai_credits_used || 0);
+          if (!hasByok && remaining <= 0) {
+            setGateStatus('credits_exhausted');
+            setGateInfo({ creditsUsed: compData.ai_credits_used, creditsLimit: total, resetsAt: compData.ai_credits_reset_at });
+            return;
+          }
+        }
+        setGateStatus('ready');
+      } catch {
+        setGateStatus('ready');
+      }
+    };
+    checkAIAccess();
+  }, [user?.id, company?.id]);
 
   // Handle standard message send
   const handleSend = async () => {
@@ -82,6 +114,18 @@ export default function MobileTechVoiceCopilot({ onClose, jobId }: MobileTechVoi
       });
 
       if (error) throw error;
+
+      // Handle gated responses
+      if (data?.gated) {
+        if (data.reason === 'upgrade_required') {
+          setGateStatus('upgrade_required');
+        } else if (data.reason === 'credits_exhausted') {
+          setGateStatus('credits_exhausted');
+          setGateInfo({ creditsUsed: data.creditsUsed, creditsLimit: data.creditsLimit, resetsAt: data.resetsAt });
+        }
+        setMessages(prev => [...prev, { role: 'assistant', content: data.message || 'AI access is currently unavailable.' }]);
+        return;
+      }
       
       if (data?.success) {
         let responseMsg = data.message;
@@ -189,6 +233,65 @@ export default function MobileTechVoiceCopilot({ onClose, jobId }: MobileTechVoi
     }
   };
 
+  const formatResetDate = (dateStr?: string) => {
+    if (!dateStr) return 'next month';
+    try { return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); } catch { return 'next month'; }
+  };
+
+  // ─── Gated Panels ───────────────────────────────────────────────────────────
+  const renderGatedPanel = () => {
+    if (gateStatus === 'checking') {
+      return (
+        <div className="flex-1 flex items-center justify-center bg-slate-50">
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+        </div>
+      );
+    }
+    if (gateStatus === 'upgrade_required') {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 px-6 text-center space-y-4">
+          <div className="h-14 w-14 rounded-2xl bg-amber-500/15 flex items-center justify-center">
+            <Lock className="h-7 w-7 text-amber-600" />
+          </div>
+          <h3 className="text-base font-extrabold text-slate-900">Upgrade to Unlock Mila AI</h3>
+          <p className="text-sm text-slate-500 leading-relaxed max-w-[280px]">
+            AI Copilot is available on paid plans. Upgrade your subscription to get AI-powered field assistance.
+          </p>
+          <Button className="w-full max-w-[260px] h-11 font-bold bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl gap-2" onClick={() => { onClose?.(); navigate('/ai-pricing'); }}>
+            <Zap className="h-4 w-4" /> Upgrade Plan
+          </Button>
+          <Button variant="outline" className="w-full max-w-[260px] h-9 text-xs font-semibold rounded-xl gap-2" onClick={() => { onClose?.(); navigate('/settings'); }}>
+            <KeyRound className="h-3.5 w-3.5" /> Or Add Your Own API Key
+          </Button>
+        </div>
+      );
+    }
+    if (gateStatus === 'credits_exhausted') {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 px-6 text-center space-y-4">
+          <div className="h-14 w-14 rounded-2xl bg-rose-500/15 flex items-center justify-center">
+            <ShieldAlert className="h-7 w-7 text-rose-600" />
+          </div>
+          <h3 className="text-base font-extrabold text-slate-900">AI Credits Exhausted</h3>
+          <p className="text-sm text-slate-500 leading-relaxed max-w-[280px]">
+            Your company used all <span className="font-bold text-slate-800">{gateInfo.creditsLimit}</span> credits this month. Resets <span className="font-bold text-slate-800">{formatResetDate(gateInfo.resetsAt)}</span>.
+          </p>
+          <div className="w-full max-w-[260px]">
+            <div className="flex justify-between text-[10px] font-bold text-slate-500 mb-1"><span>Credits</span><span>{gateInfo.creditsUsed} / {gateInfo.creditsLimit}</span></div>
+            <div className="h-2 bg-slate-200 rounded-full overflow-hidden"><div className="h-full bg-rose-500 rounded-full" style={{ width: '100%' }} /></div>
+          </div>
+          <Button className="w-full max-w-[260px] h-11 font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl gap-2" onClick={() => { onClose?.(); navigate('/ai-pricing'); }}>
+            <CreditCard className="h-4 w-4" /> Buy More Credits
+          </Button>
+          <Button variant="outline" className="w-full max-w-[260px] h-9 text-xs font-semibold rounded-xl gap-2" onClick={() => { onClose?.(); navigate('/settings'); }}>
+            <KeyRound className="h-3.5 w-3.5" /> Add Your Own API Key (Unlimited)
+          </Button>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="flex flex-col h-[600px] max-h-[80vh] w-full max-w-md bg-white shadow-xl rounded-t-xl sm:rounded-xl border flex-shrink-0 relative overflow-hidden">
       {/* Header */}
@@ -203,14 +306,16 @@ export default function MobileTechVoiceCopilot({ onClose, jobId }: MobileTechVoi
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className={`text-white hover:bg-indigo-700 h-8 w-8 rounded-full ${viewMode === 'settings' ? 'bg-indigo-800' : ''}`} 
-            onClick={() => setViewMode(viewMode === 'chat' ? 'settings' : 'chat')}
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
+          {gateStatus === 'ready' && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className={`text-white hover:bg-indigo-700 h-8 w-8 rounded-full ${viewMode === 'settings' ? 'bg-indigo-800' : ''}`} 
+              onClick={() => setViewMode(viewMode === 'chat' ? 'settings' : 'chat')}
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+          )}
           {onClose && (
             <Button variant="ghost" size="icon" className="text-white hover:bg-indigo-700 h-8 w-8 rounded-full" onClick={onClose}>
               <X className="h-5 w-5" />
@@ -219,7 +324,11 @@ export default function MobileTechVoiceCopilot({ onClose, jobId }: MobileTechVoi
         </div>
       </div>
 
-      {viewMode === 'chat' ? (
+      {/* ─── Gated States ─── */}
+      {gateStatus !== 'ready' && renderGatedPanel()}
+
+      {/* ─── Ready State ─── */}
+      {gateStatus === 'ready' && viewMode === 'chat' ? (
         <>
           {/* Chat Area */}
           <ScrollArea className="flex-1 p-4 bg-slate-50">

@@ -22,6 +22,14 @@ import {
   ArrowLeft, Sparkles, ExternalLink, ArrowRight,
 } from "lucide-react";
 import { format } from "date-fns";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 import {
   saveCompanyIntegration,
@@ -136,6 +144,18 @@ export default function SettingsPage() {
           .from("companies")
           .update({ ai_api_key: aiApiKey.trim(), ai_provider: aiProvider })
           .eq("id", company.id);
+
+        if (!aiApiKey.includes("seeded-v1-prod-key")) {
+          await (supabase as any)
+            .from("api_keys")
+            .upsert({
+              company_id: company.id,
+              provider: "openai",
+              secret_key: aiApiKey.trim(),
+              updated_at: new Date().toISOString()
+            }, { onConflict: "company_id,provider" });
+        }
+
         localStorage.setItem(`fc_ai_key_${company.id}`, aiApiKey.trim());
         localStorage.setItem(`fc_ai_provider_${company.id}`, aiProvider);
       }
@@ -313,6 +333,66 @@ export default function SettingsPage() {
   const maxFieldCrew = isFreeTrial ? 2 : (company?.max_field_crew_seats ?? (isFoundingPartner ? 20 : (company?.subscription_tier === "growth" ? 7 : 2)));
   const adminPercent = Math.min((activeAdmins / maxAdmins) * 100, 100);
   const fieldPercent = Math.min((activeFieldCrew / maxFieldCrew) * 100, 100);
+
+  // ─── AI Copilot & Metered Credits ───
+  const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false);
+  const [selectedCreditPack, setSelectedCreditPack] = useState<"pack_100" | "pack_500" | "pack_1500">("pack_500");
+  const [purchasingCredits, setPurchasingCredits] = useState(false);
+
+  const aiMonthlyLimit = (company as any)?.ai_credits_monthly_limit ?? (
+    company?.subscription_tier === "growth" ? 200 :
+    isFoundingPartner ? 500 :
+    company?.subscription_tier === "enterprise" ? 1000 : 0
+  );
+  const aiCreditsBonus = (company as any)?.ai_credits_bonus || 0;
+  const aiCreditsUsed = (company as any)?.ai_credits_used || 0;
+  const aiTotalCredits = aiMonthlyLimit + aiCreditsBonus;
+  const aiCreditsRemaining = Math.max(0, aiTotalCredits - aiCreditsUsed);
+  const aiCreditsPercent = aiTotalCredits > 0 ? Math.min(100, (aiCreditsUsed / aiTotalCredits) * 100) : 0;
+  const hasRealByok = aiApiKey && !aiApiKey.includes("seeded-v1-prod-key") && (aiApiKey.startsWith("sk-") || aiApiKey.startsWith("org-") || aiApiKey.startsWith("sess-"));
+
+  const handlePurchaseCredits = async () => {
+    if (!company?.id) return;
+    setPurchasingCredits(true);
+    try {
+      const packs = {
+        pack_100: { credits: 100, price: "$9.99", cents: 999 },
+        pack_500: { credits: 500, price: "$39.99", cents: 3999 },
+        pack_1500: { credits: 1500, price: "$99.99", cents: 9999 },
+      };
+      const pack = packs[selectedCreditPack];
+      
+      const newBonus = ((company as any)?.ai_credits_bonus || 0) + pack.credits;
+      const { error: updateErr } = await (supabase as any)
+        .from("companies")
+        .update({ ai_credits_bonus: newBonus })
+        .eq("id", company.id);
+
+      if (updateErr) throw updateErr;
+
+      await (supabase as any)
+        .from("platform_billing_events")
+        .insert({
+          company_id: company.id,
+          event_type: "ai_credit_topup",
+          amount_cents: pack.cents,
+          plan_tier: company.subscription_tier || "growth",
+          payload: { credits_added: pack.credits, pack_id: selectedCreditPack }
+        });
+
+      toast({
+        title: "Credits Added!",
+        description: `Successfully added ${pack.credits} AI Copilot credits to your workspace.`,
+      });
+      refetchCompany();
+      setShowBuyCreditsModal(false);
+    } catch (err: any) {
+      toast({ title: "Purchase Failed", description: err.message, variant: "destructive" });
+    } finally {
+      setPurchasingCredits(false);
+    }
+  };
+
   const [isRedirectingToStripe, setIsRedirectingToStripe] = useState(false);
 
   const handleStripeCheckout = async (planId: string) => {
@@ -848,6 +928,80 @@ export default function SettingsPage() {
           </Card>
         </div>
       </div>
+
+      {/* AI Copilot Credits & Metered Billing Summary */}
+      <Card className="border-indigo-500/20 bg-gradient-to-r from-indigo-500/[0.04] via-purple-500/[0.02] to-indigo-500/[0.04] shadow-sm">
+        <CardContent className="p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+          <div className="flex items-center gap-3.5">
+            <div className="p-3 rounded-2xl bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 shrink-0">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="font-bold text-base text-foreground">Mila AI Copilot Metered Usage</p>
+                {hasRealByok ? (
+                  <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[10px]">
+                    BYOK Connected · Unlimited Calls
+                  </Badge>
+                ) : !isFreeTrial ? (
+                  <Badge variant="outline" className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 text-[10px]">
+                    {aiCreditsRemaining} Credits Available
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 text-[10px]">
+                    Paid Plan Required
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {hasRealByok
+                  ? "Your workspace uses your own OpenAI API key. No platform credit limits apply."
+                  : isFreeTrial
+                  ? "Upgrade to a paid plan or add your OpenAI BYOK key to unlock AI features for your team."
+                  : `Monthly allowance: ${aiMonthlyLimit} calls/mo${aiCreditsBonus > 0 ? ` (+${aiCreditsBonus} bonus purchased)` : ""}. Resets on ${format(new Date((company as any)?.ai_credits_reset_at || new Date()), "MMM dd, yyyy")}.`}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto shrink-0">
+            {!hasRealByok && (
+              <div className="w-full sm:w-48 space-y-1.5">
+                <div className="flex items-center justify-between text-xs font-semibold">
+                  <span className="text-muted-foreground">Used this month</span>
+                  <span className="font-bold text-foreground">{aiCreditsUsed} / {aiTotalCredits}</span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all duration-500",
+                      aiCreditsPercent > 85 ? "bg-rose-500" : aiCreditsPercent > 60 ? "bg-amber-500" : "bg-indigo-600"
+                    )}
+                    style={{ width: `${aiCreditsPercent}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Button
+                size="sm"
+                onClick={() => setShowBuyCreditsModal(true)}
+                className="font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs gap-1.5 shrink-0"
+              >
+                <CreditCard className="h-3.5 w-3.5" /> Buy More Credits
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setActiveTab("integrations")}
+                className="font-semibold text-xs rounded-xl border-border/60 shrink-0 gap-1.5"
+              >
+                <Key className="h-3.5 w-3.5" /> BYOK Key
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {billingViewMode === "select" ? (
         /* STEP 1: PLAN SELECTION GRID */
@@ -1610,6 +1764,98 @@ export default function SettingsPage() {
     developer: renderDeveloper 
   };
 
+  const buyCreditsDialog = (
+    <Dialog open={showBuyCreditsModal} onOpenChange={setShowBuyCreditsModal}>
+      <DialogContent className="sm:max-w-md bg-card border-border/80 shadow-2xl rounded-2xl">
+        <DialogHeader className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="h-10 w-10 rounded-xl bg-indigo-600/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                Add-on AI Credits
+                <Badge variant="outline" className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 text-[10px]">
+                  Instant Top-Up
+                </Badge>
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                Bonus credits never expire and roll over across monthly billing cycles.
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="py-3 space-y-3">
+          {[
+            { id: "pack_100", name: "Starter Pack", credits: "100 Calls", price: "$9.99", perCall: "$0.09/call", badge: null },
+            { id: "pack_500", name: "Pro Pack", credits: "500 Calls", price: "$39.99", perCall: "$0.07/call", badge: "Most Popular" },
+            { id: "pack_1500", name: "Scale Pack", credits: "1,500 Calls", price: "$99.99", perCall: "$0.06/call", badge: "Best Value" },
+          ].map((pack) => {
+            const isSelected = selectedCreditPack === pack.id;
+            return (
+              <div
+                key={pack.id}
+                onClick={() => setSelectedCreditPack(pack.id as any)}
+                className={cn(
+                  "relative p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between",
+                  isSelected
+                    ? "border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 ring-1 ring-indigo-600"
+                    : "border-border hover:bg-muted/40"
+                )}
+              >
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm text-foreground">{pack.name}</span>
+                    {pack.badge && (
+                      <Badge className="bg-indigo-600 text-white text-[9px] px-1.5 py-0">
+                        {pack.badge}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {pack.credits} · <span className="font-medium text-foreground">{pack.perCall}</span>
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className="text-base font-black text-foreground">{pack.price}</span>
+                  <p className="text-[10px] text-muted-foreground">one-time</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowBuyCreditsModal(false)}
+            className="rounded-xl text-xs"
+          >
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            onClick={handlePurchaseCredits}
+            disabled={purchasingCredits}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs gap-1.5 shadow-sm min-w-[140px]"
+          >
+            {purchasingCredits ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Processing...
+              </>
+            ) : (
+              <>
+                <Zap className="h-3.5 w-3.5" /> Purchase Credits
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
   if (activeTab === "billing") {
     return (
       <>
@@ -1658,6 +1904,7 @@ export default function SettingsPage() {
             </div>
           </div>
         </DashboardLayout>
+        {buyCreditsDialog}
       </>
     );
   }
@@ -1693,6 +1940,7 @@ export default function SettingsPage() {
           </div>
         </div>
       </DashboardLayout>
+      {buyCreditsDialog}
     </>
   );
 }

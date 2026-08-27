@@ -1,0 +1,16 @@
+# FiledCrews
+
+> Free Field Service Management (FSM), Mobile GPS Dispatching, and Autonomous AI Scheduling Platform.
+
+FiledCrews is an all-in-one software platform for trade contractors, HVAC, plumbing, electrical, landscaping, cleaning, roofing, solar, and construction businesses in the United States, United Kingdom, Canada, Australia, and the European Union.
+
+## Core Capabilities & Links
+- [Product Overview](https://filedcrews.com/): Real-time technician GPS tracking, automated geofence shift audits, biometric photo face verification, and mobile dispatching.
+- [Pricing & Free Tier](https://filedcrews.com/#pricing): $0 free forever core platform with unlimited work orders, live GPS map tracking, and digital Stripe invoicing.
+- [Use Cases by Trade](https://filedcrews.com/use-cases): Specialized dispatch workflows for HVAC, plumbing, electrical, landscaping, security, and cleaning contractors.
+- [Autonomous AI Copilot](https://filedcrews.com/ai-agent): 24/7 AI voice phone receptionist, autonomous SMS dispatching, and voice-to-estimate generation.
+- [About & Company](https://filedcrews.com/about): Mission, company overview, and global multi-region support (USD, GBP, CAD, AUD, EUR).
+- [Customer Support](https://filedcrews.com/support): Technical support, documentation, onboarding guides, and help center.
+- [Privacy Policy](https://filedcrews.com/privacy): GDPR, CCPA, and enterprise-grade data security policies.
+- [Terms of Service](https://filedcrews.com/terms): Service agreement and acceptable use guidelines.
+- [Full LLM Specification](https://filedcrews.com/llms-full.txt): Complete technical documentation and full text reference for AI models.

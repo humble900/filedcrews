@@ -573,7 +573,7 @@ export default function LandingPage() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-slate-900 whitespace-nowrap">{ind.name}</p>
-                      <p className="text-xs text-slate-400 whitespace-nowrap">{ind.tag}</p>
+                      <p className="text-xs text-slate-600 font-medium whitespace-nowrap">{ind.tag}</p>
                     </div>
                   </div>
                 ))}
@@ -590,7 +590,7 @@ export default function LandingPage() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-slate-900 whitespace-nowrap">{ind.name}</p>
-                      <p className="text-xs text-slate-400 whitespace-nowrap">{ind.tag}</p>
+                      <p className="text-xs text-slate-600 font-medium whitespace-nowrap">{ind.tag}</p>
                     </div>
                   </div>
                 ))}
@@ -626,8 +626,10 @@ export default function LandingPage() {
               >
                 <div className="relative h-72 w-full overflow-hidden">
                   <img
-                    src="/images/hvac-security.jpg"
+                    src="/images/hvac-security.webp"
                     alt="HVAC & Security Technicians"
+                    width={896}
+                    height={682}
                     loading="lazy"
                     decoding="async"
                     className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
@@ -638,7 +640,7 @@ export default function LandingPage() {
                     <h3 className="text-lg font-bold text-white group-hover:text-teal-300 transition-colors">
                       Dual-Specialization Operations
                     </h3>
-                    <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed font-normal">
                       Technicians install AC condenser units and mount security cameras simultaneously while FiledCrews auto-assigns parts inventory.
                     </p>
                   </div>
@@ -656,8 +658,10 @@ export default function LandingPage() {
               >
                 <div className="relative h-72 w-full overflow-hidden">
                   <img
-                    src="/images/electrician-panel.jpg"
+                    src="/images/electrician-panel.webp"
                     alt="Commercial Electrician Panel Work"
+                    width={896}
+                    height={682}
                     loading="lazy"
                     decoding="async"
                     className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
@@ -668,7 +672,7 @@ export default function LandingPage() {
                     <h3 className="text-lg font-bold text-white group-hover:text-amber-300 transition-colors">
                       High-Voltage & Scissor Lift Safety
                     </h3>
-                    <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed font-normal">
                       Master electricians log high-voltage breaker panel audits on-site with required safety check-ins before main breaker energizing.
                     </p>
                   </div>
@@ -686,8 +690,10 @@ export default function LandingPage() {
               >
                 <div className="relative h-72 w-full overflow-hidden">
                   <img
-                    src="/images/plumber-sink.jpg"
+                    src="/images/plumber-sink.webp"
                     alt="Plumbing Specialist Repair"
+                    width={896}
+                    height={682}
                     loading="lazy"
                     decoding="async"
                     className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
@@ -698,7 +704,7 @@ export default function LandingPage() {
                     <h3 className="text-lg font-bold text-white group-hover:text-cyan-300 transition-colors">
                       On-Site Estimates & Instant Invoicing
                     </h3>
-                    <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                    <p className="text-xs text-slate-300 mt-2 leading-relaxed font-normal">
                       Plumbers diagnose under-sink leaks, present itemized estimates on mobile, and collect digital customer sign-offs before leaving.
                     </p>
                   </div>
@@ -830,8 +836,12 @@ export default function LandingPage() {
                 {/* Right Clean Fleet Photo Showcase */}
                 <div className="relative min-h-[340px] md:min-h-[400px] rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center group/fleet shadow-2xl">
                   <img
-                    src="/images/fleet-vans.jpg"
+                    src="/images/fleet-vans.webp"
                     alt="Service Fleet in Motion"
+                    width={886}
+                    height={961}
+                    loading="lazy"
+                    decoding="async"
                     className="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.85] contrast-[1.05] transition-transform duration-700 group-hover/fleet:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
@@ -855,7 +865,7 @@ export default function LandingPage() {
                     Why pay for five tools <br />
                     <span className="italic text-teal-600">when one does it better?</span>
                   </h2>
-                  <p className="text-slate-500 text-base leading-relaxed">
+                  <p className="text-slate-600 text-base leading-relaxed font-normal">
                     FiledCrews replaces separate dispatching systems, timesheet software, expense sheets, invoicing tools, and team alerts. One unified database controls your operations from initial estimate to final net profit reports.
                   </p>
                 </div>
@@ -883,10 +893,10 @@ export default function LandingPage() {
                         <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl transition-all duration-500 ${
                           isActive ? "bg-teal-500 scale-y-100" : "bg-transparent scale-y-0"
                         }`} />
-                        <h4 className={`text-sm font-bold transition-colors ${isActive ? "text-slate-900" : "text-slate-500 group-hover:text-slate-800"}`}>
+                        <h3 className={`text-sm font-bold transition-colors ${isActive ? "text-slate-900" : "text-slate-600 group-hover:text-slate-900"}`}>
                           {step.title}
-                        </h4>
-                        <p className={`text-xs mt-1.5 transition-colors leading-relaxed ${isActive ? "text-slate-500" : "text-slate-400"}`}>
+                        </h3>
+                        <p className={`text-xs mt-1.5 transition-colors leading-relaxed font-medium ${isActive ? "text-slate-700" : "text-slate-600"}`}>
                           {step.desc}
                         </p>
                       </div>
@@ -907,9 +917,9 @@ export default function LandingPage() {
                     <span className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
                     <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/80" />
                     <span className="h-2.5 w-2.5 rounded-full bg-green-500/80" />
-                    <span className="text-[10px] font-bold text-slate-500 tracking-wider uppercase ml-2 bg-white/5 px-2 py-0.5 rounded">Project Workspace</span>
+                    <span className="text-[10px] font-bold text-slate-300 tracking-wider uppercase ml-2 bg-white/10 px-2 py-0.5 rounded">Project Workspace</span>
                   </div>
-                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 bg-white/5 px-3 py-1.5 rounded-xl border border-white/5">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-200 bg-white/10 px-3 py-1.5 rounded-xl border border-white/10">
                     <Activity className="h-3 w-3 text-teal-400 animate-pulse" />
                     <span>Live Syncing</span>
                   </div>
@@ -1123,17 +1133,19 @@ export default function LandingPage() {
                 </div>
 
                 {/* Footer progress bar representing the step transition */}
-                <div className="border-t border-white/5 pt-4 mt-4 flex items-center justify-between text-slate-500 text-[10px] font-semibold">
-                  <div className="flex gap-1.5">
+                <div className="border-t border-white/5 pt-4 mt-4 flex items-center justify-between text-slate-400 text-[10px] font-semibold">
+                  <div className="flex gap-1 items-center">
                     {[0, 1, 2, 3].map((stepIdx) => (
                       <button
                         key={stepIdx}
                         onClick={() => setActiveStep(stepIdx)}
-                        className={`h-2 rounded-full transition-all duration-300 ${
-                          activeStep === stepIdx ? "w-6 bg-teal-500" : "w-2 bg-white/10 hover:bg-white/20"
-                        }`}
+                        className="p-3 -m-1 inline-flex items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
                         aria-label={`Go to step ${stepIdx + 1}`}
-                      />
+                      >
+                        <span className={`h-2 rounded-full transition-all duration-300 block ${
+                          activeStep === stepIdx ? "w-6 bg-teal-500" : "w-2 bg-white/20 hover:bg-white/40"
+                        }`} />
+                      </button>
                     ))}
                   </div>
                   <span>Real-Time Database Sync</span>
@@ -1541,9 +1553,9 @@ export default function LandingPage() {
                   ].map((row, idx) => (
                     <tr key={idx} className="hover:bg-stone-50/40 transition-colors">
                       <td className="p-5 font-semibold text-slate-900">{row.f}</td>
-                      <td className="p-5 font-bold text-teal-600 bg-teal-50/10">{row.c1}</td>
-                      <td className="p-5 text-slate-600">{row.c2}</td>
-                      <td className="p-5 text-slate-500">{row.c3}</td>
+                      <td className="p-5 font-bold text-teal-700 bg-teal-50/20">{row.c1}</td>
+                      <td className="p-5 text-slate-700">{row.c2}</td>
+                      <td className="p-5 text-slate-600">{row.c3}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1591,7 +1603,7 @@ export default function LandingPage() {
                   Connects seamlessly with{" "}
                   <span className="italic text-teal-400">your business stack.</span>
                 </h2>
-                <p className="text-slate-400 leading-relaxed">
+                <p className="text-slate-300 leading-relaxed font-normal">
                   No isolated data silos. FiledCrews integrates directly with the software you already use to sync financial ledgers, process cards, and alert your crew instantly.
                 </p>
                 <div className="grid gap-3 sm:grid-cols-2 pt-2">
@@ -1601,12 +1613,12 @@ export default function LandingPage() {
                     { title: "Slack & Teams", desc: "Real-time office alerts & logs" },
                     { title: "Twilio SMS", desc: "Auto-notify clients when crew arrives" },
                   ].map((int) => (
-                    <div key={int.title} className="rounded-xl border border-white/5 bg-white/[0.03] p-4 space-y-1 hover:border-white/10 transition-colors">
-                      <h4 className="text-sm font-bold text-slate-200 flex items-center gap-2">
+                    <div key={int.title} className="rounded-xl border border-white/10 bg-white/[0.04] p-4 space-y-1 hover:border-white/20 transition-colors">
+                      <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
                         <span className="h-1.5 w-1.5 rounded-full bg-teal-400" />
                         {int.title}
-                      </h4>
-                      <p className="text-xs text-slate-500">{int.desc}</p>
+                      </h3>
+                      <p className="text-xs text-slate-400">{int.desc}</p>
                     </div>
                   ))}
                 </div>
@@ -1615,15 +1627,15 @@ export default function LandingPage() {
               {/* Animated Interactive Diagram */}
               <div className="relative h-[400px] w-full max-w-[400px] mx-auto flex items-center justify-center shrink-0">
                 {/* SVG connection lines */}
-                <svg className="absolute inset-0 h-full w-full pointer-events-none" viewBox="0 0 400 400" fill="none">
+                <svg className="absolute inset-0 h-full w-full pointer-events-none opacity-80" viewBox="0 0 400 400" fill="none">
                   {/* QuickBooks line */}
-                  <path d="M 70 70 L 200 200" stroke="rgba(16, 185, 129, 0.4)" strokeWidth="1.5" strokeDasharray="5 5" className="animate-[flow_1.5s_linear_infinite]" />
+                  <path d="M 70 70 L 200 200" stroke="rgba(16, 185, 129, 0.5)" strokeWidth="1.5" strokeDasharray="6 6" />
                   {/* Stripe line */}
-                  <path d="M 330 70 L 200 200" stroke="rgba(99, 102, 241, 0.4)" strokeWidth="1.5" strokeDasharray="5 5" className="animate-[flow_1.5s_linear_infinite]" />
+                  <path d="M 330 70 L 200 200" stroke="rgba(99, 102, 241, 0.5)" strokeWidth="1.5" strokeDasharray="6 6" />
                   {/* Slack line */}
-                  <path d="M 70 330 L 200 200" stroke="rgba(236, 72, 153, 0.4)" strokeWidth="1.5" strokeDasharray="5 5" className="animate-[flow_1.5s_linear_infinite]" />
+                  <path d="M 70 330 L 200 200" stroke="rgba(236, 72, 153, 0.5)" strokeWidth="1.5" strokeDasharray="6 6" />
                   {/* Twilio line */}
-                  <path d="M 330 330 L 200 200" stroke="rgba(239, 68, 68, 0.4)" strokeWidth="1.5" strokeDasharray="5 5" className="animate-[flow_1.5s_linear_infinite]" />
+                  <path d="M 330 330 L 200 200" stroke="rgba(239, 68, 68, 0.5)" strokeWidth="1.5" strokeDasharray="6 6" />
                 </svg>
 
                 {/* Central FiledCrews Orb with brand logo */}
@@ -1720,8 +1732,8 @@ export default function LandingPage() {
                       <div className="h-5 w-5 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[9px] font-extrabold">H</div>
                       <div className="h-5 w-5 rounded-full bg-teal-50 border-2 border-white flex items-center justify-center text-[9px] font-extrabold">F</div>
                     </div>
-                    <p className="text-[11px] text-slate-400 leading-normal">
-                      <strong className="text-slate-800">HVAC Solutions</strong> got a +45% lift in check-in logs accuracy by switching to geofenced shift checklists on day one.
+                    <p className="text-[11px] text-slate-600 leading-normal font-medium">
+                      <strong className="text-slate-900">HVAC Solutions</strong> got a +45% lift in check-in logs accuracy by switching to geofenced shift checklists on day one.
                     </p>
                   </div>
                 </div>
@@ -1730,9 +1742,9 @@ export default function LandingPage() {
               {/* Huge visual display block representing device / app mock */}
               <div className="bg-white rounded-2xl border border-stone-200/80 p-8 md:p-14 shadow-sm relative overflow-hidden flex flex-col md:flex-row items-center justify-around gap-10">
                 <div className="space-y-4 max-w-sm text-left">
-                  <span className="text-xs font-bold text-teal-600 uppercase tracking-widest">Biometric Check-in</span>
-                  <h4 className="text-xl md:text-2xl font-extrabold text-slate-900">Secure. Accountable. Zero friction.</h4>
-                  <p className="text-slate-400 text-sm leading-relaxed">Technicians get immediate access to assigned work orders, routes, and client histories. Office managers verify shifts automatically without tracking calls or manual corrections.</p>
+                  <span className="text-xs font-bold text-teal-700 uppercase tracking-widest">Biometric Check-in</span>
+                  <h3 className="text-xl md:text-2xl font-extrabold text-slate-900">Secure. Accountable. Zero friction.</h3>
+                  <p className="text-slate-600 text-sm leading-relaxed font-normal">Technicians get immediate access to assigned work orders, routes, and client histories. Office managers verify shifts automatically without tracking calls or manual corrections.</p>
                 </div>
                 
                 {/* Visual Stack Layout */}
@@ -1950,16 +1962,17 @@ export default function LandingPage() {
                 <img src="/favicon.png" alt="FiledCrews" className="h-6 w-6 rounded-md" />
                 <span className="font-bold text-slate-900">FiledCrews</span>
               </div>
-              <nav className="flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-2 text-sm text-slate-500">
+              <nav className="flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-2 text-sm text-slate-600 font-medium">
                 <Link to="/about" className="hover:text-slate-900 transition-colors">About</Link>
-                <Link to="/affiliates" className="hover:text-teal-700 hover:border-teal-300 text-teal-600 bg-teal-50/80 px-2.5 py-0.5 rounded-full border border-teal-200/50 transition-all font-semibold text-xs uppercase tracking-wider">Partner Program</Link>
+                <Link to="/affiliates" className="hover:text-teal-800 hover:border-teal-400 text-teal-700 bg-teal-50/90 px-2.5 py-0.5 rounded-full border border-teal-200/60 transition-all font-semibold text-xs uppercase tracking-wider">Partner Program</Link>
                 <Link to="/privacy" className="hover:text-slate-900 transition-colors">Privacy Policy</Link>
                 <Link to="/terms" className="hover:text-slate-900 transition-colors">Terms of Service</Link>
                 <Link to="/support" className="hover:text-slate-900 transition-colors">Support</Link>
+                <a href="/llms.txt" className="hover:text-slate-900 transition-colors">llms.txt</a>
                 <Link to="/account-deletion" className="hover:text-slate-900 transition-colors">Account Deletion</Link>
               </nav>
             </div>
-            <p className="text-center text-xs text-slate-400">© {new Date().getFullYear()} FiledCrews. All rights reserved.</p>
+            <p className="text-center text-xs text-slate-600 font-medium">© {new Date().getFullYear()} FiledCrews. All rights reserved.</p>
           </div>
         </footer>
 
