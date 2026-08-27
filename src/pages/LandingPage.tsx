@@ -448,7 +448,7 @@ export default function LandingPage() {
               <span className="text-lg sm:text-xl font-bold tracking-tight text-slate-900">FiledCrews<span className="text-teal-600">.</span></span>
             </Link>
             <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600">
-              <a href="#features" className="hover:text-slate-900 transition-colors">Features</a>
+              <Link to="/features" className="hover:text-slate-900 transition-colors">Features</Link>
               <a href="#compare" className="hover:text-slate-900 transition-colors">Compare</a>
               <a href="#industries" className="hover:text-slate-900 transition-colors">Industries</a>
               <a href="#pricing" className="hover:text-slate-900 transition-colors">Pricing</a>
@@ -477,9 +477,9 @@ export default function LandingPage() {
             {mobileMenuOpen && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="md:hidden overflow-hidden border-t border-stone-100 bg-white">
                 <nav className="flex flex-col px-4 py-3 gap-1">
-                  {[{ href: "#features", label: "Features" }, { href: "#compare", label: "Why FiledCrews" }].map((link) => (
-                    <a key={link.href} href={link.href} className="py-2.5 px-3 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-stone-50 transition-colors" onClick={() => setMobileMenuOpen(false)}>{link.label}</a>
-                  ))}
+                  <Link to="/features" className="py-2.5 px-3 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-stone-50 transition-colors" onClick={() => setMobileMenuOpen(false)}>Features</Link>
+                  <a href="#compare" className="py-2.5 px-3 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-stone-50 transition-colors" onClick={() => setMobileMenuOpen(false)}>Why FiledCrews</a>
+                  <a href="#pricing" className="py-2.5 px-3 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-stone-50 transition-colors" onClick={() => setMobileMenuOpen(false)}>Pricing</a>
                   <div className="flex gap-2 pt-2 pb-1">
                     <Link to="/auth" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
                       <Button variant="outline" size="sm" className="w-full text-sm border-stone-200 text-slate-700">Log In</Button>
