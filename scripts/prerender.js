@@ -178,9 +178,87 @@ const staticLandingHtml = `
 
           <article class="p-6 sm:p-8 rounded-3xl bg-stone-50 border border-stone-200 hover:border-teal-500/50 transition-all shadow-sm">
             <div class="w-12 h-12 rounded-2xl bg-teal-600 text-white flex items-center justify-center mb-6 font-bold text-xl">6</div>
+            <h3 class="text-xl font-extrabold text-slate-900 mb-3">Equipment Tracking & Asset History</h3>
+            <p class="text-slate-700 text-sm leading-relaxed mb-4">
+              Track customer equipment, HVAC units, panels, and water heaters by serial number, brand, model, and warranty. Scan QR and barcodes on-site for instant service history.
+            </p>
+            <ul class="text-xs text-slate-600 space-y-2 font-medium">
+              <li class="flex items-center gap-2">&check; QR & Barcode equipment scanning</li>
+              <li class="flex items-center gap-2">&check; Complete repair & maintenance service logs</li>
+              <li class="flex items-center gap-2">&check; Warranty expiration & replacement alerts</li>
+            </ul>
+          </article>
+
+          <article class="p-6 sm:p-8 rounded-3xl bg-stone-50 border border-stone-200 hover:border-teal-500/50 transition-all shadow-sm">
+            <div class="w-12 h-12 rounded-2xl bg-teal-600 text-white flex items-center justify-center mb-6 font-bold text-xl">7</div>
+            <h3 class="text-xl font-extrabold text-slate-900 mb-3">Inventory Control & Purchase Orders (PO)</h3>
+            <p class="text-slate-700 text-sm leading-relaxed mb-4">
+              Manage truck and warehouse parts inventory in real-time. Create supplier purchase orders and set automated low-stock warnings to avoid stockouts on job sites.
+            </p>
+            <ul class="text-xs text-slate-600 space-y-2 font-medium">
+              <li class="flex items-center gap-2">&check; Van stock vs. warehouse inventory levels</li>
+              <li class="flex items-center gap-2">&check; Supplier Purchase Order (PO) workflow</li>
+              <li class="flex items-center gap-2">&check; Automated low-stock replenishment alerts</li>
+            </ul>
+          </article>
+
+          <article class="p-6 sm:p-8 rounded-3xl bg-stone-50 border border-stone-200 hover:border-teal-500/50 transition-all shadow-sm">
+            <div class="w-12 h-12 rounded-2xl bg-teal-600 text-white flex items-center justify-center mb-6 font-bold text-xl">8</div>
+            <h3 class="text-xl font-extrabold text-slate-900 mb-3">Service Agreements & Club Memberships</h3>
+            <p class="text-slate-700 text-sm leading-relaxed mb-4">
+              Build recurring revenue with maintenance agreements. Automate recurring subscription billing, member discounts, and pre-scheduled seasonal inspections.
+            </p>
+            <ul class="text-xs text-slate-600 space-y-2 font-medium">
+              <li class="flex items-center gap-2">&check; Recurring service contract tiers</li>
+              <li class="flex items-center gap-2">&check; Automated monthly & annual card billing</li>
+              <li class="flex items-center gap-2">&check; Auto-scheduled seasonal maintenance visits</li>
+            </ul>
+          </article>
+
+          <article class="p-6 sm:p-8 rounded-3xl bg-stone-50 border border-stone-200 hover:border-teal-500/50 transition-all shadow-sm">
+            <div class="w-12 h-12 rounded-2xl bg-teal-600 text-white flex items-center justify-center mb-6 font-bold text-xl">9</div>
+            <h3 class="text-xl font-extrabold text-slate-900 mb-3">Customer Portal & Online Booking</h3>
+            <p class="text-slate-700 text-sm leading-relaxed mb-4">
+              Empower homeowners with self-service web booking and a dedicated client portal to view upcoming appointments, approve quotes, and download invoice receipts.
+            </p>
+            <ul class="text-xs text-slate-600 space-y-2 font-medium">
+              <li class="flex items-center gap-2">&check; Embeddable website booking calendar widget</li>
+              <li class="flex items-center gap-2">&check; Self-service client portal (/portal)</li>
+              <li class="flex items-center gap-2">&check; Live work order status & PDF receipts</li>
+            </ul>
+          </article>
+
+          <article class="p-6 sm:p-8 rounded-3xl bg-stone-50 border border-stone-200 hover:border-teal-500/50 transition-all shadow-sm">
+            <div class="w-12 h-12 rounded-2xl bg-teal-600 text-white flex items-center justify-center mb-6 font-bold text-xl">10</div>
+            <h3 class="text-xl font-extrabold text-slate-900 mb-3">AI Reputation & Google Review Engine</h3>
+            <p class="text-slate-700 text-sm leading-relaxed mb-4">
+              AI automatically analyzes technician completion notes for customer sentiment and immediately sends Google Review SMS requests to delighted clients.
+            </p>
+            <ul class="text-xs text-slate-600 space-y-2 font-medium">
+              <li class="flex items-center gap-2">&check; AI sentiment analysis on job completion</li>
+              <li class="flex items-center gap-2">&check; Automated Google Review SMS follow-ups</li>
+              <li class="flex items-center gap-2">&check; Boosts local 5-star Google Maps rankings</li>
+            </ul>
+          </article>
+
+          <article class="p-6 sm:p-8 rounded-3xl bg-stone-50 border border-stone-200 hover:border-teal-500/50 transition-all shadow-sm">
+            <div class="w-12 h-12 rounded-2xl bg-teal-600 text-white flex items-center justify-center mb-6 font-bold text-xl">11</div>
+            <h3 class="text-xl font-extrabold text-slate-900 mb-3">Two-Way QuickBooks & Xero Sync</h3>
+            <p class="text-slate-700 text-sm leading-relaxed mb-4">
+              Real-time, two-way accounting synchronization for customers, items, timesheets, and invoices without duplicate line items or broken address formatting.
+            </p>
+            <ul class="text-xs text-slate-600 space-y-2 font-medium">
+              <li class="flex items-center gap-2">&check; QuickBooks Online & Desktop support</li>
+              <li class="flex items-center gap-2">&check; Direct Xero accounting integration</li>
+              <li class="flex items-center gap-2">&check; Real-time sync with conflict prevention</li>
+            </ul>
+          </article>
+
+          <article class="p-6 sm:p-8 rounded-3xl bg-stone-50 border border-stone-200 hover:border-teal-500/50 transition-all shadow-sm">
+            <div class="w-12 h-12 rounded-2xl bg-teal-600 text-white flex items-center justify-center mb-6 font-bold text-xl">12</div>
             <h3 class="text-xl font-extrabold text-slate-900 mb-3">Multi-Regional Compliance (US, UK, CA, AU, EU)</h3>
             <p class="text-slate-700 text-sm leading-relaxed mb-4">
-              Pre-configured tax rules (Sales Tax, VAT, GST), date formats, currency symbols ($ USD, &pound; GBP, $ CAD, $ AUD, &euro; EUR), and labor regulations.
+              Pre-configured tax rules (Sales Tax, VAT, GST), date formats, currency symbols ($ USD, &pound; GBP, $ CAD, $ AUD, &euro; EUR), and offline PWA reliability.
             </p>
             <ul class="text-xs text-slate-600 space-y-2 font-medium">
               <li class="flex items-center gap-2">&check; Localized tax presets for 5 global regions</li>

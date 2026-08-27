@@ -1,22 +1,24 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import StaffManagement from "@/components/StaffManagement";
-import LiveMap from "@/components/LiveMap";
-import DashboardLayout from "@/components/DashboardLayout";
-import TrackerDownload from "@/components/TrackerDownload";
-import DashboardOverview from "@/components/DashboardOverview";
-import StaffPortal from "@/components/StaffPortal";
-import CrewManagement from "@/components/CrewManagement";
 import { useTerminology } from "@/hooks/useTerminology";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SEO from "@/components/SEO";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, lazy, Suspense } from "react";
 import PageSkeleton from "@/components/PageSkeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useLocation, Navigate } from "react-router-dom";
 import { APIProvider } from "@vis.gl/react-google-maps";
 
 import LandingPage from "./LandingPage";
+
+// Lazily load heavy logged-in dashboard components so unauthenticated visitors only load LandingPage
+const StaffManagement = lazy(() => import("@/components/StaffManagement"));
+const LiveMap = lazy(() => import("@/components/LiveMap"));
+const DashboardLayout = lazy(() => import("@/components/DashboardLayout"));
+const TrackerDownload = lazy(() => import("@/components/TrackerDownload"));
+const DashboardOverview = lazy(() => import("@/components/DashboardOverview"));
+const StaffPortal = lazy(() => import("@/components/StaffPortal"));
+const CrewManagement = lazy(() => import("@/components/CrewManagement"));
 
 const HomePage = () => {
   const { user, company, staffProfile, loading, signOut } = useAuth();

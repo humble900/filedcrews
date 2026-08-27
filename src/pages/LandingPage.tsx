@@ -443,27 +443,34 @@ export default function LandingPage() {
         {/* ──── NAVBAR ──── */}
         <header className="sticky top-0 z-50 border-b border-stone-100 bg-white/80 backdrop-blur-md">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-3.5">
-            <Link to="/" className="flex items-center gap-2 shrink-0">
-              <img src="/favicon.png" alt="FiledCrews" className="h-8 w-8 rounded-lg" />
+            <Link to="/" className="flex items-center gap-2 shrink-0" aria-label="FiledCrews Homepage">
+              <img src="/favicon.png" alt="FiledCrews" className="h-8 w-8 rounded-lg" width="32" height="32" />
               <span className="text-lg sm:text-xl font-bold tracking-tight text-slate-900">FiledCrews<span className="text-teal-600">.</span></span>
             </Link>
             <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600">
               <a href="#features" className="hover:text-slate-900 transition-colors">Features</a>
-              <a href="#compare" className="hover:text-slate-900 transition-colors">Why FiledCrews</a>
+              <a href="#compare" className="hover:text-slate-900 transition-colors">Compare</a>
+              <a href="#industries" className="hover:text-slate-900 transition-colors">Industries</a>
+              <a href="#pricing" className="hover:text-slate-900 transition-colors">Pricing</a>
+              <a href="#faq" className="hover:text-slate-900 transition-colors">FAQ</a>
             </nav>
-            <div className="flex items-center gap-2 sm:gap-3">
-              <Link to="/auth" className="hidden md:inline-flex">
-                <Button variant="ghost" size="sm" className="text-sm font-semibold text-slate-600 hover:text-slate-900 rounded-full px-4">Log In</Button>
+            <div className="hidden sm:flex items-center gap-3">
+              <Link to="/auth">
+                <Button variant="ghost" size="sm" className="text-slate-700 hover:text-slate-900">Log in</Button>
               </Link>
-              <Link to="/wizard" className="hidden md:inline-flex">
-                <Button size="sm" className="text-sm px-5 py-2.5 bg-slate-950 hover:bg-slate-800 text-white font-bold rounded-full shadow-md transition-all hover:scale-[1.02]">
-                  Start for free
+              <Link to="/wizard">
+                <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-white font-semibold shadow-sm" aria-label="Start Free Account">
+                  Get Started Free
                 </Button>
               </Link>
-              <Button variant="ghost" size="icon" className="md:hidden text-slate-600" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle menu">
-                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </Button>
             </div>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 text-slate-600 hover:text-slate-900"
+              aria-label="Toggle Navigation Menu"
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
           </div>
 
           <AnimatePresence>
@@ -486,6 +493,9 @@ export default function LandingPage() {
             )}
           </AnimatePresence>
         </header>
+
+        {/* ──── MAIN CONTENT LANDMARK ──── */}
+        <main id="main-content">
 
         {/* ──── HERO ──── */}
         <section className="relative overflow-hidden bg-gradient-to-b from-stone-100/90 via-slate-50 to-teal-50/40 pt-12 md:pt-18 pb-20 md:pb-28 rounded-b-[3.5rem] sm:rounded-b-[5rem] md:rounded-b-[6.5rem] shadow-[0_20px_50px_-15px_rgba(13,148,136,0.12)] border-b border-stone-200/80">
@@ -1016,11 +1026,11 @@ export default function LandingPage() {
 
                         {/* Real-time SMS bubble */}
                         <div className="rounded-2xl bg-white/[0.03] border border-white/5 p-4 space-y-3">
-                          <div className="flex justify-between text-[10px] text-slate-500 font-bold">
+                          <div className="flex justify-between text-[10px] text-teal-300 font-bold">
                             <span>Auto-SMS Outbox</span>
-                            <span>Just now</span>
+                            <span className="text-slate-300">Just now</span>
                           </div>
-                          <p className="text-xs text-slate-300 italic leading-relaxed">
+                          <p className="text-xs text-slate-200 italic leading-relaxed">
                             "Hello Premier Client, technician Marcus Vance is en route to your location. Expected arrival: 08:42 AM. View live technician location map here: fc.co/t/7a82f"
                           </p>
                         </div>
@@ -1073,11 +1083,11 @@ export default function LandingPage() {
                         {/* Verified details */}
                         <div className="grid grid-cols-2 gap-3 text-center">
                           <div className="bg-white/[0.02] border border-white/5 p-2 rounded-xl">
-                            <span className="text-[8px] font-bold text-slate-500 uppercase block mb-0.5">Clock In time</span>
+                            <span className="text-[8px] font-bold text-slate-300 uppercase block mb-0.5">Clock In time</span>
                             <span className="text-xs font-bold text-slate-200">08:30:12 AM</span>
                           </div>
                           <div className="bg-white/[0.02] border border-white/5 p-2 rounded-xl">
-                            <span className="text-[8px] font-bold text-slate-500 uppercase block mb-0.5">Biometrics Check</span>
+                            <span className="text-[8px] font-bold text-slate-300 uppercase block mb-0.5">Biometrics Check</span>
                             <span className="text-xs font-bold text-emerald-400 flex items-center justify-center gap-1">
                               <ShieldCheck className="h-3 w-3" /> Face Verified
                             </span>
@@ -1200,7 +1210,7 @@ export default function LandingPage() {
                   </p>
                   <div className="flex items-center gap-4 pt-2">
                     <Link to="/wizard">
-                      <Button size="sm" className="text-sm px-5 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-lg shadow-sm">
+                      <Button size="sm" className="text-sm px-5 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-lg shadow-sm" aria-label="Get Started Free with Dispatch">
                         Get Started Free <ArrowRight className="ml-1.5 h-4 w-4" />
                       </Button>
                     </Link>
@@ -1208,7 +1218,7 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div className="rounded-2xl overflow-hidden shadow-[0_20px_50px_-12px_rgba(15,118,110,0.12)] border border-stone-200/80 ring-1 ring-slate-900/5">
-                  <img src={heroDashboard} alt="Live GPS Map Dispatching — real-time crew tracking" className="w-full h-auto animate-fade-in" loading="lazy" />
+                  <img src={heroDashboard} alt="Live GPS Map Dispatching — real-time crew tracking" width="1200" height="750" className="w-full h-auto animate-fade-in" loading="lazy" decoding="async" />
                 </div>
               </motion.div>
 
@@ -1221,7 +1231,7 @@ export default function LandingPage() {
                 className="sticky top-[130px] z-20 bg-[#fef0f7] text-slate-900 rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 grid lg:grid-cols-[1.3fr_1fr] gap-8 lg:gap-10 items-center shadow-md border border-rose-100/30 mb-6"
               >
                 <div className="rounded-2xl overflow-hidden shadow-[0_20px_50px_-12px_rgba(15,118,110,0.12)] border border-stone-200/80 ring-1 ring-slate-900/5 order-2 lg:order-1">
-                  <img src={featureGeofence} alt="Smart Geofence Boundaries — automated site compliance" className="w-full h-auto animate-fade-in" loading="lazy" />
+                  <img src={featureGeofence} alt="Smart Geofence Boundaries — automated site compliance" width="1200" height="750" className="w-full h-auto animate-fade-in" loading="lazy" decoding="async" />
                 </div>
                 <div className="space-y-5 order-1 lg:order-2">
                   {/* Badge Style: Signal Pulse */}
@@ -1347,14 +1357,14 @@ export default function LandingPage() {
                   </div>
                   <div className="flex items-center gap-4 pt-1">
                     <Link to="/wizard">
-                      <Button size="sm" className="text-sm px-5 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-lg shadow-sm">
+                      <Button size="sm" className="text-sm px-5 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-lg shadow-sm" aria-label="Get Started Free with Invoicing">
                         Get Started Free <ArrowRight className="ml-1.5 h-4 w-4" />
                       </Button>
                     </Link>
                   </div>
                 </div>
                 <div className="rounded-2xl overflow-hidden shadow-[0_20px_50px_-12px_rgba(15,118,110,0.12)] border border-stone-200/80 ring-1 ring-slate-900/5">
-                  <img src={featureStaffList} alt="Staff and crew management — invoices and scheduling" className="w-full h-auto animate-fade-in" loading="lazy" />
+                  <img src={featureStaffList} alt="Staff and crew management — invoices and scheduling" width="1200" height="750" className="w-full h-auto animate-fade-in" loading="lazy" decoding="async" />
                 </div>
               </motion.div>
 
@@ -1395,9 +1405,9 @@ export default function LandingPage() {
                 </div>
 
                 <div className="space-y-5 order-1 lg:order-2">
-                  {/* Badge Style: Gradient Shimmer */}
+                  {/* Badge Style: Composited Pulse */}
                   <div className="inline-flex select-none">
-                    <span className="relative overflow-hidden text-[9px] font-extrabold uppercase tracking-[0.2em] text-white bg-gradient-to-r from-indigo-600 via-violet-500 to-indigo-600 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] px-4 py-1 rounded-full shadow-[0_2px_10px_rgba(99,102,241,0.35)]">
+                    <span className="relative overflow-hidden text-[9px] font-extrabold uppercase tracking-[0.2em] text-white bg-indigo-600 animate-pulse px-4 py-1 rounded-full shadow-[0_2px_10px_rgba(99,102,241,0.35)]">
                       Dynamic Dispatching
                     </span>
                   </div>
@@ -1405,12 +1415,12 @@ export default function LandingPage() {
                     Crew Shift &{" "}
                     <span className="italic text-indigo-600">Work Schedules</span>
                   </h3>
-                  <p className="text-slate-500 leading-relaxed">
+                  <p className="text-slate-700 leading-relaxed font-medium">
                     Ditch the whiteboard. Drag-and-drop shift blocks, check real-time crew availability, and notify teams instantly on the FiledCrews mobile app about shift updates.
                   </p>
                   <div className="flex items-center gap-4 pt-2">
                     <Link to="/wizard">
-                      <Button size="sm" className="text-sm px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm">
+                      <Button size="sm" className="text-sm px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm" aria-label="Get Started Free with Scheduling">
                         Get Started Free <ArrowRight className="ml-1.5 h-4 w-4" />
                       </Button>
                     </Link>
@@ -1715,17 +1725,17 @@ export default function LandingPage() {
                     A mobile app your <span className="italic text-teal-600">crew will actually use</span>
                   </h2>
                   <div className="flex flex-wrap items-center gap-3 pt-2">
-                    <a href="/downloads/FiledCrews.apk" download className="inline-flex items-center gap-1.5 text-sm font-semibold text-teal-600 hover:text-teal-700 transition-colors">
+                    <a href="/downloads/FiledCrews.apk" download className="inline-flex items-center gap-1.5 text-sm font-bold text-teal-800 hover:text-teal-900 transition-colors">
                       Download Android APK <ArrowRight className="h-4 w-4" />
                     </a>
-                    <Link to="/mobile-welcome" className="inline-flex items-center gap-1.5 text-sm font-bold text-slate-800 bg-teal-500/10 hover:bg-teal-500/20 px-3 py-1.5 rounded-xl border border-teal-500/30 transition-colors">
-                      <Smartphone className="h-4 w-4 text-teal-600" /> Interactive Mobile Guide
+                    <Link to="/mobile-welcome" className="inline-flex items-center gap-1.5 text-sm font-bold text-slate-800 bg-teal-500/10 hover:bg-teal-500/20 px-3 py-1.5 rounded-xl border border-teal-500/30 transition-colors" aria-label="Interactive Mobile App Guide">
+                      <Smartphone className="h-4 w-4 text-teal-700" /> Interactive Mobile Guide
                     </Link>
                   </div>
                 </div>
 
                 <div className="space-y-6">
-                  <p className="text-slate-500 text-base leading-relaxed">
+                  <p className="text-slate-700 text-base leading-relaxed font-medium">
                     The FiledCrews mobile app makes field operations completely seamless. Technicians can check in automatically via geofencing, log tasks, and verify their identity with quick biometric Face ID checks.
                   </p>
                   
@@ -1735,7 +1745,7 @@ export default function LandingPage() {
                       <div className="h-5 w-5 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[9px] font-extrabold">H</div>
                       <div className="h-5 w-5 rounded-full bg-teal-50 border-2 border-white flex items-center justify-center text-[9px] font-extrabold">F</div>
                     </div>
-                    <p className="text-[11px] text-slate-600 leading-normal font-medium">
+                    <p className="text-[11px] text-slate-700 leading-normal font-medium">
                       <strong className="text-slate-900">HVAC Solutions</strong> got a +45% lift in check-in logs accuracy by switching to geofenced shift checklists on day one.
                     </p>
                   </div>
@@ -1747,24 +1757,24 @@ export default function LandingPage() {
                 <div className="space-y-4 max-w-sm text-left">
                   <span className="text-xs font-bold text-teal-700 uppercase tracking-widest">Biometric Check-in</span>
                   <h3 className="text-xl md:text-2xl font-extrabold text-slate-900">Secure. Accountable. Zero friction.</h3>
-                  <p className="text-slate-600 text-sm leading-relaxed font-normal">Technicians get immediate access to assigned work orders, routes, and client histories. Office managers verify shifts automatically without tracking calls or manual corrections.</p>
+                  <p className="text-slate-700 text-sm leading-relaxed font-normal">Technicians get immediate access to assigned work orders, routes, and client histories. Office managers verify shifts automatically without tracking calls or manual corrections.</p>
                 </div>
                 
                 {/* Visual Stack Layout */}
                 <div className="relative w-full max-w-xs shrink-0">
                   <div className="rounded-3xl bg-[#faf8f5] text-slate-900 p-4 shadow-2xl border border-stone-200/50 relative">
                     <div className="flex items-center gap-3 rounded-full bg-stone-100 px-4 py-2 mb-3">
-                      <Search className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                      <div className="text-xs font-medium text-slate-700 truncate">FiledCrews Mobile</div>
+                      <Search className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                      <div className="text-xs font-bold text-slate-800 truncate">FiledCrews Mobile</div>
                       <span className="ml-auto inline-block h-3.5 w-px bg-stone-200" />
-                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-teal-50 text-teal-600 text-[8px] font-bold">O</div>
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-teal-50 text-teal-800 text-[8px] font-bold">O</div>
                     </div>
                     <div className="rounded-xl overflow-hidden border border-stone-200/60 bg-white">
-                      <img src={playStoreListing} alt="FiledCrews Mobile app on Google Play Store" className="w-full h-auto block" loading="lazy" />
+                      <img src={playStoreListing} alt="FiledCrews Mobile app on Google Play Store" width="400" height="600" className="w-full h-auto block" loading="lazy" decoding="async" />
                     </div>
-                    <div className="mt-3 flex items-center justify-between text-[11px] text-slate-500">
+                    <div className="mt-3 flex items-center justify-between text-[11px] text-slate-700 font-semibold">
                       <span>Android App Preview</span>
-                      <span className="text-teal-600 font-bold">Available Now</span>
+                      <span className="text-teal-800 font-extrabold">Available Now</span>
                     </div>
                   </div>
                 </div>
@@ -1927,6 +1937,7 @@ export default function LandingPage() {
             </motion.div>
           </div>
         </section>
+        </main>
 
         {/* ──── FOOTER WITH EMBEDDED FAQ ──── */}
         <footer className="relative border-t border-stone-200 bg-stone-50 overflow-hidden pt-12 pb-8">
@@ -1962,7 +1973,7 @@ export default function LandingPage() {
             {/* Footer Bottom Links & Copyright */}
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-2">
-                <img src="/favicon.png" alt="FiledCrews" className="h-6 w-6 rounded-md" />
+                <img src="/favicon.png" alt="FiledCrews" className="h-6 w-6 rounded-md" width="24" height="24" />
                 <span className="font-bold text-slate-900">FiledCrews</span>
               </div>
               <nav className="flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-2 text-sm text-slate-600 font-medium">
