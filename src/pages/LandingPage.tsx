@@ -544,7 +544,7 @@ export default function LandingPage() {
             >
               <Link to="/wizard" className="w-full sm:w-auto">
                 <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-9 py-6 bg-slate-950 hover:bg-slate-800 text-white font-extrabold shadow-xl shadow-slate-950/20 rounded-full transition-all hover:scale-[1.02] active:scale-[0.98]">
-                  Start for free <ArrowRight className="ml-2 h-5 w-5 text-teal-400" />
+                  Start for free
                 </Button>
               </Link>
             </motion.div>
