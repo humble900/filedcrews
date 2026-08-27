@@ -49,6 +49,13 @@ import {
   Rocket,
   Award,
   Headphones,
+  QrCode,
+  Package,
+  RefreshCw,
+  Star,
+  Bot,
+  Boxes,
+  PhoneCall,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -132,14 +139,18 @@ function FeatureCard({ f }: { f: { icon: React.ElementType; title: string; desc:
 
 /* ── Data ── */
 const features = [
-  { icon: Map, title: "Live Map Dispatching", desc: "Monitor every crew member in real time on an interactive GPS map with photo markers and live status indicators." },
-  { icon: Target, title: "Geofence Boundaries", desc: "Draw virtual perimeters around job sites. Automatic entry and exit logging triggers instant notifications." },
-  { icon: ScanFace, title: "Face ID Gatekeeper", desc: "Verify identity at every check-in with AI facial recognition. Ensure the right person clocks in at the right site." },
-  { icon: Bell, title: "Push Notifications", desc: "Receive real-time alerts for check-ins, check-outs, boundary crossings, and shift exceptions as they happen." },
-  { icon: ClipboardList, title: "Jobs & Scheduling", desc: "Create projects, assign tasks to crews, and track shift hours through an integrated scheduling calendar." },
-  { icon: Building2, title: "CRM & Asset Tracing", desc: "Maintain client directories and trace the full service history of every piece of site-installed equipment." },
-  { icon: Receipt, title: "Invoices & Billing", desc: "Generate invoices linked to jobs and projects. Track payments, outstanding balances, and collection status." },
-  { icon: ShieldAlert, title: "Safety & Compliance", desc: "Digital safety audits, incident logs, and compliance checklists to keep your crew and operations protected." },
+  { icon: Map, title: "Live GPS Map Dispatching", desc: "Monitor technicians in real time on an interactive live map with vehicle speed, traffic overlays, and nearest-tech dispatch." },
+  { icon: Target, title: "Geofence Time Audits", desc: "Draw 50m–500m virtual perimeters around job sites. Automatic arrival and departure logging completely eliminates timesheet fraud." },
+  { icon: ScanFace, title: "Biometric Face ID Verification", desc: "Require quick selfie check-ins at shift start. AI facial recognition matches the technician's profile with GPS audit stamps." },
+  { icon: QrCode, title: "Equipment & Asset History", desc: "Track customer HVAC units, water heaters, and panels by serial number. Scan QR & barcodes on-site for instant service history." },
+  { icon: Package, title: "Inventory & Purchase Orders", desc: "Track truck vs. warehouse parts in real time. Create supplier purchase orders and receive automated low-stock reorder alerts." },
+  { icon: RefreshCw, title: "Service Agreements & Clubs", desc: "Build recurring revenue with maintenance contracts, automated recurring credit card billing, and pre-scheduled seasonal tune-ups." },
+  { icon: Calendar, title: "Online Booking & Client Portal", desc: "Embed an instant web booking calendar on your site and give homeowners a self-service portal to approve quotes and pay invoices." },
+  { icon: Bot, title: "24/7 AI Voice Phone Receptionist", desc: "Autonomous AI receptionist answers after-hours emergency calls, schedules leads, and converts technician voice memos into quotes." },
+  { icon: Star, title: "Automated Google Review Engine", desc: "AI sentiment analysis triggers automated Google Review SMS requests upon job completion to skyrocket your local 5-star ranking." },
+  { icon: FileText, title: "Good/Better/Best Proposals", desc: "Send tiered estimates with instant SMS/Email client e-signatures, converting directly to work orders and Stripe invoices." },
+  { icon: DollarSign, title: "Real-Time Job Costing & Margins", desc: "Track itemized labor, materials, equipment rentals, and subcontractors with live gross profit margin alerts." },
+  { icon: Receipt, title: "Two-Way QuickBooks & Xero Sync", desc: "Real-time bi-directional accounting synchronization for customers, items, timesheets, and invoices with zero duplication." },
 ];
 
 const outcomes = [
@@ -551,6 +562,34 @@ export default function LandingPage() {
                   Start for free <ArrowRight className="ml-2 h-5 w-5 text-teal-400" />
                 </Button>
               </Link>
+            </motion.div>
+
+            {/* Core Capability Pills */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.35 }}
+              className="flex flex-wrap justify-center items-center gap-2 max-w-4xl mx-auto pt-4"
+            >
+              {[
+                { label: "Live GPS Dispatching", icon: Map },
+                { label: "Geofence Timecards", icon: Target },
+                { label: "Biometric Face ID", icon: ScanFace },
+                { label: "Equipment QR Tracking", icon: QrCode },
+                { label: "Inventory & POs", icon: Package },
+                { label: "Service Memberships", icon: RefreshCw },
+                { label: "Client Web Booking", icon: Calendar },
+                { label: "24/7 AI Phone Voice", icon: Bot },
+                { label: "QuickBooks & Xero Sync", icon: Receipt },
+              ].map((pill, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/80 border border-stone-200/80 text-slate-700 shadow-sm backdrop-blur-sm hover:border-teal-500/50 hover:text-teal-900 transition-colors"
+                >
+                  <pill.icon className="h-3.5 w-3.5 text-teal-600" />
+                  {pill.label}
+                </span>
+              ))}
             </motion.div>
           </div>
 
@@ -1531,16 +1570,196 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ──── ADVANCED FSM OPERATIONS SHOWCASE ──── */}
+        <section className="py-16 md:py-24 bg-white border-b border-stone-100">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+            <div className="text-center max-w-3xl mx-auto space-y-3 mb-14">
+              <span className="text-xs font-extrabold text-teal-700 uppercase tracking-widest bg-teal-50 border border-teal-200/80 px-3.5 py-1 rounded-full">
+                Tier 2 Enterprise Operations
+              </span>
+              <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
+                Built for serious contracting businesses
+              </h2>
+              <p className="text-slate-600 text-base md:text-lg leading-relaxed">
+                Beyond GPS and clock-ins: manage your inventory, customer equipment, maintenance agreements, and after-hours emergency calls on one unified platform.
+              </p>
+            </div>
+
+            {/* 6 Advanced Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              
+              {/* Card 1: Equipment QR Tracking */}
+              <div className="rounded-3xl bg-stone-50 border border-stone-200/80 p-6 sm:p-8 space-y-5 hover:border-teal-500/40 hover:shadow-xl transition-all">
+                <div className="flex items-center justify-between">
+                  <div className="h-12 w-12 rounded-2xl bg-teal-600 text-white flex items-center justify-center shadow-md shadow-teal-600/20">
+                    <QrCode className="h-6 w-6" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-teal-800 bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-full">Mobile QR & Barcode</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">Equipment & Asset History</h3>
+                  <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+                    Track customer AC units, water heaters, and electrical panels by serial number. Scan QR codes on-site for instant maintenance history and warranty status.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-white border border-stone-200 p-4 space-y-2 text-xs">
+                  <div className="flex justify-between font-bold text-slate-800">
+                    <span>Carrier 4-Ton Condenser</span>
+                    <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">In Warranty</span>
+                  </div>
+                  <div className="text-[11px] text-slate-500">Serial: <code className="text-slate-800 font-mono">CR-99201-B</code> • Installed: May 2024</div>
+                  <div className="text-[11px] text-teal-800 font-semibold pt-1 flex items-center gap-1">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-teal-600" /> 3 service records attached
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Inventory & Purchase Orders */}
+              <div className="rounded-3xl bg-stone-50 border border-stone-200/80 p-6 sm:p-8 space-y-5 hover:border-teal-500/40 hover:shadow-xl transition-all">
+                <div className="flex items-center justify-between">
+                  <div className="h-12 w-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/20">
+                    <Package className="h-6 w-6" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-800 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-full">Van & Warehouse</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">Inventory & Purchase Orders</h3>
+                  <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+                    Track parts stock in real time across every service truck and central warehouse. Issue supplier purchase orders with automated low-stock warnings.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-white border border-stone-200 p-4 space-y-2 text-xs">
+                  <div className="flex justify-between font-bold text-slate-800">
+                    <span>Truck #104 Van Stock</span>
+                    <span className="text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded">Live Sync</span>
+                  </div>
+                  <div className="flex justify-between text-[11px] text-slate-600">
+                    <span>45/50µF Run Capacitors</span>
+                    <span className="font-bold text-slate-900">3 in truck</span>
+                  </div>
+                  <div className="text-[11px] text-amber-800 font-semibold pt-1 flex items-center gap-1">
+                    <span>PO #8491: Ferguson Supply (En Route)</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Service Agreements & Memberships */}
+              <div className="rounded-3xl bg-stone-50 border border-stone-200/80 p-6 sm:p-8 space-y-5 hover:border-teal-500/40 hover:shadow-xl transition-all">
+                <div className="flex items-center justify-between">
+                  <div className="h-12 w-12 rounded-2xl bg-amber-600 text-white flex items-center justify-center shadow-md shadow-amber-600/20">
+                    <RefreshCw className="h-6 w-6" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">Recurring Revenue</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">Service Club Memberships</h3>
+                  <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+                    Turn one-off service calls into predictable recurring revenue. Automate monthly credit card billing, seasonal inspection reminders, and member discounts.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-white border border-stone-200 p-4 space-y-2 text-xs">
+                  <div className="flex justify-between font-bold text-slate-800">
+                    <span>Gold Comfort HVAC Club</span>
+                    <span className="text-amber-800 font-bold">$29/mo</span>
+                  </div>
+                  <div className="text-[11px] text-slate-600">Auto-charges on 1st of month • 15% parts discount</div>
+                  <div className="text-[11px] text-emerald-800 font-semibold pt-1 flex items-center gap-1">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> Spring AC Tune-Up: Auto-Scheduled
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 4: 24/7 AI Receptionist & Voice */}
+              <div className="rounded-3xl bg-stone-50 border border-stone-200/80 p-6 sm:p-8 space-y-5 hover:border-teal-500/40 hover:shadow-xl transition-all">
+                <div className="flex items-center justify-between">
+                  <div className="h-12 w-12 rounded-2xl bg-rose-600 text-white flex items-center justify-center shadow-md shadow-rose-600/20">
+                    <Bot className="h-6 w-6" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-rose-800 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-full">24/7 AI Phone Agent</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">AI Receptionist & Voice Copilot</h3>
+                  <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+                    Never lose an after-hours emergency job. The AI phone receptionist answers calls, captures job details, and transcribes field technician voice notes into quotes.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-white border border-stone-200 p-4 space-y-2 text-xs">
+                  <div className="flex justify-between font-bold text-slate-800">
+                    <span>After-Hours Emergency Call</span>
+                    <span className="text-rose-700 bg-rose-50 px-2 py-0.5 rounded">11:42 PM</span>
+                  </div>
+                  <div className="text-[11px] text-slate-600 italic">"Pipe burst in basement, water shut off."</div>
+                  <div className="text-[11px] text-teal-800 font-semibold pt-1">
+                    ✓ Booked slot 08:00 AM & sent client SMS
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 5: Self-Service Customer Portal */}
+              <div className="rounded-3xl bg-stone-50 border border-stone-200/80 p-6 sm:p-8 space-y-5 hover:border-teal-500/40 hover:shadow-xl transition-all">
+                <div className="flex items-center justify-between">
+                  <div className="h-12 w-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/20">
+                    <Calendar className="h-6 w-6" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">Online Booking Widget</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">Customer Portal & Online Booking</h3>
+                  <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+                    Embed a clean booking calendar on your website. Give homeowners a dedicated portal to view technician ETAs, approve quotes, and download receipts.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-white border border-stone-200 p-4 space-y-2 text-xs">
+                  <div className="flex justify-between font-bold text-slate-800">
+                    <span>Homeowner Portal (/portal)</span>
+                    <span className="text-emerald-700 font-semibold">Self-Service</span>
+                  </div>
+                  <div className="text-[11px] text-slate-600">Online quote signed via SMS • Instant Stripe card pay</div>
+                  <div className="text-[11px] text-slate-800 font-semibold pt-1">
+                    ✓ Live technician GPS track link provided
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 6: AI Automated Google Reviews */}
+              <div className="rounded-3xl bg-stone-50 border border-stone-200/80 p-6 sm:p-8 space-y-5 hover:border-teal-500/40 hover:shadow-xl transition-all">
+                <div className="flex items-center justify-between">
+                  <div className="h-12 w-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20">
+                    <Star className="h-6 w-6 fill-white" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">Reputation Booster</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">Automated Google Reviews</h3>
+                  <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+                    AI analyzes job completion notes for positive sentiment and triggers automated review SMS requests to delighted clients, boosting your local Google Maps ranking.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-white border border-stone-200 p-4 space-y-2 text-xs">
+                  <div className="flex justify-between font-bold text-slate-800">
+                    <span>Job Complete: WO-9204</span>
+                    <span className="text-amber-700 font-bold">⭐⭐⭐⭐⭐</span>
+                  </div>
+                  <div className="text-[11px] text-slate-600">Sentiment: 98% Positive • SMS sent 10 mins post-job</div>
+                  <div className="text-[11px] text-emerald-800 font-semibold pt-1">
+                    ✓ +18 new 5-star Google reviews this month
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
         {/* ──── COMPETITOR COMPARISON GRID (GEO/AEO Focus) ──── */}
         <section id="compare" className="py-10 md:py-16 bg-white border-b border-stone-100">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div className="text-center max-w-3xl mx-auto space-y-4 mb-8 md:mb-10">
-
               <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900">
                 How we compare to legacy software.
               </h2>
               <p className="text-slate-500 text-lg leading-relaxed">
-                Most Field Service Management tools charge hefty per-user subscription fees. FiledCrews offers enterprise capabilities completely free.
+                Most Field Service Management tools charge hefty per-user subscription fees ($150–$450/month). FiledCrews provides a full-scale Tier 1 + Tier 2 operating system at $0 core cost.
               </p>
             </div>
 
@@ -1550,19 +1769,23 @@ export default function LandingPage() {
                   <tr className="border-b border-stone-100 bg-stone-50/50">
                     <th className="p-5 text-sm font-bold text-slate-900">Feature Capabilities</th>
                     <th className="p-5 text-sm font-bold text-teal-700 bg-teal-50/30">FiledCrews FSM</th>
-                    <th className="p-5 text-sm font-medium text-slate-500">Legacy Paid FSM</th>
-                    <th className="p-5 text-sm font-medium text-slate-500">Paper & Spreadsheets</th>
+                    <th className="p-5 text-sm font-medium text-slate-700">Legacy Paid FSM (Jobber/ServiceTitan)</th>
+                    <th className="p-5 text-sm font-medium text-slate-700">Paper & Spreadsheets</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100 text-sm">
                   {[
-                    { f: "Pricing Model", c1: "$0 Free Forever", c2: "$150+/mo per user", c3: "Free (but high time cost)" },
-                    { f: "Live GPS Tracking Map", c1: "Included (Real-time updates)", c2: "Paid add-on", c3: "None" },
-                    { f: "Geofenced Check-in Audits", c1: "Automated (Map boundary)", c2: "Basic tracking", c3: "Manual entries" },
-                    { f: "Biometric Face ID verification", c1: "Included (AI face match)", c2: "Rarely supported", c3: "None" },
-                    { f: "Custom Cost categories Ledger", c1: "Included (Budget vs Actual)", c2: "Requires integrations", c3: "Manual formulas" },
-                    { f: "Invoice & Billing dispatch", c1: "Direct draft creation", c2: "Paid subscription", c3: "Manual creation" },
-                    { f: "Multi-Country Tax support", c1: "US, UK, CA, AU & EU presets", c2: "Single region focus", c3: "Custom setup needed" },
+                    { f: "Pricing Model", c1: "$0 Free Forever Core", c2: "$150–$450/mo per technician", c3: "Free (high labor leak)" },
+                    { f: "Live GPS Tracking Map", c1: "Included (Real-time speed & traffic)", c2: "Paid add-on / Tier lock", c3: "None" },
+                    { f: "Geofenced Check-in Audits", c1: "Automated (50m–500m boundaries)", c2: "Basic tracking", c3: "Manual entries" },
+                    { f: "Biometric Face ID Verification", c1: "Included (AI face match)", c2: "Rarely supported", c3: "None" },
+                    { f: "Equipment QR & Asset Tracing", c1: "Included (Serial # & repair history)", c2: "High-tier plan only", c3: "Paper folders" },
+                    { f: "Truck & Warehouse Inventory", c1: "Included (Stock & Purchase Orders)", c2: "$300+/mo add-on", c3: "Manual count" },
+                    { f: "Recurring Service Agreements", c1: "Included (Auto-billing & tune-ups)", c2: "High-tier plan only", c3: "Manual calendar" },
+                    { f: "24/7 AI Phone Voice Receptionist", c1: "Included AI Copilot Integration", c2: "Not available", c3: "Voicemail / Missed calls" },
+                    { f: "Customer Online Booking & Portal", c1: "Included (/portal & /booking)", c2: "Paid tier required", c3: "None" },
+                    { f: "Automated Google Reviews", c1: "Included (AI Sentiment trigger)", c2: "Requires 3rd party tool", c3: "Manual ask" },
+                    { f: "QuickBooks & Xero Two-Way Sync", c1: "Included (Clean sync & no duplicates)", c2: "Included (often buggy)", c3: "Manual typing" },
                   ].map((row, idx) => (
                     <tr key={idx} className="hover:bg-stone-50/40 transition-colors">
                       <td className="p-5 font-semibold text-slate-900">{row.f}</td>
@@ -1817,8 +2040,8 @@ export default function LandingPage() {
                   </ul>
                 </div>
                 <Link to="/wizard?plan=free_trial">
-                  <Button className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs h-11 rounded-xl flex items-center justify-center gap-1.5 shadow-sm">
-                    Get Started Free <ArrowRight className="h-4 w-4" />
+                  <Button className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs h-11 rounded-xl flex items-center justify-center gap-1.5 shadow-sm" aria-label="Start Free 14-Day Trial">
+                    Start Free Trial <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
               </div>
@@ -1827,20 +2050,20 @@ export default function LandingPage() {
               <div className="bg-white rounded-3xl border-2 border-amber-500/40 p-6 sm:p-7 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6">
                 <div className="space-y-4">
                   <div>
-                    <span className="text-[10px] font-extrabold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full uppercase">10 Seats</span>
+                    <span className="text-[10px] font-extrabold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full uppercase">10 Seats</span>
                     <h3 className="text-xl font-black text-slate-900 mt-1">Growth</h3>
                     <div className="text-3xl font-black text-slate-900 mt-2">$495 <span className="text-xs text-slate-600 font-medium">/ mo</span></div>
                     <p className="text-xs text-slate-600 font-medium mt-2 leading-relaxed">Supercharge your business with 10 total seats, AI dispatching, & safety hub.</p>
                   </div>
                   <ul className="text-xs text-slate-700 space-y-2.5 pt-4 border-t border-stone-100 font-medium">
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" /><span><strong>3 Office Staff Seats</strong></span></li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" /><span><strong>7 Field Crew Members</strong></span></li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" /><span>AI Dispatcher & Mila Copilot</span></li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" /><span>Safety Hub & Compliance</span></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" /><span><strong>3 Office Staff Seats</strong></span></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" /><span><strong>7 Field Crew Members</strong></span></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" /><span>AI Dispatcher & Mila Copilot</span></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" /><span>Safety Hub & Compliance</span></li>
                   </ul>
                 </div>
                 <Link to="/wizard?plan=growth">
-                  <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs h-11 rounded-xl flex items-center justify-center gap-1.5 shadow-sm" aria-label="Get started with Growth Plan">
+                  <Button className="w-full bg-amber-800 hover:bg-amber-900 text-white font-extrabold text-xs h-11 rounded-xl flex items-center justify-center gap-1.5 shadow-sm" aria-label="Get started with Growth Plan for 10 seats">
                     Get Started with Growth <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
@@ -1872,8 +2095,8 @@ export default function LandingPage() {
                   </ul>
                 </div>
                 <Link to="/wizard?plan=founding_partner">
-                  <Button className="w-full bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white font-extrabold text-xs h-11 rounded-xl shadow-lg shadow-purple-600/20 flex items-center justify-center gap-1.5" aria-label="Get started with Founding Partner VIP Charter">
-                    Get Started (VIP Charter) <ArrowRight className="h-4 w-4" />
+                  <Button className="w-full bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white font-extrabold text-xs h-11 rounded-xl shadow-lg shadow-purple-600/20 flex items-center justify-center gap-1.5" aria-label="Join Founding Partner VIP Charter with 20 seats">
+                    Join VIP Charter <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
               </div>
@@ -1894,8 +2117,8 @@ export default function LandingPage() {
                   </ul>
                 </div>
                 <Link to="/wizard?plan=enterprise">
-                  <Button className="w-full bg-cyan-700 hover:bg-cyan-800 text-white font-extrabold text-xs h-11 rounded-xl flex items-center justify-center gap-1.5 shadow-sm" aria-label="Contact Sales for Enterprise plan">
-                    Contact Sales <ArrowRight className="h-4 w-4" />
+                  <Button className="w-full bg-cyan-800 hover:bg-cyan-900 text-white font-extrabold text-xs h-11 rounded-xl flex items-center justify-center gap-1.5 shadow-sm" aria-label="Contact Sales for Custom Enterprise Deployment">
+                    Contact Enterprise Sales <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
               </div>
