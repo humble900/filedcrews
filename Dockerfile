@@ -2,6 +2,15 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
+# Build ARGs for Vite environment variables
+ARG VITE_SUPABASE_URL=https://jxvifnggjjmyjefudjuf.supabase.co
+ARG VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_J1ALskQkLpRdnZM2JHVOcQ_k4IVNp-w
+ARG VITE_SUPABASE_PROJECT_ID=jxvifnggjjmyjefudjuf
+
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ENV VITE_SUPABASE_PUBLISHABLE_KEY=$VITE_SUPABASE_PUBLISHABLE_KEY
+ENV VITE_SUPABASE_PROJECT_ID=$VITE_SUPABASE_PROJECT_ID
+
 # Install deps first (cache layer)
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts

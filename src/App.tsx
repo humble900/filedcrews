@@ -79,8 +79,8 @@ const AITermsPage = lazyWithRetry(() => import("./pages/AITermsPage"));
 const AIAgentPage = lazyWithRetry(() => import("./pages/AIAgentPage"));
 const ActionInboxPage = lazyWithRetry(() => import("./pages/ActionInboxPage"));
 const KnowledgeBasePage = lazyWithRetry(() => import("./pages/KnowledgeBasePage"));
-const MobileWelcomePage = lazyWithRetry(() => import("./pages/MobileWelcomePage"));
 const FeaturesPage = lazyWithRetry(() => import("./pages/FeaturesPage"));
+const IndustriesPage = lazyWithRetry(() => import("./pages/IndustriesPage"));
 
 
 
@@ -132,6 +132,7 @@ const App = () => (
               <Route path="/support" element={<Support />} />
               <Route path="/about" element={<About />} />
               <Route path="/features" element={<FeaturesPage />} />
+              <Route path="/industries" element={<IndustriesPage />} />
               <Route path="/account-deletion" element={<AccountDeletion />} />
               <Route path="/superadmin/login" element={<SuperadminLogin />} />
               <Route path="/superadmin" element={<SuperadminDashboard />} />

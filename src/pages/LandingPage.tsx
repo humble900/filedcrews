@@ -445,10 +445,9 @@ export default function LandingPage() {
             </Link>
             <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600">
               <Link to="/features" className="hover:text-slate-900 transition-colors">Features</Link>
+              <Link to="/industries" className="hover:text-slate-900 transition-colors">Industries</Link>
               <a href="#compare" className="hover:text-slate-900 transition-colors">Compare</a>
-              <a href="#industries" className="hover:text-slate-900 transition-colors">Industries</a>
               <a href="#pricing" className="hover:text-slate-900 transition-colors">Pricing</a>
-              <a href="#faq" className="hover:text-slate-900 transition-colors">FAQ</a>
             </nav>
             <div className="hidden sm:flex items-center gap-3">
               <Link to="/auth">
@@ -474,6 +473,7 @@ export default function LandingPage() {
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="md:hidden overflow-hidden border-t border-stone-100 bg-white">
                 <nav className="flex flex-col px-4 py-3 gap-1">
                   <Link to="/features" className="py-2.5 px-3 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-stone-50 transition-colors" onClick={() => setMobileMenuOpen(false)}>Features</Link>
+                  <Link to="/industries" className="py-2.5 px-3 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-stone-50 transition-colors" onClick={() => setMobileMenuOpen(false)}>Industries</Link>
                   <a href="#compare" className="py-2.5 px-3 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-stone-50 transition-colors" onClick={() => setMobileMenuOpen(false)}>Why FiledCrews</a>
                   <a href="#pricing" className="py-2.5 px-3 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-stone-50 transition-colors" onClick={() => setMobileMenuOpen(false)}>Pricing</a>
                   <div className="flex gap-2 pt-2 pb-1">
@@ -568,6 +568,11 @@ export default function LandingPage() {
               <motion.p variants={fadeUp} custom={1} className="text-slate-500 max-w-lg mx-auto">
                 Whether you manage a 5-person crew or a 500-person operation, FiledCrews adapts to your trade.
               </motion.p>
+              <motion.div variants={fadeUp} custom={2} className="pt-2">
+                <Link to="/industries" className="inline-flex items-center text-xs sm:text-sm font-bold text-teal-700 hover:text-teal-800 transition-colors">
+                  Explore deep trade workflows & specs &rarr;
+                </Link>
+              </motion.div>
             </motion.div>
           </div>
 
