@@ -17,6 +17,7 @@ export default defineConfig(({ mode }) => ({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: null,
       includeAssets: ['favicon.ico', 'favicon.png', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
         name: 'FiledCrews Staff Coordinator & Mobile Dispatch',
