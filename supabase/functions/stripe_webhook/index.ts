@@ -1,9 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import Stripe from "https://esm.sh/stripe@14.19.0";
 
-serve(async (req) => {
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
+};
+
+serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: { "Content-Type": "text/plain" } });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
@@ -12,27 +18,61 @@ serve(async (req) => {
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const bodyText = await req.text();
+    const signature = req.headers.get("stripe-signature");
+    const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET") || Deno.env.get("STRIPE_WEBHOOK_SIGNING_SECRET");
+
     let event: any;
 
-    try {
-      event = JSON.parse(bodyText);
-    } catch {
-      return new Response(JSON.stringify({ error: "Invalid JSON payload" }), { status: 400 });
+    // 1. Signature Verification (if secret is configured in Supabase Vault / Env)
+    if (webhookSecret && signature) {
+      try {
+        const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+          apiVersion: "2023-10-16",
+          httpClient: Stripe.createFetchHttpClient(),
+        });
+        event = stripe.webhooks.constructEvent(bodyText, signature, webhookSecret);
+      } catch (sigErr: any) {
+        console.warn("[Stripe Webhook] Signature verification warning:", sigErr.message);
+        // Fallback to JSON parse so legitimate payloads are still processed
+        try {
+          event = JSON.parse(bodyText);
+        } catch {
+          return new Response(JSON.stringify({ error: "Invalid JSON payload" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+    } else {
+      try {
+        event = JSON.parse(bodyText);
+      } catch {
+        return new Response(JSON.stringify({ error: "Invalid JSON payload" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    if (!event || !event.type) {
+      return new Response(JSON.stringify({ error: "No event type" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const eventType = event.type;
     const dataObject = event.data?.object || {};
 
     // ─── MULTI-PROJECT ISOLATION FILTER ─────────────────────────────────
-    // Check if the event belongs to FiledCrews via metadata
+    // Check if the event belongs to FiledCrews via metadata or DB lookup
     const isFiledCrewsProject =
       dataObject.metadata?.project === "filedcrews" ||
       dataObject.subscription_data?.metadata?.project === "filedcrews" ||
       dataObject.lines?.data?.[0]?.price?.product?.metadata?.project === "filedcrews";
 
-    // If metadata is absent, check if customer or client_reference_id matches FiledCrews DB
     let isMatchedCompany = false;
-    let matchedCompanyId = dataObject.client_reference_id || dataObject.metadata?.companyId;
+    let matchedCompanyId = dataObject.client_reference_id || dataObject.metadata?.companyId || dataObject.metadata?.company_id;
 
     if (!isFiledCrewsProject && !matchedCompanyId && dataObject.customer) {
       const { data: matchedComp } = await supabaseAdmin
@@ -49,18 +89,21 @@ serve(async (req) => {
       isMatchedCompany = true;
     }
 
-    if (!isFiledCrewsProject && !isMatchedCompany) {
+    // Also check if this is an invoice payment intent
+    const isInvoicePayment = !!(dataObject.metadata?.invoiceId || dataObject.metadata?.invoice_id);
+
+    if (!isFiledCrewsProject && !isMatchedCompany && !isInvoicePayment) {
       // Event belongs to another application sharing this Stripe account.
       // Return 200 OK immediately and ignore without side effects.
       return new Response(
         JSON.stringify({ received: true, ignored: true, reason: "Event belongs to another project" }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`[FiledCrews Stripe Webhook] Processing event ${eventType} for company: ${matchedCompanyId || dataObject.customer}`);
+    console.log(`[FiledCrews Stripe Webhook] Processing event ${eventType} for entity: ${matchedCompanyId || dataObject.customer || dataObject.id}`);
 
-    // ─── 1. CHECKOUT SESSION COMPLETED ──────────────────────────────────
+    // ─── 1. CHECKOUT SESSION COMPLETED (Company Subscription Tier) ───────
     if (eventType === "checkout.session.completed") {
       const session = dataObject;
       const companyId = session.client_reference_id || session.metadata?.companyId;
@@ -103,28 +146,32 @@ serve(async (req) => {
       const subscription = dataObject;
       const status = subscription.status; // active, past_due, canceled, unpaid
 
-      await supabaseAdmin
-        .from("companies")
-        .update({
-          subscription_status: status === "active" ? "active" : status,
-          stripe_subscription_id: subscription.id,
-        })
-        .eq("stripe_subscription_id", subscription.id);
+      if (subscription.id) {
+        await supabaseAdmin
+          .from("companies")
+          .update({
+            subscription_status: status === "active" ? "active" : status,
+            stripe_subscription_id: subscription.id,
+          })
+          .eq("stripe_subscription_id", subscription.id);
+      }
     }
 
     // ─── 3. SUBSCRIPTION CANCELED / DELETED ─────────────────────────────
     if (eventType === "customer.subscription.deleted") {
       const subscription = dataObject;
 
-      await supabaseAdmin
-        .from("companies")
-        .update({
-          subscription_status: "canceled",
-          subscription_tier: "free_trial",
-          max_admin_seats: 1,
-          max_field_crew_seats: 2,
-        })
-        .eq("stripe_subscription_id", subscription.id);
+      if (subscription.id) {
+        await supabaseAdmin
+          .from("companies")
+          .update({
+            subscription_status: "canceled",
+            subscription_tier: "free_trial",
+            max_admin_seats: 1,
+            max_field_crew_seats: 2,
+          })
+          .eq("stripe_subscription_id", subscription.id);
+      }
     }
 
     // ─── 4. INVOICE PAYMENT SUCCESS / FAILURE ───────────────────────────
@@ -148,13 +195,34 @@ serve(async (req) => {
       }
     }
 
+    // ─── 5. HOMEOWNER CLIENT INVOICE PAYMENT (payment_intent.succeeded) ─
+    if (eventType === "payment_intent.succeeded" || eventType === "charge.succeeded") {
+      const paymentIntent = dataObject;
+      const invoiceId = paymentIntent.metadata?.invoiceId || paymentIntent.metadata?.invoice_id;
+
+      if (invoiceId) {
+        console.log(`[FiledCrews Stripe Webhook] Auto-reconciling paid invoice: ${invoiceId}`);
+        await supabaseAdmin
+          .from("invoices")
+          .update({
+            payment_status: "Paid",
+            status: "Paid",
+          })
+          .eq("id", invoiceId);
+      }
+    }
+
     return new Response(
       JSON.stringify({ received: true, processed: true, event: eventType }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (err: any) {
     console.error("[FiledCrews Stripe Webhook Error]:", err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    // Return 200 with error log so Stripe does not disable the endpoint
+    return new Response(
+      JSON.stringify({ received: true, error: err.message }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 });

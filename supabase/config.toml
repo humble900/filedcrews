@@ -1,1 +1,16 @@
-project_id = "fflgoyftwtlzkekrrizc"
+project_id = "jxvifnggjjmyjefudjuf"
+
+[functions.stripe_webhook]
+verify_jwt = false
+
+[functions.agent_webhook_router]
+verify_jwt = false
+
+[functions.health]
+verify_jwt = false
+
+[functions.get-maps-key]
+verify_jwt = false
+
+[functions.create-payment-intent]
+verify_jwt = false
