@@ -1,211 +1,126 @@
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import {
-  Map,
-  Target,
-  ScanFace,
-  QrCode,
-  Package,
-  RefreshCw,
-  Calendar,
-  Bot,
-  Star,
-  FileText,
-  DollarSign,
-  Receipt,
-  CheckCircle2,
-  ArrowRight,
-  Shield,
+  MapPin,
   Clock,
-  Smartphone,
-  Layers,
-  Sparkles,
-  Users,
-  Zap,
+  Scan,
+  Calendar,
+  FileCheck,
+  CreditCard,
+  QrCode,
+  Box,
+  Repeat,
+  Phone,
+  Globe,
+  Star,
+  TrendingUp,
+  RefreshCw,
+  ArrowRight,
+  ShieldCheck,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SEO from "@/components/SEO";
 
-interface FeatureCard {
-  icon: typeof Map;
+interface FeatureDetail {
+  icon: typeof MapPin;
   title: string;
-  badge: string;
-  badgeColor: string;
   description: string;
-  points: string[];
+  specs: string[];
 }
 
-const tier1Features: FeatureCard[] = [
+const dispatchFeatures: FeatureDetail[] = [
   {
-    icon: Map,
-    title: "Live GPS Map Dispatching",
-    badge: "Real-Time Tracking",
-    badgeColor: "bg-teal-50 text-teal-800 border-teal-200",
-    description: "Track your entire fleet and field workforce in real time on an interactive live map with vehicle speed, traffic overlays, and nearest-technician dispatch.",
-    points: [
-      "Live vehicle location and route playback",
-      "Instant nearest-tech routing to emergency calls",
-      "Street, satellite, and live traffic overlays",
-    ],
+    icon: MapPin,
+    title: "Live GPS Fleet & Tech Dispatching",
+    description: "Monitor your entire workforce on an interactive live map with real-time speed tracking, traffic overlays, and instant nearest-technician dispatch to emergency service calls.",
+    specs: ["Sub-second location refreshes", "Historical route breadcrumbs", "Nearest technician routing algorithm"],
   },
   {
-    icon: Target,
-    title: "Geofence Automated Timecards",
-    badge: "Zero Timesheet Fraud",
-    badgeColor: "bg-emerald-50 text-emerald-800 border-emerald-200",
-    description: "Draw 50m–500m virtual boundaries around job sites. Automatically log arrival and departure timestamps with GPS audit verification.",
-    points: [
-      "Automated hands-free clock-in and clock-out",
-      "Complete elimination of timesheet rounding & padding",
-      "Instant dispatcher alert on site perimeter departure",
-    ],
+    icon: Clock,
+    title: "Automated Geofence Time Audits",
+    description: "Define 50m–500m virtual boundaries around job addresses. Shift check-ins and departures are logged automatically when entering or exiting the perimeter.",
+    specs: ["Hands-free auto clock-in/out", "Tamper-proof GPS audit trails", "Instant perimeter departure alerts"],
   },
   {
-    icon: ScanFace,
+    icon: Scan,
     title: "Biometric Face ID Verification",
-    badge: "Anti-Buddy Punching",
-    badgeColor: "bg-indigo-50 text-indigo-800 border-indigo-200",
-    description: "Ensure the right technician is on the right job site. Quick selfie check-in uses AI facial recognition matched against the technician's encrypted profile.",
-    points: [
-      "Instant sub-second facial recognition verification",
-      "GPS geotagged & timestamped selfie audit records",
-      "Works on iOS, Android, and mobile web browsers",
-    ],
-  },
-  {
-    icon: Calendar,
-    title: "Drag-and-Drop Scheduling & Dispatch",
-    badge: "Smart Dispatch",
-    badgeColor: "bg-sky-50 text-sky-800 border-sky-200",
-    description: "Schedule jobs, assign crews, and balance workloads across days or weeks with a visual color-coded calendar and automated SMS client arrival windows.",
-    points: [
-      "Visual day, week, month, and crew-timeline views",
-      "Automated customer 'On My Way' SMS notifications",
-      "Multi-day project milestones and shift re-assignments",
-    ],
-  },
-  {
-    icon: FileText,
-    title: "Good / Better / Best Multi-Option Quotes",
-    badge: "Higher Close Rates",
-    badgeColor: "bg-amber-50 text-amber-800 border-amber-200",
-    description: "Create professional tiered proposals that allow homeowners to choose premium upgrades. Capture digital e-signatures instantly on phone, tablet, or web.",
-    points: [
-      "3-tier Good/Better/Best proposal presentation",
-      "Instant client SMS/Email approval with digital signature",
-      "Auto-converts approved quotes into work orders & invoices",
-    ],
-  },
-  {
-    icon: Receipt,
-    title: "Invoicing & Instant Mobile Payments",
-    badge: "Same-Day Cash Flow",
-    badgeColor: "bg-rose-50 text-rose-800 border-rose-200",
-    description: "Generate itemized invoices directly from completed work orders. Accept credit cards, debit, and ACH bank transfers on-site or via self-service SMS payment links.",
-    points: [
-      "Powered by secure Stripe payment processing",
-      "Automated overdue payment reminders via SMS & email",
-      "Detailed receipt issuance and partial deposit tracking",
-    ],
+    description: "Require a quick selfie at shift start. AI facial recognition matches the technician's profile photo to ensure the right crew member is physically on site.",
+    specs: ["Instant identity verification", "Encrypted facial embedding match", "Zero buddy-punching or proxy sign-ins"],
   },
 ];
 
-const tier2Features: FeatureCard[] = [
+const operationsFeatures: FeatureDetail[] = [
+  {
+    icon: Calendar,
+    title: "Drag-and-Drop Scheduling Calendar",
+    description: "Visual calendar dispatching with multi-technician day, week, and timeline views. Adjust assignments in seconds and trigger automated customer arrival windows.",
+    specs: ["Color-coded trade categorization", "Automated customer 'On My Way' SMS", "Multi-day milestone tracking"],
+  },
+  {
+    icon: FileCheck,
+    title: "Good / Better / Best Multi-Tier Proposals",
+    description: "Present clean multi-option proposals directly on phone or tablet. Allow clients to choose premium upgrades with built-in digital signature capture.",
+    specs: ["3-tier proposal layouts", "SMS & email instant approval links", "One-click conversion to active work orders"],
+  },
+  {
+    icon: CreditCard,
+    title: "On-Site Invoicing & Stripe Card Processing",
+    description: "Generate itemized invoices upon job completion and collect payments immediately on-site via card reader, tap-to-pay, or secure self-service SMS payment links.",
+    specs: ["Direct Stripe payment integration", "Automated overdue balance reminders", "Instant receipt generation"],
+  },
+];
+
+const assetFeatures: FeatureDetail[] = [
   {
     icon: QrCode,
-    title: "Equipment & Asset QR Tracking",
-    badge: "Lifecycle Management",
-    badgeColor: "bg-teal-50 text-teal-800 border-teal-200",
-    description: "Maintain comprehensive records of client equipment (HVAC air handlers, condensers, water heaters, electrical panels) tracked by serial number and physical QR codes.",
-    points: [
-      "On-site QR and barcode scanning with phone camera",
-      "Instant access to full repair history and previous parts used",
-      "Manufacturer warranty expiration tracking and alerts",
-    ],
+    title: "Equipment & Asset QR Lifecycle Tracking",
+    description: "Track customer HVAC systems, water heaters, and electrical panels by serial number. Scan QR codes on-site for immediate access to full service history and warranty status.",
+    specs: ["Camera-based QR & barcode scanning", "Complete parts and maintenance history", "Warranty expiration tracking & alerts"],
   },
   {
-    icon: Package,
-    title: "Truck & Warehouse Inventory + POs",
-    badge: "Van Stock Control",
-    badgeColor: "bg-indigo-50 text-indigo-800 border-indigo-200",
-    description: "Track parts, supplies, and materials across individual service vans and central warehouse locations. Issue vendor purchase orders with low-stock reorder triggers.",
-    points: [
-      "Multi-location truck vs warehouse stock visibility",
-      "Direct supplier purchase order (PO) generation & tracking",
-      "Automated stock level deductions upon job completion",
-    ],
+    icon: Box,
+    title: "Truck Van Stock & Warehouse Inventory",
+    description: "Track parts and consumable supplies across every individual service vehicle and central warehouse. Create supplier purchase orders with low-stock warnings.",
+    specs: ["Real-time van stock inventory counts", "Supplier PO creation and receiving", "Auto-depletion upon job completion"],
   },
   {
-    icon: RefreshCw,
-    title: "Service Agreements & Recurring Clubs",
-    badge: "Predictable Recurring Revenue",
-    badgeColor: "bg-amber-50 text-amber-800 border-amber-200",
-    description: "Build a high-margin recurring revenue stream with maintenance agreements and VIP service clubs. Automate recurring credit card billing and seasonal tune-up visits.",
-    points: [
-      "Automated monthly or annual recurring card billing",
-      "Pre-scheduled spring/fall maintenance tune-up triggers",
-      "Custom member discount tiers on parts and emergency labor",
-    ],
+    icon: Repeat,
+    title: "Recurring Maintenance Agreements & Service Clubs",
+    description: "Build predictable recurring revenue with VIP service memberships. Automate monthly credit card charging and auto-schedule spring and fall tune-ups.",
+    specs: ["Automated recurring subscription billing", "Seasonal tune-up scheduler", "Member-specific pricing & discount tiers"],
+  },
+];
+
+const aiAutomationFeatures: FeatureDetail[] = [
+  {
+    icon: Phone,
+    title: "24/7 Autonomous AI Voice Phone Receptionist",
+    description: "Never lose a high-value after-hours call. The autonomous voice agent answers incoming calls, captures customer requirements, and books available appointment slots.",
+    specs: ["Natural conversational voice handling", "Direct calendar scheduling integration", "Voice-to-quote dictation for field techs"],
   },
   {
-    icon: Bot,
-    title: "24/7 AI Phone Voice Receptionist & Copilot",
-    badge: "Autonomous Voice AI",
-    badgeColor: "bg-rose-50 text-rose-800 border-rose-200",
-    description: "Never miss an emergency call or after-hours inquiry. The AI voice agent answers calls, captures customer details, books calendar slots, and transcribes voice notes to quotes.",
-    points: [
-      "Human-like conversational voice answering 24/7/365",
-      "Direct calendar booking into available technician slots",
-      "Field technician speech-to-estimate voice dictation",
-    ],
-  },
-  {
-    icon: Smartphone,
+    icon: Globe,
     title: "Customer Self-Service Portal & Web Booking",
-    badge: "Client Experience",
-    badgeColor: "bg-emerald-50 text-emerald-800 border-emerald-200",
-    description: "Embed an instant web booking calendar on your website. Give homeowners a modern self-service portal to approve quotes, track technician ETA, and pay invoices.",
-    points: [
-      "Embeddable website booking widget with instant confirmation",
-      "Homeowner portal for quote e-signing, invoices, and job history",
-      "Live GPS technician tracking link on service day",
-    ],
+    description: "Embed an instant booking calendar on your website and provide homeowners with a self-service portal to approve estimates, track technician ETA, and download receipts.",
+    specs: ["Embeddable responsive web widget", "Live GPS technician tracking on service day", "Self-service quote approval & payment"],
   },
   {
     icon: Star,
-    title: "Automated Google Review Engine",
-    badge: "5-Star Reputation",
-    badgeColor: "bg-amber-50 text-amber-800 border-amber-200",
-    description: "Skyrocket your local search ranking on Google Maps. AI analyzes technician completion notes and sends automated review requests via SMS to satisfied homeowners.",
-    points: [
-      "AI sentiment analysis to target high-satisfaction clients",
-      "Automated 1-click Google review link sent via SMS",
-      "Internal feedback capture for negative experiences",
-    ],
+    title: "Automated Google Review SMS Engine",
+    description: "Analyze technician job notes for positive sentiment upon completion and trigger automated review requests via SMS to satisfied clients to boost local Google ranking.",
+    specs: ["Sentiment-triggered SMS invitations", "Direct 1-click Google review link", "Internal feedback capture for exceptions"],
   },
   {
-    icon: DollarSign,
-    title: "Real-Time Job Costing & Gross Margins",
-    badge: "Profit Intelligence",
-    badgeColor: "bg-sky-50 text-sky-800 border-sky-200",
-    description: "Know your exact profitability before leaving the driveway. Itemize technician hourly wages, material costs, equipment rentals, and subcontractor expenses per job.",
-    points: [
-      "Real-time gross margin calculation against project budgets",
-      "Itemized labor, materials, and subcontractor cost ledger",
-      "Profitability reporting by trade, technician, and job type",
-    ],
+    icon: TrendingUp,
+    title: "Real-Time Job Costing & Profit Margins",
+    description: "Track exact labor hours, material costs, equipment rentals, and subcontractor expenses per job to calculate gross profit margins before leaving the site.",
+    specs: ["Live budget vs. actual cost ledger", "Gross margin percentage alerts", "Technician and trade profitability reports"],
   },
   {
-    icon: Layers,
-    title: "Two-Way QuickBooks & Xero Sync",
-    badge: "Clean Accounting",
-    badgeColor: "bg-purple-50 text-purple-800 border-purple-200",
-    description: "Bi-directional synchronization for customers, items, timesheets, and invoices. Keep your accounting clean with zero double-entry and no duplicate records.",
-    points: [
-      "Automatic sync of customers, invoices, and payments",
-      "Export payroll-ready geofence-verified timesheets",
-      "Reconcile payments and bank deposits automatically",
-    ],
+    icon: RefreshCw,
+    title: "Two-Way QuickBooks & Xero Synchronization",
+    description: "Bi-directional accounting sync for customers, items, timesheets, and invoices. Keep books reconciled with zero double-entry and no duplicate records.",
+    specs: ["Continuous two-way data sync", "Export geofence-verified payroll hours", "Automatic payment reconciliation"],
   },
 ];
 
@@ -213,36 +128,37 @@ export default function FeaturesPage() {
   return (
     <>
       <SEO
-        title="FiledCrews Features — Complete Field Service Management & Dispatch Software"
-        description="Explore the full suite of FiledCrews FSM features: Live GPS dispatching, geofence timecards, biometric face verification, equipment QR tracking, inventory POs, service memberships, AI voice receptionist, and QuickBooks sync."
+        title="FiledCrews Features — Complete Field Service Management Software"
+        description="Comprehensive feature overview of FiledCrews: Live GPS dispatch, geofence time tracking, biometric face ID, equipment QR lifecycle, van inventory, recurring service agreements, and 24/7 AI voice phone receptionist."
         path="/features"
       />
 
-      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
-        {/* Header */}
-        <header className="sticky top-0 z-50 border-b border-stone-200/80 bg-white/90 backdrop-blur-md">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-4">
-            <Link to="/" className="flex items-center gap-2" aria-label="FiledCrews Homepage">
-              <img src="/favicon.png" alt="FiledCrews" className="h-8 w-8 rounded-lg" width="32" height="32" />
-              <span className="text-xl font-bold tracking-tight text-slate-900">
+      <div className="min-h-screen bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900">
+        
+        {/* Navigation */}
+        <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100">
+          <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 py-4">
+            <Link to="/" className="flex items-center gap-2.5" aria-label="FiledCrews Homepage">
+              <img src="/favicon.png" alt="FiledCrews" className="h-7 w-7 rounded-md" width="28" height="28" />
+              <span className="text-xl font-bold tracking-tight text-slate-950">
                 FiledCrews<span className="text-teal-600">.</span>
               </span>
             </Link>
             <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
-              <Link to="/features" className="text-teal-700 font-bold">Features</Link>
-              <Link to="/#compare" className="hover:text-slate-900 transition-colors">Compare</Link>
-              <Link to="/#pricing" className="hover:text-slate-900 transition-colors">Pricing</Link>
-              <Link to="/about" className="hover:text-slate-900 transition-colors">About</Link>
-              <Link to="/support" className="hover:text-slate-900 transition-colors">Support</Link>
+              <Link to="/features" className="text-slate-950 font-semibold">Features</Link>
+              <Link to="/#compare" className="hover:text-slate-950 transition-colors">Compare</Link>
+              <Link to="/#pricing" className="hover:text-slate-950 transition-colors">Pricing</Link>
+              <Link to="/about" className="hover:text-slate-950 transition-colors">About</Link>
+              <Link to="/support" className="hover:text-slate-950 transition-colors">Support</Link>
             </nav>
             <div className="flex items-center gap-3">
               <Link to="/auth">
-                <Button variant="ghost" size="sm" className="text-slate-700 hover:text-slate-900">
-                  Log In
+                <Button variant="ghost" size="sm" className="text-slate-700 hover:text-slate-950 font-medium">
+                  Sign In
                 </Button>
               </Link>
               <Link to="/wizard">
-                <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-white font-bold shadow-sm" aria-label="Get Started Free">
+                <Button size="sm" className="bg-slate-950 hover:bg-slate-800 text-white font-semibold rounded-lg px-4 py-2 text-sm shadow-sm" aria-label="Get Started Free">
                   Get Started Free
                 </Button>
               </Link>
@@ -250,186 +166,266 @@ export default function FeaturesPage() {
           </div>
         </header>
 
-        {/* Hero Banner */}
-        <section className="bg-gradient-to-b from-white via-stone-50 to-teal-50/30 pt-16 pb-20 border-b border-stone-200/80">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 text-center space-y-5">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-extrabold bg-teal-50 border border-teal-200 text-teal-800">
-              <Sparkles className="h-3.5 w-3.5 text-teal-600" /> Complete Field Service Operating System
-            </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tight leading-tight">
-              Every tool to dispatch, execute, and grow your trade business.
+        {/* Hero Section */}
+        <section className="pt-20 pb-16 md:pt-28 md:pb-24 border-b border-slate-100 bg-[#fafaf9]">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center space-y-6">
+            <p className="text-xs font-bold uppercase tracking-widest text-teal-800">
+              Complete Field Service Architecture
+            </p>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-slate-950 tracking-tight leading-[1.1]">
+              Every tool required to run, dispatch, and scale your field operations.
             </h1>
             <p className="text-lg md:text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
-              From real-time GPS tracking and geofence timecards to equipment QR lifecycles, van inventory, recurring service clubs, and 24/7 AI voice phone agents.
+              Consolidate dispatching, time tracking, customer equipment records, van inventory, recurring maintenance contracts, and automated invoicing into a single high-performance platform.
             </p>
-            <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3.5">
               <Link to="/wizard">
-                <Button size="lg" className="w-full sm:w-auto px-8 py-6 text-base bg-slate-950 hover:bg-slate-800 text-white font-black rounded-2xl shadow-xl shadow-slate-950/20">
-                  Start Free Account <ArrowRight className="ml-2 h-5 w-5 text-teal-400" />
+                <Button size="lg" className="w-full sm:w-auto px-8 py-6 text-base bg-slate-950 hover:bg-slate-800 text-white font-bold rounded-xl shadow-lg shadow-slate-950/10">
+                  Start for Free <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
-              <Link to="/#compare">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto px-8 py-6 text-base border-stone-300 text-slate-700 font-bold rounded-2xl">
-                  Compare with Jobber & ServiceTitan
+              <Link to="/#pricing">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto px-8 py-6 text-base border-slate-300 text-slate-700 font-semibold rounded-xl hover:bg-white">
+                  View Pricing Plans
                 </Button>
               </Link>
             </div>
           </div>
         </section>
 
-        {/* Main Content Sections */}
-        <main className="flex-1 py-16">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 space-y-20">
-            
-            {/* Section 1: Tier 1 Core FSM Operations */}
-            <section className="space-y-8">
-              <div className="text-center max-w-3xl mx-auto space-y-2">
-                <span className="text-xs font-black uppercase tracking-widest text-teal-700 bg-teal-50 px-3 py-1 rounded-full border border-teal-200">
-                  Core Dispatch & Field Management
-                </span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                  Streamlined Field Dispatch & Real-Time Auditing
-                </h2>
-                <p className="text-slate-600 text-base">
-                  Eliminate paperwork, lost hours, and timesheet fraud with automated GPS and biometric auditing.
-                </p>
-              </div>
+        {/* Main Content Area */}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 py-20 space-y-28">
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {tier1Features.map((feat, idx) => (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.4, delay: idx * 0.05 }}
-                    className="rounded-3xl bg-white border border-stone-200/90 p-7 shadow-sm hover:shadow-xl hover:border-teal-500/40 transition-all flex flex-col justify-between space-y-6"
-                  >
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="h-12 w-12 rounded-2xl bg-teal-600 text-white flex items-center justify-center shadow-md shadow-teal-600/20">
-                          <feat.icon className="h-6 w-6" />
-                        </div>
-                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${feat.badgeColor}`}>
-                          {feat.badge}
-                        </span>
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-slate-900">{feat.title}</h3>
-                        <p className="text-sm text-slate-600 mt-2 leading-relaxed">{feat.description}</p>
-                      </div>
-                    </div>
-                    <ul className="space-y-2 pt-4 border-t border-stone-100 text-xs text-slate-700 font-medium">
-                      {feat.points.map((pt, pIdx) => (
-                        <li key={pIdx} className="flex items-start gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-teal-600 shrink-0 mt-0.5" />
-                          <span>{pt}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </motion.div>
-                ))}
-              </div>
-            </section>
-
-            {/* Section 2: Tier 2 Advanced Operations */}
-            <section className="space-y-8 pt-8">
-              <div className="text-center max-w-3xl mx-auto space-y-2">
-                <span className="text-xs font-black uppercase tracking-widest text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200">
-                  Enterprise Operations & Growth
-                </span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                  Advanced Capabilities for Scaling Contractors
-                </h2>
-                <p className="text-slate-600 text-base">
-                  Equipment tracking, van stock management, recurring service clubs, and 24/7 AI receptionist.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {tier2Features.map((feat, idx) => (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.4, delay: idx * 0.05 }}
-                    className="rounded-3xl bg-white border border-stone-200/90 p-7 shadow-sm hover:shadow-xl hover:border-indigo-500/40 transition-all flex flex-col justify-between space-y-6"
-                  >
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="h-12 w-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/20">
-                          <feat.icon className="h-6 w-6" />
-                        </div>
-                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${feat.badgeColor}`}>
-                          {feat.badge}
-                        </span>
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-slate-900">{feat.title}</h3>
-                        <p className="text-sm text-slate-600 mt-2 leading-relaxed">{feat.description}</p>
-                      </div>
-                    </div>
-                    <ul className="space-y-2 pt-4 border-t border-stone-100 text-xs text-slate-700 font-medium">
-                      {feat.points.map((pt, pIdx) => (
-                        <li key={pIdx} className="flex items-start gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-indigo-600 shrink-0 mt-0.5" />
-                          <span>{pt}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </motion.div>
-                ))}
-              </div>
-            </section>
-
-            {/* Bottom CTA Banner */}
-            <div className="rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-teal-950 p-8 sm:p-12 text-center text-white space-y-6 shadow-2xl relative overflow-hidden">
-              <div className="max-w-2xl mx-auto space-y-3 relative z-10">
-                <span className="text-xs font-extrabold uppercase tracking-widest text-teal-400 bg-teal-950/80 border border-teal-500/30 px-3.5 py-1 rounded-full">
-                  Get Started in Minutes
-                </span>
-                <h3 className="text-3xl sm:text-4xl font-black tracking-tight">
-                  Ready to upgrade your field service business?
-                </h3>
-                <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-                  Join hundreds of HVAC, plumbing, electrical, and landscaping businesses running on FiledCrews today. $0 core tier, no credit card required.
-                </p>
-              </div>
-              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10">
-                <Link to="/wizard">
-                  <Button size="lg" className="w-full sm:w-auto px-9 py-6 text-base bg-teal-500 hover:bg-teal-400 text-slate-950 font-black rounded-full shadow-lg shadow-teal-500/25">
-                    Start for Free <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-                <Link to="/#pricing">
-                  <Button variant="outline" size="lg" className="w-full sm:w-auto px-8 py-6 text-base border-slate-700 text-slate-200 hover:text-white font-bold rounded-full">
-                    View Pricing Plans
-                  </Button>
-                </Link>
-              </div>
+          {/* Category 1: Dispatch & Field Audits */}
+          <section className="space-y-12">
+            <div className="max-w-2xl space-y-3">
+              <p className="text-xs font-bold uppercase tracking-wider text-teal-800">Module 01</p>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-950 tracking-tight">
+                Real-Time Dispatching & Field Verification
+              </h2>
+              <p className="text-slate-600 text-base leading-relaxed">
+                Automated location tracking, verified arrival times, and facial biometric confirmation that eliminate timesheet disputes entirely.
+              </p>
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {dispatchFeatures.map((f, i) => (
+                <div key={i} className="rounded-2xl border border-slate-200/80 bg-white p-7 flex flex-col justify-between space-y-6 hover:border-slate-400 transition-colors">
+                  <div className="space-y-4">
+                    <div className="h-11 w-11 rounded-xl bg-slate-100 text-slate-900 flex items-center justify-center">
+                      <f.icon className="h-5 w-5" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-950">{f.title}</h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">{f.description}</p>
+                  </div>
+                  <ul className="space-y-2 pt-4 border-t border-slate-100 text-xs text-slate-700 font-medium">
+                    {f.specs.map((s, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <Check className="h-3.5 w-3.5 text-teal-700 shrink-0 mt-0.5" />
+                        <span>{s}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Category 2: Scheduling, Estimates & Invoicing */}
+          <section className="space-y-12">
+            <div className="max-w-2xl space-y-3">
+              <p className="text-xs font-bold uppercase tracking-wider text-teal-800">Module 02</p>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-950 tracking-tight">
+                Scheduling, Proposals & Fast Payments
+              </h2>
+              <p className="text-slate-600 text-base leading-relaxed">
+                Move seamlessly from initial customer inquiry to multi-tier estimates, scheduled jobs, and same-day payment collection.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {operationsFeatures.map((f, i) => (
+                <div key={i} className="rounded-2xl border border-slate-200/80 bg-white p-7 flex flex-col justify-between space-y-6 hover:border-slate-400 transition-colors">
+                  <div className="space-y-4">
+                    <div className="h-11 w-11 rounded-xl bg-slate-100 text-slate-900 flex items-center justify-center">
+                      <f.icon className="h-5 w-5" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-950">{f.title}</h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">{f.description}</p>
+                  </div>
+                  <ul className="space-y-2 pt-4 border-t border-slate-100 text-xs text-slate-700 font-medium">
+                    {f.specs.map((s, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <Check className="h-3.5 w-3.5 text-teal-700 shrink-0 mt-0.5" />
+                        <span>{s}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Category 3: Asset Lifecycles, Van Inventory & Memberships */}
+          <section className="space-y-12">
+            <div className="max-w-2xl space-y-3">
+              <p className="text-xs font-bold uppercase tracking-wider text-teal-800">Module 03</p>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-950 tracking-tight">
+                Equipment QR Scanning, Van Stock & Recurring Clubs
+              </h2>
+              <p className="text-slate-600 text-base leading-relaxed">
+                Built-in enterprise modules to manage physical machinery on-site, prevent truck stock shortages, and lock in recurring revenue.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {assetFeatures.map((f, i) => (
+                <div key={i} className="rounded-2xl border border-slate-200/80 bg-white p-7 flex flex-col justify-between space-y-6 hover:border-slate-400 transition-colors">
+                  <div className="space-y-4">
+                    <div className="h-11 w-11 rounded-xl bg-slate-100 text-slate-900 flex items-center justify-center">
+                      <f.icon className="h-5 w-5" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-950">{f.title}</h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">{f.description}</p>
+                  </div>
+                  <ul className="space-y-2 pt-4 border-t border-slate-100 text-xs text-slate-700 font-medium">
+                    {f.specs.map((s, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <Check className="h-3.5 w-3.5 text-teal-700 shrink-0 mt-0.5" />
+                        <span>{s}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Category 4: AI Receptionist, Reputation & Integrations */}
+          <section className="space-y-12">
+            <div className="max-w-2xl space-y-3">
+              <p className="text-xs font-bold uppercase tracking-wider text-teal-800">Module 04</p>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-950 tracking-tight">
+                AI Voice Agents, Reputation & Accounting Sync
+              </h2>
+              <p className="text-slate-600 text-base leading-relaxed">
+                Autonomous after-hours phone handling, automated 5-star Google review collection, job cost ledgers, and seamless QuickBooks/Xero synchronization.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {aiAutomationFeatures.map((f, i) => (
+                <div key={i} className="rounded-2xl border border-slate-200/80 bg-white p-7 flex flex-col justify-between space-y-6 hover:border-slate-400 transition-colors">
+                  <div className="space-y-4">
+                    <div className="h-11 w-11 rounded-xl bg-slate-100 text-slate-900 flex items-center justify-center">
+                      <f.icon className="h-5 w-5" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-950">{f.title}</h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">{f.description}</p>
+                  </div>
+                  <ul className="space-y-2 pt-4 border-t border-slate-100 text-xs text-slate-700 font-medium">
+                    {f.specs.map((s, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <Check className="h-3.5 w-3.5 text-teal-700 shrink-0 mt-0.5" />
+                        <span>{s}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Full Platform Summary Table */}
+          <section className="space-y-8 pt-8">
+            <div className="max-w-2xl space-y-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-teal-800">Feature Matrix</p>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">
+                Complete Capabilities Summary
+              </h2>
+            </div>
+
+            <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm bg-white">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-900 font-bold">
+                  <tr>
+                    <th className="p-4 sm:p-5">Capability Area</th>
+                    <th className="p-4 sm:p-5">Feature Functionality</th>
+                    <th className="p-4 sm:p-5">Availability</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-700">
+                  {[
+                    { area: "Field Dispatch", feat: "Live GPS Map with vehicle speed & route replay", tier: "Included ($0 Core)" },
+                    { area: "Time & Attendance", feat: "50m–500m Geofenced check-in/out audits", tier: "Included ($0 Core)" },
+                    { area: "Security", feat: "Biometric Face ID selfie verification", tier: "Included ($0 Core)" },
+                    { area: "Scheduling", feat: "Visual drag-and-drop calendar & arrival windows", tier: "Included ($0 Core)" },
+                    { area: "Sales", feat: "Good/Better/Best multi-tier estimates with e-signatures", tier: "Included ($0 Core)" },
+                    { area: "Billing", feat: "On-site card payments & invoice generation via Stripe", tier: "Included ($0 Core)" },
+                    { area: "Equipment Tracking", feat: "QR code & barcode scanning for machinery service records", tier: "Included ($0 Core)" },
+                    { area: "Inventory", feat: "Truck van stock vs warehouse stock with supplier POs", tier: "Included ($0 Core)" },
+                    { area: "Agreements", feat: "Recurring maintenance contracts with auto card charges", tier: "Included ($0 Core)" },
+                    { area: "AI Voice", feat: "24/7 AI receptionist for after-hours call booking", tier: "Integrated Copilot" },
+                    { area: "Customer Portal", feat: "Online web booking widget & self-service client hub", tier: "Included ($0 Core)" },
+                    { area: "Reputation", feat: "Automated Google review SMS requests with sentiment filter", tier: "Included ($0 Core)" },
+                    { area: "Job Costing", feat: "Itemized labor, material, and gross margin tracking", tier: "Included ($0 Core)" },
+                    { area: "Accounting", feat: "Two-way live synchronization with QuickBooks & Xero", tier: "Included ($0 Core)" },
+                  ].map((row, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="p-4 sm:p-5 font-semibold text-slate-950">{row.area}</td>
+                      <td className="p-4 sm:p-5 text-slate-600">{row.feat}</td>
+                      <td className="p-4 sm:p-5 font-medium text-teal-800">{row.tier}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {/* CTA Footer Banner */}
+          <div className="rounded-3xl bg-slate-950 text-white p-8 sm:p-14 text-center space-y-6 shadow-xl">
+            <div className="max-w-2xl mx-auto space-y-3">
+              <h3 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+                Run your entire field service business on FiledCrews.
+              </h3>
+              <p className="text-slate-400 text-base leading-relaxed">
+                Free core platform for small crews, with transparent seat scaling as your company expands.
+              </p>
+            </div>
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link to="/wizard">
+                <Button size="lg" className="w-full sm:w-auto px-8 py-6 text-base bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold rounded-xl shadow-md">
+                  Get Started Free <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+              <Link to="/#compare">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto px-8 py-6 text-base border-slate-800 text-slate-300 hover:text-white font-semibold rounded-xl">
+                  Compare with Competitors
+                </Button>
+              </Link>
+            </div>
           </div>
+
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-stone-200 bg-white py-10 mt-auto">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-slate-500">
+        <footer className="border-t border-slate-200 bg-white py-10 mt-auto">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-slate-500">
             <div className="flex items-center gap-2">
               <img src="/favicon.png" alt="FiledCrews" className="h-5 w-5 rounded-md" width="20" height="20" />
-              <span className="font-bold text-slate-800">FiledCrews FSM</span>
+              <span className="font-bold text-slate-900">FiledCrews</span>
               <span>© {new Date().getFullYear()} All rights reserved.</span>
             </div>
             <nav className="flex flex-wrap justify-center gap-6 font-medium">
-              <Link to="/features" className="text-slate-900 font-semibold">Features</Link>
-              <Link to="/about" className="hover:text-slate-900 transition-colors">About</Link>
-              <Link to="/support" className="hover:text-slate-900 transition-colors">Support</Link>
-              <Link to="/privacy" className="hover:text-slate-900 transition-colors">Privacy Policy</Link>
-              <Link to="/terms" className="hover:text-slate-900 transition-colors">Terms of Service</Link>
+              <Link to="/features" className="text-slate-950 font-semibold">Features</Link>
+              <Link to="/about" className="hover:text-slate-950 transition-colors">About</Link>
+              <Link to="/support" className="hover:text-slate-950 transition-colors">Support</Link>
+              <Link to="/privacy" className="hover:text-slate-950 transition-colors">Privacy Policy</Link>
+              <Link to="/terms" className="hover:text-slate-950 transition-colors">Terms of Service</Link>
             </nav>
           </div>
         </footer>
+
       </div>
     </>
   );
