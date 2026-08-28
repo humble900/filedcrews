@@ -7,7 +7,6 @@ import { useCallback, useEffect, useState, lazy, Suspense } from "react";
 import PageSkeleton from "@/components/PageSkeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useLocation, Navigate } from "react-router-dom";
-import { APIProvider } from "@vis.gl/react-google-maps";
 
 import LandingPage from "./LandingPage";
 
@@ -153,13 +152,11 @@ const HomePage = () => {
           {activeTab === "overview" && <DashboardOverview companyId={company.id} />}
           {activeTab === "map" && (
             apiKey ? (
-              <APIProvider apiKey={apiKey} libraries={["places"]}>
-                <LiveMap
-                  apiKey={apiKey}
-                  onEditModeChange={setGeofenceEditing}
-                  companyId={company.id}
-                />
-              </APIProvider>
+              <LiveMap
+                apiKey={apiKey}
+                onEditModeChange={setGeofenceEditing}
+                companyId={company.id}
+              />
             ) : (
               <p className="text-muted-foreground">Loading map…</p>
             )

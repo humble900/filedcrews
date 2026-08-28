@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Users, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -19,12 +19,12 @@ const CompanySetup = ({ onCreate, onSignOut }: CompanySetupProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (prefix.length !== 5) {
-      toast.error("Workspace tag must be exactly 5 letters");
+    if (prefix.length < 3 || prefix.length > 8) {
+      toast.error("Workspace tag must be between 3 and 8 letters");
       return;
     }
-    if (!/^[A-Za-z]{5}$/.test(prefix)) {
-      toast.error("Workspace tag must be 5 letters only (A-Z)");
+    if (!/^[A-Za-z]{3,8}$/.test(prefix)) {
+      toast.error("Workspace tag must be 3 to 8 letters only (A-Z)");
       return;
     }
     setLoading(true);
@@ -32,7 +32,7 @@ const CompanySetup = ({ onCreate, onSignOut }: CompanySetupProps) => {
       const { error } = await onCreate(name.trim(), prefix.toUpperCase());
       if (error) {
         if (error.message?.includes("duplicate") || error.message?.includes("unique")) {
-          toast.error("This workspace tag is already taken. Please choose another 5-letter tag.");
+          toast.error("This workspace tag is already taken. Please choose another tag.");
         } else {
           toast.error(error.message || "Failed to create workspace");
         }
@@ -57,13 +57,12 @@ const CompanySetup = ({ onCreate, onSignOut }: CompanySetupProps) => {
               <CardTitle className="text-2xl font-bold">Setup Your Workspace</CardTitle>
             </div>
             <CardDescription className="text-xs leading-relaxed text-muted-foreground">
-              Configure your organization and custom 5-letter workspace tag for team logins and job dispatches.
+              Configure your organization and custom 3 to 8-letter workspace tag for team logins and job dispatches.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="company-name" className="text-xs font-bold uppercase tracking-wide">Company Name</Label>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
                 <Input
                   id="company-name"
                   placeholder="e.g. Paramount Constructors"
@@ -71,29 +70,18 @@ const CompanySetup = ({ onCreate, onSignOut }: CompanySetupProps) => {
                   onChange={(e) => {
                     setName(e.target.value);
                     if (!prefix) {
-                      const clean = e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 5);
-                      setPrefix(clean.padEnd(Math.min(5, clean.length), "X"));
+                      const clean = e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 8);
+                      setPrefix(clean);
                     }
                   }}
-                  className="h-11 rounded-xl"
+                  className="h-12 rounded-xl text-base placeholder:text-xs sm:placeholder:text-sm placeholder:text-muted-foreground/70 placeholder:font-normal"
                   required
                 />
               </div>
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <Label htmlFor="prefix" className="text-xs font-bold uppercase tracking-wide">Workspace Tag</Label>
-                    <span className="text-[10px] font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md shrink-0">
-                      5 Letters
-                    </span>
-                  </div>
-                  <span className={cn(
-                    "text-xs font-mono font-bold px-2 py-0.5 rounded shrink-0",
-                    prefix.length === 5 ? "text-emerald-700 bg-emerald-50 border border-emerald-200" : "text-amber-700 bg-amber-50 border border-amber-200"
-                  )}>
-                    {prefix.length}/5
-                  </span>
-                </div>
+              <div className="space-y-2.5 pt-1">
+                <p className="text-[11px] text-muted-foreground leading-snug">
+                  Add a 3 to 8-letter code for your company. Your crew will use it when signing in.
+                </p>
 
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-mono font-bold text-muted-foreground select-none text-base">
@@ -101,43 +89,51 @@ const CompanySetup = ({ onCreate, onSignOut }: CompanySetupProps) => {
                   </span>
                   <Input
                     id="prefix"
-                    placeholder="PARAM"
+                    placeholder="e.g. PARAM"
                     value={prefix}
-                    onChange={(e) => setPrefix(e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 5))}
-                    className="font-mono text-base tracking-widest uppercase pl-8 h-11 rounded-xl font-bold"
+                    onChange={(e) => setPrefix(e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 8))}
+                    className="font-mono text-base tracking-widest uppercase pl-8 h-12 rounded-xl font-bold placeholder:text-xs sm:placeholder:text-sm placeholder:text-muted-foreground/70 placeholder:font-normal"
                     required
-                    maxLength={5}
+                    maxLength={8}
                   />
                 </div>
 
-                {/* Conversational Live Preview & Guided Feedback Card */}
-                <div className="p-3 bg-muted/50 border border-border/80 rounded-xl space-y-2 text-xs">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-muted-foreground font-medium flex items-center gap-1.5">
-                      <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                      Sample Crew Login:
+                {/* Compact Password-Strength Style Tag Completion Indicator */}
+                {prefix.length > 0 && (
+                  <div className="flex items-center justify-between text-[11px] font-semibold text-primary pt-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <span className={cn("text-xs font-semibold", prefix.length >= 3 ? "text-primary" : "text-amber-600")}>
+                      {prefix.length >= 3
+                        ? `✓ ${prefix.length}-letter tag ready`
+                        : `Add ${3 - prefix.length} more letter${3 - prefix.length === 1 ? "" : "s"} (min 3)`}
                     </span>
-                    <span className="font-mono font-bold text-foreground bg-background border border-border/60 px-2 py-0.5 rounded-md">
-                      @{prefix || "TAG"}_ALEX
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5, 6, 7, 8].map((seg) => {
+                          const isFilled = prefix.length >= seg;
+                          const isValid = prefix.length >= 3;
+                          return (
+                            <div
+                              key={seg}
+                              className={cn(
+                                "h-1.5 w-2 rounded-full transition-all duration-300",
+                                isFilled && isValid
+                                  ? "bg-primary"
+                                  : isFilled
+                                  ? "bg-amber-400"
+                                  : "bg-muted"
+                              )}
+                            />
+                          );
+                        })}
+                      </div>
+                      <span className="font-mono font-bold tracking-tight">
+                        {prefix.length}/8
+                      </span>
+                    </div>
                   </div>
-
-                  {prefix.length > 0 && prefix.length < 5 && (
-                    <div className="flex items-center gap-1.5 text-xs text-amber-700 font-semibold pt-1 border-t border-border/60">
-                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                      <span>Add {5 - prefix.length} more letter{5 - prefix.length === 1 ? "" : "s"} ({prefix.length}/5)</span>
-                    </div>
-                  )}
-
-                  {prefix.length === 5 && (
-                    <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-semibold pt-1 border-t border-border/60">
-                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-                      <span>Workspace tag locked: <strong className="font-mono text-emerald-800">@{prefix}</strong></span>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
-              <Button type="submit" className="w-full font-bold h-11 rounded-xl" disabled={loading || prefix.length !== 5}>
+              <Button type="submit" className="w-full font-bold h-12 rounded-xl text-base" disabled={loading || prefix.length < 3 || prefix.length > 8}>
                 {loading ? "Creating Workspace…" : "Create Workspace"}
               </Button>
             </form>

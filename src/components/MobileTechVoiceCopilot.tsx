@@ -53,8 +53,8 @@ export default function MobileTechVoiceCopilot({ onClose, jobId }: MobileTechVoi
   useEffect(() => {
     const fetchVoiceSettings = async () => {
       if (!user?.id) return;
-      const { data } = await supabase
-        .from('staff_profiles')
+      const { data } = await (supabase
+        .from('staff_profiles') as any)
         .select('voice_settings')
         .eq('id', user.id)
         .single();
@@ -153,7 +153,7 @@ export default function MobileTechVoiceCopilot({ onClose, jobId }: MobileTechVoi
     
     setSavingSettings(true);
     try {
-      await supabase.from('staff_profiles').update({
+      await (supabase.from('staff_profiles') as any).update({
         voice_settings: { voice_id: newVoiceId, is_custom_clone: false }
       }).eq('id', user.id);
       toast.success("Voice preference saved");

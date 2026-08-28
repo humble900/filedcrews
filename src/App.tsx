@@ -12,12 +12,9 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import PageSkeleton from "./components/PageSkeleton";
 
 // ─── Eagerly loaded (instant render, no loading fallbacks) ───────────
-import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import LandingPage from "./pages/LandingPage";
 import HomePage from "./pages/HomePage";
-import FeaturesPage from "./pages/FeaturesPage";
-import IndustriesPage from "./pages/IndustriesPage";
 
 // ─── Resilient Lazy Loader (handles new deployments & stale chunks) ───
 function lazyWithRetry<T extends React.ComponentType<any>>(
@@ -45,6 +42,9 @@ function lazyWithRetry<T extends React.ComponentType<any>>(
 }
 
 // ─── Lazy loaded (large secondary pages, loaded on demand) ─────────
+const Index = lazyWithRetry(() => import("./pages/Index"));
+const FeaturesPage = lazyWithRetry(() => import("./pages/FeaturesPage"));
+const IndustriesPage = lazyWithRetry(() => import("./pages/IndustriesPage"));
 const FaceVerification = lazyWithRetry(() => import("./pages/FaceVerification"));
 const ResetPassword = lazyWithRetry(() => import("./pages/ResetPassword"));
 const PrivacyPolicy = lazyWithRetry(() => import("./pages/PrivacyPolicy"));

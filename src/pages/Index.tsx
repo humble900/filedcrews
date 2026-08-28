@@ -4,7 +4,11 @@ import AuthPage from "@/pages/AuthPage";
 import SEO from "@/components/SEO";
 
 const Index = () => {
-  const { user, signIn, signUp } = useAuth();
+  const { user, loading, signIn, signUp } = useAuth();
+
+  if (loading) {
+    return <div className="min-h-screen bg-slate-50" />;
+  }
 
   // Authenticated users should not stay on /auth — redirect to homepage
   if (user) {

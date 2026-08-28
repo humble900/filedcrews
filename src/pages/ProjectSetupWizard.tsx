@@ -257,7 +257,7 @@ function DashboardOverlayBackdrop({ children, companyName, companyPrefix }: { ch
       </div>
 
       {/* Dimmed Overlay Backdrop containing the floating Modal Dialog */}
-      <div className="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+      <div className="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto scrollbar-hidden">
         {children}
       </div>
     </div>
@@ -301,7 +301,8 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
   const computePrefix = (name: string) => {
     const clean = name.toUpperCase().replace(/[^A-Z]/g, "");
-    return clean.slice(0, 5).padEnd(5, "X");
+    if (clean.length < 3) return clean.padEnd(3, "X");
+    return clean.slice(0, Math.min(clean.length, 6));
   };
 
   const applyVerticalPresets = (val: string) => {
@@ -820,8 +821,8 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
           toast.error("Company Name is required");
           return false;
         }
-        if (companyPrefix.length !== 5 || !/^[A-Z]{5}$/.test(companyPrefix)) {
-          toast.error("Prefix must be exactly 5 uppercase letters (A-Z)");
+        if (companyPrefix.length < 3 || companyPrefix.length > 8 || !/^[A-Z]{3,8}$/.test(companyPrefix)) {
+          toast.error("Prefix must be between 3 and 8 uppercase letters (A-Z)");
           return false;
         }
         return true;
@@ -1317,7 +1318,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
   const activeStepsList = stepsList;
 
   if (loading || (user && loadingAdmin)) {
-    return <div className="min-h-screen bg-[#0a0f1d]" />;
+    return <div className="min-h-screen bg-slate-50" />;
   }
 
   if (!company && introStep === 6) {
@@ -1660,7 +1661,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
           path="/wizard"
           noIndex
         />
-        <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row font-sans select-none relative overflow-x-hidden">
+        <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row font-sans select-none relative">
           {/* Left Pane (Desktop only - Remote 3 Replica) */}
           <div className="hidden lg:flex lg:w-[400px] xl:w-[460px] flex-col justify-between p-10 bg-sidebar text-sidebar-foreground border-r border-sidebar-border relative overflow-hidden shrink-0 select-none">
             
@@ -1926,7 +1927,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
         </div>
 
           {/* Right Pane (Forms) */}
-          <div className="flex-1 flex flex-col items-center justify-center px-4 py-8 sm:p-8 lg:p-16 relative w-full">
+          <div className="flex-1 flex flex-col items-center justify-center px-4 py-8 sm:p-8 lg:p-16 relative w-full overflow-hidden">
             <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-blue-600/5 rounded-full blur-[100px] pointer-events-none" />
             <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[400px] h-[400px] bg-indigo-600/5 rounded-full blur-[120px] pointer-events-none" />
 
@@ -1963,11 +1964,8 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                       We'll set up your personalized enterprise workspace and crew dispatch tags under this name.
                     </p>
                   </div>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="intro-company-name" className="text-xs font-bold text-slate-700 tracking-wide uppercase">
-                        Company Name
-                      </Label>
+                  <div className="space-y-6">
+                    <div>
                       <Input
                         id="intro-company-name"
                         placeholder="e.g. Paramount Constructors"
@@ -1981,30 +1979,13 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                             saveSandboxProgress({ companyPrefix: prefix });
                           }
                         }}
-                        className="bg-slate-50/80 border-slate-300 text-slate-900 text-base h-12 focus:ring-2 focus:ring-primary/20 px-4 rounded-xl font-medium"
+                        className="bg-slate-50/70 hover:bg-slate-50 border-slate-200/90 focus:bg-white focus:border-[#14223c] focus:ring-4 focus:ring-[#14223c]/10 text-slate-900 text-base h-12 px-4 rounded-xl font-medium placeholder:text-xs sm:placeholder:text-sm placeholder:text-slate-400 placeholder:font-normal shadow-xs transition-all duration-200"
                       />
                     </div>
 
                     <div className="space-y-2.5 pt-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <Label htmlFor="intro-company-prefix" className="text-xs font-bold text-slate-800 tracking-wide uppercase truncate">
-                            Workspace Tag
-                          </Label>
-                          <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200/60 px-1.5 py-0.5 rounded-md shrink-0">
-                            5 Letters
-                          </span>
-                        </div>
-                        <span className={cn(
-                          "text-xs font-mono font-bold px-2 py-0.5 rounded shrink-0 transition-colors",
-                          companyPrefix.length === 5 ? "text-emerald-700 bg-emerald-50 border border-emerald-200" : "text-amber-700 bg-amber-50 border border-amber-200"
-                        )}>
-                          {companyPrefix.length}/5
-                        </span>
-                      </div>
-
                       <p className="text-[11px] text-slate-500 leading-snug">
-                        Your unique 5-letter code for crew mobile logins, geofences, and job dispatch tags.
+                        Add a 3 to 8-letter code for your company. Your crew will use it when signing in.
                       </p>
 
                       <div className="relative">
@@ -2013,59 +1994,60 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                         </span>
                         <Input
                           id="intro-company-prefix"
-                          placeholder="PARAM"
+                          placeholder="e.g. PARAM"
                           value={companyPrefix}
-                          maxLength={5}
+                          maxLength={8}
                           onChange={(e) => {
                             setIsPrefixManuallyEdited(true);
-                            const clean = e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 5);
+                            const clean = e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 8);
                             setCompanyPrefix(clean);
                             saveSandboxProgress({ companyPrefix: clean });
                           }}
                           className={cn(
-                            "bg-slate-50/80 border text-slate-900 font-mono font-bold text-base h-12 pl-8 pr-4 rounded-xl uppercase tracking-widest transition-all",
-                            companyPrefix.length > 0 && companyPrefix.length < 5
-                              ? "border-amber-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
-                              : companyPrefix.length === 5
-                              ? "border-emerald-500 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
-                              : "border-slate-300 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                            "bg-slate-50/70 hover:bg-slate-50 border text-slate-900 font-mono font-bold text-base h-12 pl-8 pr-4 rounded-xl uppercase tracking-widest placeholder:text-xs sm:placeholder:text-sm placeholder:text-slate-400 placeholder:font-normal shadow-xs transition-all duration-200",
+                            companyPrefix.length > 0 && companyPrefix.length < 3
+                              ? "border-amber-400 focus:bg-white focus:border-[#14223c] focus:ring-4 focus:ring-[#14223c]/10"
+                              : companyPrefix.length >= 3
+                              ? "border-[#14223c] focus:bg-white focus:border-[#14223c] focus:ring-4 focus:ring-[#14223c]/10"
+                              : "border-slate-200/90 focus:bg-white focus:border-[#14223c] focus:ring-4 focus:ring-[#14223c]/10"
                           )}
                         />
                       </div>
 
-                      {/* Conversational Live Preview & Guided Feedback Card */}
-                      <div className="p-3.5 bg-slate-50/90 border border-slate-200/80 rounded-xl space-y-2 text-xs transition-all">
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-slate-500 font-medium flex items-center gap-1.5">
-                            <Users className="h-3.5 w-3.5 text-slate-400" />
-                            Sample Crew Login:
+                      {/* Compact Password-Strength Style Tag Completion Indicator */}
+                      {companyPrefix.length > 0 && (
+                        <div className="flex items-center justify-between text-[11px] font-semibold text-[#14223c] pt-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                          <span className={cn("text-xs font-semibold", companyPrefix.length >= 3 ? "text-[#14223c]" : "text-amber-600")}>
+                            {companyPrefix.length >= 3
+                              ? `✓ ${companyPrefix.length}-letter tag ready`
+                              : `Add ${3 - companyPrefix.length} more letter${3 - companyPrefix.length === 1 ? "" : "s"} (min 3)`}
                           </span>
-                          <span className="font-mono font-bold text-slate-800 bg-white border border-slate-200/60 px-2 py-0.5 rounded-md">
-                            @{companyPrefix || "TAG"}_ALEX
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1">
+                              {[1, 2, 3, 4, 5, 6, 7, 8].map((seg) => {
+                                const isFilled = companyPrefix.length >= seg;
+                                const isValid = companyPrefix.length >= 3;
+                                return (
+                                  <div
+                                    key={seg}
+                                    className={cn(
+                                      "h-1.5 w-2 rounded-full transition-all duration-300",
+                                      isFilled && isValid
+                                        ? "bg-[#14223c]"
+                                        : isFilled
+                                        ? "bg-amber-400"
+                                        : "bg-slate-200"
+                                    )}
+                                  />
+                                );
+                              })}
+                            </div>
+                            <span className="font-mono font-bold tracking-tight text-[#14223c]">
+                              {companyPrefix.length}/8
+                            </span>
+                          </div>
                         </div>
-
-                        {/* Conversational state helper */}
-                        {companyPrefix.length > 0 && companyPrefix.length < 5 && (
-                          <div className="flex items-center gap-1.5 text-xs text-amber-700 font-semibold pt-1 border-t border-slate-200/60 animate-in fade-in-50 duration-200">
-                            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                            <span>Add {5 - companyPrefix.length} more letter{5 - companyPrefix.length === 1 ? "" : "s"} to complete tag ({companyPrefix.length}/5)</span>
-                          </div>
-                        )}
-
-                        {companyPrefix.length === 5 && (
-                          <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-semibold pt-1 border-t border-slate-200/60 animate-in fade-in-50 duration-200">
-                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-                            <span>Workspace tag locked: <strong className="font-mono text-emerald-800">@{companyPrefix}</strong> (Auto-applied to crew apps)</span>
-                          </div>
-                        )}
-
-                        {companyPrefix.length === 0 && (
-                          <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-200/60">
-                            💡 Auto-suggested from company name — choose 5 letters your team will easily remember.
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -2707,7 +2689,7 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
 
               {/* Card Footer Controls */}
-              <div className="border-t border-slate-300/40 pt-4 mt-4 flex items-center justify-between">
+              <div className="pt-3 mt-3 flex items-center justify-between">
                 <Button
                   variant="ghost"
                   onClick={() => {
@@ -2731,8 +2713,8 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                           toast.error("Company Name is required");
                           return;
                         }
-                        if (companyPrefix.length !== 5 || !/^[A-Z]{5}$/.test(companyPrefix)) {
-                          toast.error("Prefix must be exactly 5 uppercase letters (A-Z)");
+                        if (companyPrefix.length < 3 || companyPrefix.length > 8 || !/^[A-Z]{3,8}$/.test(companyPrefix)) {
+                          toast.error("Prefix must be between 3 and 8 uppercase letters (A-Z)");
                           return;
                         }
                       }
@@ -2773,8 +2755,8 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
                       setSaving(true);
                       try {
                         const prefixToUse = companyPrefix.toUpperCase();
-                        if (prefixToUse.length !== 5 || !/^[A-Z]{5}$/.test(prefixToUse)) {
-                          toast.error("Prefix must be exactly 5 uppercase letters (A-Z)");
+                        if (prefixToUse.length < 3 || prefixToUse.length > 8 || !/^[A-Z]{3,8}$/.test(prefixToUse)) {
+                          toast.error("Prefix must be between 3 and 8 uppercase letters (A-Z)");
                           setSaving(false);
                           return;
                         }
@@ -4229,7 +4211,6 @@ function ProjectSetupWizardContent({ apiKey }: { apiKey: string }) {
 
 export default function ProjectSetupWizard() {
   const [apiKey, setApiKey] = useState<string>("AIzaSyC9uIJFFtEeqXJDCQdz-m346o3B7X7cZNw");
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -4240,19 +4221,9 @@ export default function ProjectSetupWizard() {
         }
       } catch (e) {
         console.warn("Could not retrieve dynamic maps key. Falling back to default.");
-      } finally {
-        setLoading(false);
       }
     })();
   }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <APIProvider apiKey={apiKey} libraries={["places"]}>

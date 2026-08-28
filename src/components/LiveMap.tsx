@@ -1908,6 +1908,7 @@ const LiveMap = ({ apiKey, onEditModeChange, companyId, projectId, projectLatitu
   );
 
   return (
+    <APIProvider apiKey={apiKey} libraries={["places"]}>
     <div className="flex gap-4 h-[calc(100vh-10rem)] relative">
       <div className="flex-1 rounded-xl overflow-hidden border border-border">
           <Map
@@ -2193,6 +2194,7 @@ const LiveMap = ({ apiKey, onEditModeChange, companyId, projectId, projectLatitu
         </SheetContent>
       </Sheet>
     </div>
+    </APIProvider>
   );
 };
 

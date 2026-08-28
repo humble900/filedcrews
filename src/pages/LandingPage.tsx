@@ -57,7 +57,6 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import SEO from "@/components/SEO";
 
 import heroDashboard from "@/assets/hero-dashboard.webp";
-import heroMobile from "@/assets/hero-mobile.webp";
 import featureStaffList from "@/assets/feature-staff-list.webp";
 import featureGeofence from "@/assets/feature-geofence.webp";
 import playStoreListing from "@/assets/play-store-app-listing.webp";
@@ -72,42 +71,24 @@ const fadeUp = {
   }),
 };
 
-/* ── Interactive Moon ── */
-function InteractiveMoon({
-  mouseX, mouseY, top, left, size = 100,
+/* ── Lightweight Ambient Floating Glow ── */
+function AmbientGlow({
+  top, left, size = 100,
   color = "rgba(13, 148, 136, 0.25)", delay = 0,
 }: {
-  mouseX: number; mouseY: number; top: string; left: string;
+  top: string; left: string;
   size?: number; color?: string; delay?: number;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [proximity, setProximity] = useState(0);
-  const rectRef = useRef<{ cx: number; cy: number } | null>(null);
-
-  useEffect(() => {
-    if (!ref.current || (mouseX === 0 && mouseY === 0)) return;
-    if (!rectRef.current) {
-      const rect = ref.current.getBoundingClientRect();
-      rectRef.current = { cx: rect.left + rect.width / 2, cy: rect.top + rect.height / 2 };
-    }
-    const dist = Math.hypot(mouseX - rectRef.current.cx, mouseY - rectRef.current.cy);
-    setProximity(Math.max(0, 1 - dist / 400));
-  }, [mouseX, mouseY]);
-
-  const s = size + proximity * size * 0.7;
-
   return (
     <motion.div
-      ref={ref}
-      animate={{ y: [0, -16, 0] }}
-      transition={{ duration: 4 + delay, repeat: Infinity, ease: "easeInOut", delay }}
+      animate={{ y: [0, -14, 0] }}
+      transition={{ duration: 5 + delay, repeat: Infinity, ease: "easeInOut", delay }}
       className="absolute rounded-full pointer-events-none"
       style={{
-        top, left, width: s, height: s,
+        top, left, width: size, height: size,
         background: `radial-gradient(circle at 35% 35%, ${color} 0%, transparent 65%)`,
-        opacity: 0.4 + proximity * 0.5,
-        filter: `blur(${Math.max(1, 6 - proximity * 5)}px)`,
-        transition: "width 0.3s ease-out, height 0.3s ease-out, opacity 0.3s ease-out, filter 0.3s ease-out",
+        opacity: 0.5,
+        filter: `blur(${Math.max(2, size / 16)}px)`,
       }}
     />
   );
@@ -239,14 +220,17 @@ export function InteractiveParticlesCanvas({ color = "13, 148, 136" }: Interacti
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    // Completely bypass particle animation on mobile devices for maximum performance and battery life
+    if (typeof window !== "undefined" && window.innerWidth < 768) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     let animationFrameId: number;
-    let width = (canvas.width = canvas.offsetWidth);
-    let height = (canvas.height = canvas.offsetHeight);
+    let width = (canvas.width = canvas.parentElement?.clientWidth || window.innerWidth);
+    let height = (canvas.height = canvas.parentElement?.clientHeight || 600);
 
     const particles: Array<{
       x: number;
@@ -256,44 +240,22 @@ export function InteractiveParticlesCanvas({ color = "13, 148, 136" }: Interacti
       radius: number;
     }> = [];
 
-    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-    const particleCount = isMobile ? 8 : Math.min(32, Math.floor((width * height) / 25000));
+    const particleCount = Math.min(24, Math.floor((width * height) / 35000));
 
     for (let i = 0; i < particleCount; i++) {
       particles.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.35,
-        vy: (Math.random() - 0.5) * 0.35,
-        radius: Math.random() * 2 + 1,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3,
+        radius: Math.random() * 1.5 + 1,
       });
     }
 
-    let mouseX = 0;
-    let mouseY = 0;
-    let isHovering = false;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      mouseX = e.clientX - rect.left;
-      mouseY = e.clientY - rect.top;
-      isHovering = true;
-    };
-
-    const handleMouseLeave = () => {
-      isHovering = false;
-    };
-
-    const parent = canvas.parentElement;
-    if (parent) {
-      window.addEventListener("mousemove", handleMouseMove);
-      parent.addEventListener("mouseleave", handleMouseLeave);
-    }
-
     const handleResize = () => {
-      if (!canvas) return;
-      width = canvas.width = canvas.offsetWidth;
-      height = canvas.height = canvas.offsetHeight;
+      if (!canvas || !canvas.parentElement) return;
+      width = canvas.width = canvas.parentElement.clientWidth;
+      height = canvas.height = canvas.parentElement.clientHeight;
     };
 
     let isVisible = true;
@@ -307,6 +269,8 @@ export function InteractiveParticlesCanvas({ color = "13, 148, 136" }: Interacti
       { threshold: 0.05 }
     );
     observer.observe(canvas);
+
+    window.addEventListener("resize", handleResize, { passive: true });
 
     const render = () => {
       if (!isVisible) {
@@ -328,8 +292,8 @@ export function InteractiveParticlesCanvas({ color = "13, 148, 136" }: Interacti
         for (let j = i + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-          if (dist < 100) {
-            const alpha = (1 - dist / 100) * 0.12;
+          if (dist < 90) {
+            const alpha = (1 - dist / 90) * 0.1;
             ctx.strokeStyle = `rgba(${color}, ${alpha})`;
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
@@ -338,19 +302,7 @@ export function InteractiveParticlesCanvas({ color = "13, 148, 136" }: Interacti
           }
         }
 
-        if (isHovering) {
-          const distToMouse = Math.hypot(p1.x - mouseX, p1.y - mouseY);
-          if (distToMouse < 180) {
-            const alpha = (1 - distToMouse / 180) * 0.2;
-            ctx.strokeStyle = `rgba(${color}, ${alpha})`;
-            ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(mouseX, mouseY);
-            ctx.stroke();
-          }
-        }
-
-        ctx.fillStyle = `rgba(${color}, 0.35)`;
+        ctx.fillStyle = `rgba(${color}, 0.3)`;
         ctx.beginPath();
         ctx.arc(p1.x, p1.y, p1.radius, 0, Math.PI * 2);
         ctx.fill();
@@ -365,10 +317,6 @@ export function InteractiveParticlesCanvas({ color = "13, 148, 136" }: Interacti
       observer.disconnect();
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
       window.removeEventListener("resize", handleResize);
-      window.removeEventListener("mousemove", handleMouseMove);
-      if (parent) {
-        parent.removeEventListener("mouseleave", handleMouseLeave);
-      }
     };
   }, [color]);
 
@@ -378,8 +326,6 @@ export function InteractiveParticlesCanvas({ color = "13, 148, 136" }: Interacti
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const rafRef = useRef<number | null>(null);
   const [activeStep, setActiveStep] = useState(0);
   const [activePhraseIndex, setActivePhraseIndex] = useState(0);
 
@@ -410,21 +356,6 @@ export default function LandingPage() {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, []);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (rafRef.current) return;
-    rafRef.current = requestAnimationFrame(() => {
-      setMousePos({ x: e.clientX, y: e.clientY });
-      rafRef.current = null;
-    });
-  }, []);
-
-  const mx = mousePos.x;
-  const my = mousePos.y;
-
   return (
     <>
       <SEO
@@ -434,7 +365,7 @@ export default function LandingPage() {
         ogImageAlt="FiledCrews FSM dashboard showing live map tracking, geofence zones, and mobile dispatching."
       />
 
-      <div className="min-h-screen bg-white text-slate-900" onMouseMove={handleMouseMove}>
+      <div className="min-h-screen bg-white text-slate-900">
 
         {/* ──── NAVBAR ──── */}
         <header className="sticky top-0 z-50 border-b border-stone-100 bg-white/80 backdrop-blur-md">
@@ -500,9 +431,9 @@ export default function LandingPage() {
           </div>
           <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-0 left-1/4 w-[700px] h-[700px] bg-amber-500/8 rounded-full blur-3xl pointer-events-none" />
-          <InteractiveMoon mouseX={mx} mouseY={my} top="8%" left="84%" size={180} color="rgba(13, 148, 136, 0.22)" delay={0} />
-          <InteractiveMoon mouseX={mx} mouseY={my} top="45%" left="2%" size={140} color="rgba(20, 184, 166, 0.18)" delay={1.2} />
-          <InteractiveMoon mouseX={mx} mouseY={my} top="18%" left="92%" size={90} color="rgba(245, 158, 11, 0.15)" delay={2.5} />
+          <AmbientGlow top="8%" left="84%" size={180} color="rgba(13, 148, 136, 0.22)" delay={0} />
+          <AmbientGlow top="45%" left="2%" size={140} color="rgba(20, 184, 166, 0.18)" delay={1.2} />
+          <AmbientGlow top="18%" left="92%" size={90} color="rgba(245, 158, 11, 0.15)" delay={2.5} />
 
           <div className="mx-auto max-w-5xl px-4 sm:px-6 text-center space-y-8 relative z-10">
 
@@ -641,9 +572,11 @@ export default function LandingPage() {
                 <div className="relative h-72 w-full overflow-hidden">
                   <img
                     src="/images/hvac-security.webp"
+                    srcSet="/images/hvac-security-sm.webp 480w, /images/hvac-security.webp 800w"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
                     alt="HVAC & Security Technicians"
-                    width={896}
-                    height={682}
+                    width={800}
+                    height={600}
                     loading="lazy"
                     decoding="async"
                     className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
@@ -673,9 +606,11 @@ export default function LandingPage() {
                 <div className="relative h-72 w-full overflow-hidden">
                   <img
                     src="/images/electrician-panel.webp"
+                    srcSet="/images/electrician-panel-sm.webp 480w, /images/electrician-panel.webp 800w"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
                     alt="Commercial Electrician Panel Work"
-                    width={896}
-                    height={682}
+                    width={800}
+                    height={600}
                     loading="lazy"
                     decoding="async"
                     className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
@@ -705,9 +640,11 @@ export default function LandingPage() {
                 <div className="relative h-72 w-full overflow-hidden">
                   <img
                     src="/images/plumber-sink.webp"
+                    srcSet="/images/plumber-sink-sm.webp 480w, /images/plumber-sink.webp 800w"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
                     alt="Plumbing Specialist Repair"
-                    width={896}
-                    height={682}
+                    width={800}
+                    height={600}
                     loading="lazy"
                     decoding="async"
                     className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
@@ -806,8 +743,14 @@ export default function LandingPage() {
               >
                 <div className="relative h-80 w-full overflow-hidden">
                   <img
-                    src="/hvac-technician.jpg"
+                    src="/hvac-technician.webp"
+                    srcSet="/hvac-technician-sm.webp 480w, /hvac-technician.webp 800w"
+                    sizes="(max-width: 1024px) 100vw, 450px"
                     alt="HVAC Field Technician"
+                    width={800}
+                    height={533}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
                   />
                 </div>
@@ -851,9 +794,11 @@ export default function LandingPage() {
                 <div className="relative min-h-[340px] md:min-h-[400px] rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center group/fleet shadow-2xl">
                   <img
                     src="/images/fleet-vans.webp"
+                    srcSet="/images/fleet-vans-sm.webp 480w, /images/fleet-vans.webp 800w"
+                    sizes="(max-width: 1024px) 100vw, 600px"
                     alt="Service Fleet in Motion"
-                    width={886}
-                    height={961}
+                    width={800}
+                    height={533}
                     loading="lazy"
                     decoding="async"
                     className="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.85] contrast-[1.05] transition-transform duration-700 group-hover/fleet:scale-105"
@@ -1497,8 +1442,8 @@ export default function LandingPage() {
 
         {/* ──── FEATURES ──── */}
         <section id="features" className="relative overflow-hidden py-8 md:py-10 bg-stone-50/50">
-          <InteractiveMoon mouseX={mx} mouseY={my} top="8%" left="87%" size={140} color="rgba(20, 184, 166, 0.18)" delay={0.5} />
-          <InteractiveMoon mouseX={mx} mouseY={my} top="65%" left="2%" size={100} color="rgba(13, 148, 136, 0.15)" delay={2} />
+          <AmbientGlow top="8%" left="87%" size={140} color="rgba(20, 184, 166, 0.18)" delay={0.5} />
+          <AmbientGlow top="65%" left="2%" size={100} color="rgba(13, 148, 136, 0.15)" delay={2} />
 
           <div className="mx-auto max-w-7xl px-4 sm:px-6 relative z-10">
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} className="text-center mb-10 space-y-2">
@@ -1582,7 +1527,7 @@ export default function LandingPage() {
 
         {/* ──── HOW IT WORKS ──── */}
         <section id="how-it-works" className="relative overflow-hidden py-8 md:py-10 bg-stone-50/50">
-          <InteractiveMoon mouseX={mx} mouseY={my} top="20%" left="90%" size={120} color="rgba(20, 184, 166, 0.18)" delay={1} />
+          <AmbientGlow top="20%" left="90%" size={120} color="rgba(20, 184, 166, 0.18)" delay={1} />
 
           <div className="mx-auto max-w-7xl px-4 sm:px-6 relative z-10">
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }} className="text-center mb-10 space-y-2">
@@ -1913,8 +1858,8 @@ export default function LandingPage() {
 
         {/* ──── CTA ──── */}
         <section className="relative overflow-hidden py-12 md:py-16 bg-stone-50/50">
-          <InteractiveMoon mouseX={mx} mouseY={my} top="15%" left="6%" size={160} color="rgba(13, 148, 136, 0.18)" delay={0.3} />
-          <InteractiveMoon mouseX={mx} mouseY={my} top="45%" left="86%" size={100} color="rgba(245, 158, 11, 0.12)" delay={1.8} />
+          <AmbientGlow top="15%" left="6%" size={160} color="rgba(13, 148, 136, 0.18)" delay={0.3} />
+          <AmbientGlow top="45%" left="86%" size={100} color="rgba(245, 158, 11, 0.12)" delay={1.8} />
 
           <div className="mx-auto max-w-3xl px-4 sm:px-6 text-center space-y-5 relative z-10">
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }}>

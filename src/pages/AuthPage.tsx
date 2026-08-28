@@ -454,7 +454,7 @@ const AuthPage = ({ onSignIn, onSignUp }: AuthPageProps) => {
 
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans relative overflow-hidden">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans relative">
       
       {/* Right side swooping curve background */}
       <div className="absolute bottom-0 right-0 w-[80%] h-[40%] bg-white rounded-tl-[100%] pointer-events-none z-0" />
